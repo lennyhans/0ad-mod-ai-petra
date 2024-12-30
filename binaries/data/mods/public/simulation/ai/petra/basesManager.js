@@ -150,9 +150,21 @@ PETRA.BasesManager.prototype.checkEvents = function(gameState, events)
 	for (const evt of events.EntityRenamed)
 	{
 		const ent = gameState.getEntityById(evt.newentity);
-		if (!ent || ent.owner() != PlayerID || ent.getMetadata(PlayerID, "base") === undefined)
+		const baseID = ent?.getMetadata(PlayerID, "base");
+		if (!ent || ent.owner() != PlayerID || baseID === undefined)
 			continue;
-		const base = this.getBaseByID(ent.getMetadata(PlayerID, "base"));
+
+		const base = this.getBaseByID(baseID);
+
+		// Promoted workers should be reset - their new gathering rates/capabilities might differ meaningfully.
+		if (ent.getMetadata(PlayerID, "role") === PETRA.Worker.ROLE_WORKER) {
+			ent.deleteAllMetadata(PlayerID);
+			ent.setMetadata(PlayerID, "base", baseID);
+			base.assignRolelessUnits(undefined, [ent]);
+			continue;
+		}
+
+		// Handle cases where a base anchor changes
 		if (!base.anchorId || base.anchorId != evt.entity)
 			continue;
 		base.anchorId = evt.newentity;

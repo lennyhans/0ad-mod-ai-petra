@@ -549,7 +549,7 @@ PETRA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 		if (ent.hasClasses(["Worker", "CitizenSoldier", "FishingBoat"]))
 			ent.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_WORKER);
 		else if (ent.hasClass("Support") && ent.hasClass("Elephant"))
-			ent.setMetadata(PlayerID, "role", "worker");
+			ent.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_WORKER);
 	}
 };
 
