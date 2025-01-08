@@ -157,10 +157,17 @@ PETRA.BasesManager.prototype.checkEvents = function(gameState, events)
 		const base = this.getBaseByID(baseID);
 
 		// Promoted workers should be reset - their new gathering rates/capabilities might differ meaningfully.
-		if (ent.getMetadata(PlayerID, "role") === PETRA.Worker.ROLE_WORKER) {
-			ent.deleteAllMetadata(PlayerID);
-			ent.setMetadata(PlayerID, "base", baseID);
-			base.assignRolelessUnits(undefined, [ent]);
+		if (ent.getMetadata(PlayerID, "role") === PETRA.Worker.ROLE_WORKER)
+		{
+			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_IDLE);
+			if (!ent.isGatherer())
+			{
+				// TODO: Find a way to properly reset the metadata, as this is currently done selectively
+				ent.setMetadata(PlayerID, "gather-type", undefined);
+				ent.setMetadata(PlayerID, "supply", undefined);
+				ent.setMetadata(PlayerID, "role", undefined);
+				base.assignRolelessUnits(gameState, [ent]);
+			}
 			continue;
 		}
 

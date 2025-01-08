@@ -657,7 +657,7 @@ PETRA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorker
 		// Support elephant can only be builders
 		if (ent.hasClass("Support") && ent.hasClass("Elephant"))
 		{
-			ent.setMetadata(PlayerID, "subrole", "idle");
+			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_IDLE);
 			continue;
 		}
 
