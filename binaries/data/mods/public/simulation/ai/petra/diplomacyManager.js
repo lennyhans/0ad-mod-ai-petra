@@ -357,7 +357,7 @@ PETRA.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 		if (request && request.status !== "allianceBroken")
 		{
 			if (request.status === "waitingForTribute")
-				PETRA.chatAnswerRequestDiplomacy(gameState, player, request.requestType, "decline");
+				PETRA.chatAnswerRequestDiplomacy(gameState, playerToTurnAgainst, request.requestType, "decline");
 			request.status = request.status === "accepted" ? "allianceBroken" : "declinedRequest";
 		}
 		// If we had sent this player a diplomacy request, just rescind it
