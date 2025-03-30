@@ -27,10 +27,10 @@ please inform Wildfire Games at webmaster at wildfiregames dot com.
 - binaries/data/mods/*/maps/
   - see LICENSE.txt within those directories
 
-- binaries/data/mods/public/shaders/glsl/fxaa.fs
+- binaries/data/mods/mod/shaders/glsl/fxaa.fs
   - BSD
 
-- binaries/data/mods/public/shaders/glsl/cas.fs
+- binaries/data/mods/mod/shaders/glsl/cas.fs
   - MIT
 
 - binaries/system/
