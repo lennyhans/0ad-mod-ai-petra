@@ -154,7 +154,7 @@ m.GameState.prototype.getBuiltTemplate = function(foundationName)
 {
 	if (!foundationName.startsWith("foundation|"))
 	{
-		warn("Foundation " + foundationName + " not recognised as a foundation.");
+		warn("Foundation " + foundationName + " not recognized as a foundation.");
 		return null;
 	}
 	return this.getTemplate(foundationName.substr(11));
