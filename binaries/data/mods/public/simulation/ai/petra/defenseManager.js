@@ -578,7 +578,7 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 			}
 			continue;
 		}
-		
+
 		// TODO integrate other ships later, need to be sure it is accessible.
 		if (target.hasClass("Ship"))
 			continue;

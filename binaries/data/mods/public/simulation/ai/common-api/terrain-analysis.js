@@ -305,7 +305,7 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 		y = 0;
 		let loop = false;
 		// vertical iteration
-		do 
+		do
 		{
 			--y;
 			loop = false;
@@ -323,7 +323,7 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 		let reachLeft = false;
 		let reachRight = false;
 		let index;
-		do 
+		do
 		{
 			index = newIndex + w*y;
 
