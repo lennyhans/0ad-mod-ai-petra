@@ -88,7 +88,7 @@ m.SharedScript.prototype.init = function(state, deserialization)
 		 error("AI shared component inconsistent sizes: map=" + this.mapSize + " while territory=" + this.territoryMap.width);
 	this.territoryMap.cellSize = this.mapSize / this.territoryMap.width;
 
-/*
+	/*
 	let landPassMap = new Uint8Array(this.passabilityMap.data.length);
 	let waterPassMap = new Uint8Array(this.passabilityMap.data.length);
 	let obstructionMaskLand = this.passabilityClasses["default-terrain-only"];

@@ -459,7 +459,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 				if (!armiesNeeding[a].army.foeEntities.some(eEnt => {
 					let eEntID = gameState.getEntityById(eEnt);
 					return ent.canAttackTarget(eEntID, PETRA.allowCapture(gameState, ent, eEntID));
-					}))
+				}))
 					continue;
 
 				let dist = API3.SquareVectorDistance(ent.position(), armiesNeeding[a].army.foePosition);
