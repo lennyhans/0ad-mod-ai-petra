@@ -576,7 +576,7 @@ m.Entity = m.Class({
 		this._entityModif = sharedAI._entitiesModifications.get(entity.id);
 	},
 
-	"queryInterface": function(iid) { return SimEngine.QueryInterface(this.id(), iid) },
+	"queryInterface": function(iid) { return SimEngine.QueryInterface(this.id(), iid); },
 
 	"toString": function() { return "[Entity " + this.id() + " " + this.templateName() + "]"; },
 
