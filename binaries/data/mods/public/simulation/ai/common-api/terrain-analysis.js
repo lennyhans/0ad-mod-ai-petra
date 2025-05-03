@@ -305,7 +305,8 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 		y = 0;
 		let loop = false;
 		// vertical iteration
-		do {
+		do 
+		{
 			--y;
 			loop = false;
 			let index = newIndex + w*y;
@@ -322,7 +323,8 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 		let reachLeft = false;
 		let reachRight = false;
 		let index;
-		do {
+		do 
+		{
 			index = newIndex + w*y;
 
 			if (floodFor === "land" && this.landPassMap[index] === 0 && this.map[index] !== this.IMPASSABLE && this.map[index] !== this.DEEP_WATER)
