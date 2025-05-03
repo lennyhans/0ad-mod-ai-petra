@@ -806,7 +806,7 @@ m.Entity = m.Class({
 	"setStance": function(stance) {
 		if (this.getStance() === undefined)
 			return undefined;
-		Engine.PostCommand(PlayerID, { "type": "stance", "entities": [this.id()], "name": stance});
+		Engine.PostCommand(PlayerID, { "type": "stance", "entities": [this.id()], "name": stance });
 		return this;
 	},
 
