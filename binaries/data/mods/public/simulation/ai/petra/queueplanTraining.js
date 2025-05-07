@@ -7,8 +7,8 @@ PETRA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 
 	}
 
 	// Refine the estimated cost and add pop cost
-	let trainers = this.getBestTrainers(gameState);
-	let trainer = trainers ? trainers[0] : undefined;
+	const trainers = this.getBestTrainers(gameState);
+	const trainer = trainers ? trainers[0] : undefined;
 	this.cost = new API3.Resources(this.template.cost(trainer), +this.template._template.Cost.Population);
 
 	this.category = "unit";
@@ -33,7 +33,7 @@ PETRA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
-		let trainer = gameState.getEntityById(this.metadata.trainer);
+		const trainer = gameState.getEntityById(this.metadata.trainer);
 		if (trainer)
 			return [trainer];
 	}
@@ -49,9 +49,9 @@ PETRA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 	// Keep only trainers with smallest cost
 	let costMin = Math.min();
 	let trainers;
-	for (let ent of allTrainers.values())
+	for (const ent of allTrainers.values())
 	{
-		let cost = this.template.costSum(ent);
+		const cost = this.template.costSum(ent);
 		if (cost === costMin)
 			trainers.push(ent);
 		else if (cost < costMin)
@@ -67,8 +67,8 @@ PETRA.TrainingPlan.prototype.start = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
-		let metadata = {};
-		for (let key in this.metadata)
+		const metadata = {};
+		for (const key in this.metadata)
 			if (key !== "trainer")
 				metadata[key] = this.metadata[key];
 		this.metadata = metadata;
@@ -80,7 +80,7 @@ PETRA.TrainingPlan.prototype.start = function(gameState)
 		if (this.metadata && this.metadata.index)
 			wantedIndex = this.metadata.index;
 		const workerUnit = this.metadata && this.metadata.role && this.metadata.role === PETRA.Worker.ROLE_WORKER;
-		let supportUnit = this.template.hasClass("Support");
+		const supportUnit = this.template.hasClass("Support");
 		this.trainers.sort(function(a, b) {
 			// Prefer training buildings with short queues
 			let aa = a.trainingQueueTime();
@@ -99,8 +99,8 @@ PETRA.TrainingPlan.prototype.start = function(gameState)
 					bb += 50;
 			}
 			// Give also priority to buildings with the right accessibility
-			let aBase = a.getMetadata(PlayerID, "base");
-			let bBase = b.getMetadata(PlayerID, "base");
+			const aBase = a.getMetadata(PlayerID, "base");
+			const bBase = b.getMetadata(PlayerID, "base");
 			if (wantedIndex)
 			{
 				if (!aBase || gameState.ai.HQ.getBaseByID(aBase).accessIndex != wantedIndex)
@@ -111,8 +111,8 @@ PETRA.TrainingPlan.prototype.start = function(gameState)
 			// Then, if workers, small preference for bases with less workers
 			if (workerUnit && aBase && bBase && aBase != bBase)
 			{
-				let apop = gameState.ai.HQ.getBaseByID(aBase).workers.length;
-				let bpop = gameState.ai.HQ.getBaseByID(bBase).workers.length;
+				const apop = gameState.ai.HQ.getBaseByID(aBase).workers.length;
+				const bpop = gameState.ai.HQ.getBaseByID(bBase).workers.length;
 				if (apop > bpop)
 					aa++;
 				else if (bpop > apop)
@@ -149,7 +149,7 @@ PETRA.TrainingPlan.prototype.Serialize = function()
 
 PETRA.TrainingPlan.prototype.Deserialize = function(gameState, data)
 {
-	for (let key in data)
+	for (const key in data)
 		this[key] = data[key];
 
 	this.cost = new API3.Resources();

@@ -47,7 +47,7 @@ PETRA.QueuePlan.prototype.start = function(gameState)
 
 PETRA.QueuePlan.prototype.getCost = function()
 {
-	let costs = new API3.Resources();
+	const costs = new API3.Resources();
 	costs.add(this.cost);
 	if (this.number !== 1)
 		costs.multiply(this.number);

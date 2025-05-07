@@ -7,7 +7,7 @@ PETRA.ResearchPlan = function(gameState, type, rush = false)
 		return false;
 
 	// Refine the estimated cost
-	let researchers = this.getBestResearchers(gameState, true);
+	const researchers = this.getBestResearchers(gameState, true);
 	if (researchers)
 		this.cost = new API3.Resources(this.template.cost(researchers[0]));
 
@@ -30,16 +30,16 @@ PETRA.ResearchPlan.prototype.canStart = function(gameState)
 
 PETRA.ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirementCheck = false)
 {
-	let allResearchers = gameState.findResearchers(this.type, noRequirementCheck);
+	const allResearchers = gameState.findResearchers(this.type, noRequirementCheck);
 	if (!allResearchers || !allResearchers.hasEntities())
 		return undefined;
 
 	// Keep only researchers with smallest cost
 	let costMin = Math.min();
 	let researchers;
-	for (let ent of allResearchers.values())
+	for (const ent of allResearchers.values())
 	{
-		let cost = this.template.costSum(ent);
+		const cost = this.template.costSum(ent);
 		if (cost === costMin)
 			researchers.push(ent);
 		else if (cost < costMin)
@@ -99,7 +99,7 @@ PETRA.ResearchPlan.prototype.Serialize = function()
 
 PETRA.ResearchPlan.prototype.Deserialize = function(gameState, data)
 {
-	for (let key in data)
+	for (const key in data)
 		this[key] = data[key];
 
 	this.cost = new API3.Resources();
