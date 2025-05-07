@@ -86,7 +86,7 @@ PETRA.HQ.prototype.postinit = function(gameState)
  */
 PETRA.HQ.prototype.getSeaBetweenIndices = function(gameState, index1, index2)
 {
-	let path = gameState.ai.accessibility.getTrajectToIndex(index1, index2);
+	const path = gameState.ai.accessibility.getTrajectToIndex(index1, index2);
 	if (path && path.length == 3 && gameState.ai.accessibility.regionType[path[1]] == "water")
 		return path[1];
 
@@ -106,7 +106,7 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 	if (events.TerritoriesChanged.length || events.DiplomacyChanged.length)
 		this.updateTerritories(gameState);
 
-	for (let evt of events.DiplomacyChanged)
+	for (const evt of events.DiplomacyChanged)
 	{
 		if (evt.player != PlayerID && evt.otherPlayer != PlayerID)
 			continue;
@@ -117,22 +117,22 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 
 	this.basesManager.checkEvents(gameState, events);
 
-	for (let evt of events.ConstructionFinished)
+	for (const evt of events.ConstructionFinished)
 	{
 		if (evt.newentity == evt.entity)  // repaired building
 			continue;
-		let ent = gameState.getEntityById(evt.newentity);
+		const ent = gameState.getEntityById(evt.newentity);
 		if (!ent || ent.owner() != PlayerID)
 			continue;
 		if (ent.hasClass("Market") && this.maxFields)
 			this.maxFields = false;
 	}
 
-	for (let evt of events.OwnershipChanged)   // capture events
+	for (const evt of events.OwnershipChanged)   // capture events
 	{
 		if (evt.to != PlayerID)
 			continue;
-		let ent = gameState.getEntityById(evt.entity);
+		const ent = gameState.getEntityById(evt.entity);
 		if (!ent)
 			continue;
 		if (!ent.hasClass("Unit"))
@@ -170,33 +170,33 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 	// deal with the different rally points of training units: the rally point is set when the training starts
 	// for the time being, only autogarrison is used
 
-	for (let evt of events.TrainingStarted)
+	for (const evt of events.TrainingStarted)
 	{
-		let ent = gameState.getEntityById(evt.entity);
+		const ent = gameState.getEntityById(evt.entity);
 		if (!ent || !ent.isOwn(PlayerID))
 			continue;
 
 		if (!ent._entity.trainingQueue || !ent._entity.trainingQueue.length)
 			continue;
-		let metadata = ent._entity.trainingQueue[0].metadata;
+		const metadata = ent._entity.trainingQueue[0].metadata;
 		if (metadata && metadata.garrisonType)
 			ent.setRallyPoint(ent, "garrison");  // trained units will autogarrison
 		else
 			ent.unsetRallyPoint();
 	}
 
-	for (let evt of events.TrainingFinished)
+	for (const evt of events.TrainingFinished)
 	{
-		for (let entId of evt.entities)
+		for (const entId of evt.entities)
 		{
-			let ent = gameState.getEntityById(entId);
+			const ent = gameState.getEntityById(entId);
 			if (!ent || !ent.isOwn(PlayerID))
 				continue;
 
 			if (!ent.position())
 			{
 				// we are autogarrisoned, check that the holder is registered in the garrisonManager
-				let holder = gameState.getEntityById(ent.garrisonHolderID());
+				const holder = gameState.getEntityById(ent.garrisonHolderID());
 				if (holder)
 					this.garrisonManager.registerHolder(gameState, holder);
 			}
@@ -208,19 +208,19 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 
 			// Check if this unit is no more needed in its attack plan
 			// (happen when the training ends after the attack is started or aborted)
-			let plan = ent.getMetadata(PlayerID, "plan");
+			const plan = ent.getMetadata(PlayerID, "plan");
 			if (plan !== undefined && plan >= 0)
 			{
-				let attack = this.attackManager.getPlan(plan);
+				const attack = this.attackManager.getPlan(plan);
 				if (!attack || attack.state !== PETRA.AttackPlan.STATE_UNEXECUTED)
 					ent.setMetadata(PlayerID, "plan", -1);
 			}
 		}
 	}
 
-	for (let evt of events.TerritoryDecayChanged)
+	for (const evt of events.TerritoryDecayChanged)
 	{
-		let ent = gameState.getEntityById(evt.entity);
+		const ent = gameState.getEntityById(evt.entity);
 		if (!ent || !ent.isOwn(PlayerID) || ent.foundationProgress() !== undefined)
 			continue;
 		if (evt.to)
@@ -237,15 +237,15 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 	// Then deals with decaying structures: destroy them if being lost to enemy (except in easier difficulties)
 	if (this.Config.difficulty < PETRA.DIFFICULTY_EASY)
 		return;
-	for (let entId of this.decayingStructures)
+	for (const entId of this.decayingStructures)
 	{
-		let ent = gameState.getEntityById(entId);
+		const ent = gameState.getEntityById(entId);
 		if (ent && ent.decaying() && ent.isOwn(PlayerID))
 		{
-			let capture = ent.capturePoints();
+			const capture = ent.capturePoints();
 			if (!capture)
 				continue;
-			let captureRatio = capture[PlayerID] / capture.reduce((a, b) => a + b);
+			const captureRatio = capture[PlayerID] / capture.reduce((a, b) => a + b);
 			if (captureRatio < 0.50)
 				continue;
 			let decayToGaia = true;
@@ -259,7 +259,7 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 			if (decayToGaia)
 				continue;
 			let ratioMax = 0.7 + randFloat(0, 0.1);
-			for (let evt of events.Attacked)
+			for (const evt of events.Attacked)
 			{
 				if (ent.id() != evt.target)
 					continue;
@@ -294,10 +294,10 @@ PETRA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
 	if (gameState.getNumberOfPhases() == this.currentPhase)
 		return;
 
-	let requirements = gameState.getPhaseEntityRequirements(this.currentPhase + 1);
+	const requirements = gameState.getPhaseEntityRequirements(this.currentPhase + 1);
 	let plan;
 	let queue;
-	for (let entityReq of requirements)
+	for (const entityReq of requirements)
 	{
 		// Village requirements are met elsewhere by constructing more houses
 		if (entityReq.class == "Village" || entityReq.class == "NotField")
@@ -339,7 +339,7 @@ PETRA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
 			queue = entityReq.class == "Wonder" ? "wonder" : "economicBuilding";
 			if (!queues[queue].hasQueuedUnits())
 			{
-				let structure = this.buildManager.findStructureWithClass(gameState, [entityReq.class]);
+				const structure = this.buildManager.findStructureWithClass(gameState, [entityReq.class]);
 				if (structure && this.canBuild(gameState, structure))
 					plan = new PETRA.ConstructionPlan(gameState, structure, { "phaseUp": true });
 			}
@@ -372,9 +372,9 @@ PETRA.HQ.prototype.OnPhaseUp = function(gameState, phase)
 PETRA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 {
 	// default template
-	let requirementsDef = [ ["costsResource", 1, "food"] ];
+	const requirementsDef = [ ["costsResource", 1, "food"] ];
 	const classesDef = ["Support+Worker"];
-	let templateDef = this.findBestTrainableUnit(gameState, classesDef, requirementsDef);
+	const templateDef = this.findBestTrainableUnit(gameState, classesDef, requirementsDef);
 
 	// counting the workers that aren't part of a plan
 	let numberOfWorkers = 0;   // all workers
@@ -389,7 +389,7 @@ PETRA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 	});
 	let numberInTraining = 0;
 	gameState.getOwnTrainingFacilities().forEach(function(ent) {
-		for (let item of ent.trainingQueue())
+		for (const item of ent.trainingQueue())
 		{
 			numberInTraining += item.count;
 			if (item.metadata && item.metadata.role && item.metadata.role === PETRA.Worker.ROLE_WORKER &&
@@ -406,7 +406,7 @@ PETRA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 	// and adapt the batch size of the first and second queued workers to the present population
 	// to ease a possible recovery if our population was drastically reduced by an attack
 	// (need to go up to second queued as it is accounted in queueManager)
-	let size = numberOfWorkers < 12 ? 1 : Math.min(5, Math.ceil(numberOfWorkers / 10));
+	const size = numberOfWorkers < 12 ? 1 : Math.min(5, Math.ceil(numberOfWorkers / 10));
 	if (queues.villager.plans[0])
 	{
 		queues.villager.plans[0].number = Math.min(queues.villager.plans[0].number, size);
@@ -420,10 +420,10 @@ PETRA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 			queues.citizenSoldier.plans[1].number = Math.min(queues.citizenSoldier.plans[1].number, size);
 	}
 
-	let numberOfQueuedSupports = queues.villager.countQueuedUnits();
-	let numberOfQueuedSoldiers = queues.citizenSoldier.countQueuedUnits();
-	let numberQueued = numberOfQueuedSupports + numberOfQueuedSoldiers;
-	let numberTotal = numberOfWorkers + numberQueued;
+	const numberOfQueuedSupports = queues.villager.countQueuedUnits();
+	const numberOfQueuedSoldiers = queues.citizenSoldier.countQueuedUnits();
+	const numberQueued = numberOfQueuedSupports + numberOfQueuedSoldiers;
+	const numberTotal = numberOfWorkers + numberQueued;
 
 	if (this.saveResources && numberTotal > this.Config.Economy.popPhase2 + 10)
 		return;
@@ -447,8 +447,8 @@ PETRA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 		alpha = 0.7;
 	if (gameState.isCeasefireActive())
 		alpha += (1 - alpha) * Math.min(Math.max(gameState.ceasefireTimeRemaining - 120, 0), 180) / 180;
-	let supportMax = supportRatio * this.targetNumWorkers;
-	let supportNum = supportMax * (1 - Math.exp(-alpha*numberTotal/supportMax));
+	const supportMax = supportRatio * this.targetNumWorkers;
+	const supportNum = supportMax * (1 - Math.exp(-alpha*numberTotal/supportMax));
 
 	let template;
 	if (!templateDef || numberOfSupports + numberOfQueuedSupports > supportNum)
@@ -487,18 +487,18 @@ PETRA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirem
 	if (!units.length)
 		return undefined;
 
-	let parameters = requirements.slice();
-	let remainingResources = this.getTotalResourceLevel(gameState);    // resources (estimation) still gatherable in our territory
-	let availableResources = gameState.ai.queueManager.getAvailableResources(gameState); // available (gathered) resources
-	for (let type in remainingResources)
+	const parameters = requirements.slice();
+	const remainingResources = this.getTotalResourceLevel(gameState);    // resources (estimation) still gatherable in our territory
+	const availableResources = gameState.ai.queueManager.getAvailableResources(gameState); // available (gathered) resources
+	for (const type in remainingResources)
 	{
 		if (availableResources[type] > 800)
 			continue;
 		if (remainingResources[type] > 800)
 			continue;
-		let costsResource = remainingResources[type] > 400 ? 0.6 : 0.2;
+		const costsResource = remainingResources[type] > 400 ? 0.6 : 0.2;
 		let toAdd = true;
-		for (let param of parameters)
+		for (const param of parameters)
 		{
 			if (param[0] != "costsResource" || param[2] != type)
 				continue;
@@ -511,11 +511,11 @@ PETRA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirem
 	}
 
 	units.sort((a, b) => {
-		let aCost = 1 + a[1].costSum();
-		let bCost = 1 + b[1].costSum();
+		const aCost = 1 + a[1].costSum();
+		const bCost = 1 + b[1].costSum();
 		let aValue = 0.1;
 		let bValue = 0.1;
-		for (let param of parameters)
+		for (const param of parameters)
 		{
 			if (param[0] == "strength")
 			{
@@ -600,13 +600,13 @@ PETRA.HQ.prototype.GetWantedGatherRates = function(gameState)
  */
 PETRA.HQ.prototype.pickMostNeededResources = function(gameState, allowedResources = [])
 {
-	let wantedRates = this.GetWantedGatherRates(gameState);
-	let currentRates = this.GetCurrentGatherRates(gameState);
+	const wantedRates = this.GetWantedGatherRates(gameState);
+	const currentRates = this.GetCurrentGatherRates(gameState);
 	if (!allowedResources.length)
 		allowedResources = Resources.GetCodes();
 
-	let needed = [];
-	for (let res of allowedResources)
+	const needed = [];
+	for (const res of allowedResources)
 		needed.push({ "type": res, "wanted": wantedRates[res], "current": currentRates[res] });
 
 	needed.sort((a, b) => {
@@ -642,20 +642,20 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 	Engine.ProfileStart("findEconomicCCLocation");
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	const obstructions = PETRA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
 	else if (template.get("Footprint/Circle"))
 		halfSize = +template.get("Footprint/Circle/@radius");
 
-	let ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
 	const dpEnts = gameState.getOwnDropsites().filter(API3.Filters.not(API3.Filters.byClasses(["CivCentre", "Unit"])));
-	let ccList = [];
-	for (let cc of ccEnts.values())
+	const ccList = [];
+	for (const cc of ccEnts.values())
 		ccList.push({ "ent": cc, "pos": cc.position(), "ally": gameState.isPlayerAlly(cc.owner()) });
-	let dpList = [];
-	for (let dp of dpEnts.values())
+	const dpList = [];
+	for (const dp of dpEnts.values())
 		dpList.push({ "ent": dp, "pos": dp.position(), "territory": this.territoryMap.getOwner(dp.position()) });
 
 	let bestIdx;
@@ -663,30 +663,30 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 	let radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
 	let scale = 250 * 250;
 	let proxyAccess;
-	let nbShips = this.navalManager.transportShips.length;
+	const nbShips = this.navalManager.transportShips.length;
 	if (proximity)	// this is our first base
 	{
 		// if our first base, ensure room around
 		radius = Math.ceil((template.obstructionRadius().max + 8) / obstructions.cellSize);
 		// scale is the typical scale at which we want to find a location for our first base
 		// look for bigger scale if we start from a ship (access < 2) or from a small island
-		let cellArea = gameState.getPassabilityMap().cellSize * gameState.getPassabilityMap().cellSize;
+		const cellArea = gameState.getPassabilityMap().cellSize * gameState.getPassabilityMap().cellSize;
 		proxyAccess = gameState.ai.accessibility.getAccessValue(proximity);
 		if (proxyAccess < 2 || cellArea*gameState.ai.accessibility.regionSize[proxyAccess] < 24000)
 			scale = 400 * 400;
 	}
 
-	let width = this.territoryMap.width;
-	let cellSize = this.territoryMap.cellSize;
+	const width = this.territoryMap.width;
+	const cellSize = this.territoryMap.cellSize;
 
 	// DistanceSquare cuts to other ccs (bigger or no cuts on inaccessible ccs to allow colonizing other islands).
-	let reduce = (template.hasClass("Colony") ? 30 : 0) + 30 * this.Config.personality.defensive;
-	let nearbyRejected = Math.square(120);			// Reject if too near from any cc
-	let nearbyAllyRejected = Math.square(200);		// Reject if too near from an allied cc
-	let nearbyAllyDisfavored = Math.square(250);		// Disfavor if quite near an allied cc
-	let maxAccessRejected = Math.square(410);		// Reject if too far from an accessible ally cc
-	let maxAccessDisfavored = Math.square(360 - reduce);	// Disfavor if quite far from an accessible ally cc
-	let maxNoAccessDisfavored = Math.square(500);		// Disfavor if quite far from an inaccessible ally cc
+	const reduce = (template.hasClass("Colony") ? 30 : 0) + 30 * this.Config.personality.defensive;
+	const nearbyRejected = Math.square(120);			// Reject if too near from any cc
+	const nearbyAllyRejected = Math.square(200);		// Reject if too near from an allied cc
+	const nearbyAllyDisfavored = Math.square(250);		// Disfavor if quite near an allied cc
+	const maxAccessRejected = Math.square(410);		// Reject if too far from an accessible ally cc
+	const maxAccessDisfavored = Math.square(360 - reduce);	// Disfavor if quite far from an accessible ally cc
+	const maxNoAccessDisfavored = Math.square(500);		// Disfavor if quite far from an inaccessible ally cc
 
 	let cut = 60;
 	if (fromStrategic || proximity)  // be less restrictive
@@ -697,11 +697,11 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 		if (this.territoryMap.getOwnerIndex(j) != 0)
 			continue;
 		// With enough room around to build the cc
-		let i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
+		const i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
 		if (i < 0)
 			continue;
 		// We require that it is accessible
-		let index = gameState.ai.accessibility.landPassMap[i];
+		const index = gameState.ai.accessibility.landPassMap[i];
 		if (!this.landRegions[index])
 			continue;
 		if (proxyAccess && nbShips == 0 && proxyAccess != index)
@@ -709,7 +709,7 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 
 		let norm = 0.5;   // TODO adjust it, knowing that we will sum 5 maps
 		// Checking distance to other cc
-		let pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
+		const pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
 		// We will be more tolerant for cc around our oversea docks
 		let oversea = false;
 
@@ -720,9 +720,9 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 			let minDist = Math.min();
 			let accessible = false;
 
-			for (let cc of ccList)
+			for (const cc of ccList)
 			{
-				let dist = API3.SquareVectorDistance(cc.pos, pos);
+				const dist = API3.SquareVectorDistance(cc.pos, pos);
 				if (dist < nearbyRejected)
 				{
 					norm = 0;
@@ -765,9 +765,9 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 			oversea = !accessible && dpList.some(dp => PETRA.getLandAccess(gameState, dp.ent) == index);
 			if (!oversea)
 			{
-				for (let dp of dpList)
+				for (const dp of dpList)
 				{
-					let dist = API3.SquareVectorDistance(dp.pos, pos);
+					const dist = API3.SquareVectorDistance(dp.pos, pos);
 					if (dist < 3600)
 					{
 						norm = 0;
@@ -785,7 +785,7 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 			norm *= 0.5;
 
 		let val = 2 * gameState.sharedScript.ccResourceMaps[resource].map[j];
-		for (let res in gameState.sharedScript.resourceMaps)
+		for (const res in gameState.sharedScript.resourceMaps)
 			if (res != "food")
 				val += gameState.sharedScript.ccResourceMaps[res].map[j];
 		val *= norm;
@@ -812,16 +812,16 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 	if (bestVal < cut)
 		return false;
 
-	let x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
-	let z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
+	const x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
+	const z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
 
 	// Define a minimal number of wanted ships in the seas reaching this new base
-	let indexIdx = gameState.ai.accessibility.landPassMap[bestIdx];
+	const indexIdx = gameState.ai.accessibility.landPassMap[bestIdx];
 	for (const base of this.baseManagers())
 	{
 		if (!base.anchor || base.accessIndex == indexIdx)
 			continue;
-		let sea = this.getSeaBetweenIndices(gameState, base.accessIndex, indexIdx);
+		const sea = this.getSeaBetweenIndices(gameState, base.accessIndex, indexIdx);
 		if (sea !== undefined)
 			this.navalManager.setMinimalTransportShips(gameState, sea, 1);
 	}
@@ -840,12 +840,12 @@ PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 	// with the constraints that all CC have dist > 200 and at least one have dist < 400
 	// This needs at least 2 CC. Otherwise, go back to economic CC.
 
-	let ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
-	let ccList = [];
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+	const ccList = [];
 	let numAllyCC = 0;
-	for (let cc of ccEnts.values())
+	for (const cc of ccEnts.values())
 	{
-		let ally = gameState.isPlayerAlly(cc.owner());
+		const ally = gameState.isPlayerAlly(cc.owner());
 		ccList.push({ "pos": cc.position(), "ally": ally });
 		if (ally)
 			++numAllyCC;
@@ -856,7 +856,7 @@ PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 	Engine.ProfileStart("findStrategicCCLocation");
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	const obstructions = PETRA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -865,35 +865,35 @@ PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 
 	let bestIdx;
 	let bestVal;
-	let radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
+	const radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
 
-	let width = this.territoryMap.width;
-	let cellSize = this.territoryMap.cellSize;
+	const width = this.territoryMap.width;
+	const cellSize = this.territoryMap.cellSize;
 	let currentVal, delta;
 	let distcc0, distcc1, distcc2;
-	let favoredDistance = (template.hasClass("Colony") ? 220 : 280) - 40 * this.Config.personality.defensive;
+	const favoredDistance = (template.hasClass("Colony") ? 220 : 280) - 40 * this.Config.personality.defensive;
 
 	for (let j = 0; j < this.territoryMap.length; ++j)
 	{
 		if (this.territoryMap.getOwnerIndex(j) != 0)
 			continue;
 		// with enough room around to build the cc
-		let i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
+		const i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
 		if (i < 0)
 			continue;
 		// we require that it is accessible
-		let index = gameState.ai.accessibility.landPassMap[i];
+		const index = gameState.ai.accessibility.landPassMap[i];
 		if (!this.landRegions[index])
 			continue;
 
 		// checking distances to other cc
-		let pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
+		const pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
 		let minDist = Math.min();
 		distcc0 = undefined;
 
-		for (let cc of ccList)
+		for (const cc of ccList)
 		{
-			let dist = API3.SquareVectorDistance(cc.pos, pos);
+			const dist = API3.SquareVectorDistance(cc.pos, pos);
 			if (dist < 14000)    // Reject if too near from any cc
 			{
 				minDist = 0;
@@ -955,16 +955,16 @@ PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 	if (bestVal === undefined)
 		return undefined;
 
-	let x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
-	let z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
+	const x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
+	const z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
 
 	// Define a minimal number of wanted ships in the seas reaching this new base
-	let indexIdx = gameState.ai.accessibility.landPassMap[bestIdx];
+	const indexIdx = gameState.ai.accessibility.landPassMap[bestIdx];
 	for (const base of this.baseManagers())
 	{
 		if (!base.anchor || base.accessIndex == indexIdx)
 			continue;
-		let sea = this.getSeaBetweenIndices(gameState, base.accessIndex, indexIdx);
+		const sea = this.getSeaBetweenIndices(gameState, base.accessIndex, indexIdx);
 		if (sea !== undefined)
 			this.navalManager.setMinimalTransportShips(gameState, sea, 1);
 	}
@@ -993,7 +993,7 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 		return false;
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	const obstructions = PETRA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -1005,13 +1005,13 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 	let bestVal;
 	let bestDistSq;
 	let bestGainMult;
-	let radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
+	const radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
 	const isNavalMarket = template.hasClasses(["Naval+Trade"]);
 
-	let width = this.territoryMap.width;
-	let cellSize = this.territoryMap.cellSize;
+	const width = this.territoryMap.width;
+	const cellSize = this.territoryMap.cellSize;
 
-	let traderTemplatesGains = gameState.getTraderTemplatesGains();
+	const traderTemplatesGains = gameState.getTraderTemplatesGains();
 
 	for (let j = 0; j < this.territoryMap.length; ++j)
 	{
@@ -1021,19 +1021,19 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 		if (this.baseAtIndex(j) == 0)   // only in our territory
 			continue;
 		// with enough room around to build the market
-		let i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
+		const i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
 		if (i < 0)
 			continue;
-		let index = gameState.ai.accessibility.landPassMap[i];
+		const index = gameState.ai.accessibility.landPassMap[i];
 		if (!this.landRegions[index])
 			continue;
-		let pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
+		const pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
 		// checking distances to other markets
 		let maxVal = 0;
 		let maxDistSq;
 		let maxGainMult;
 		let gainMultiplier;
-		for (let market of markets)
+		for (const market of markets)
 		{
 			if (isNavalMarket && template.hasClasses(["Naval+Trade"]))
 			{
@@ -1048,7 +1048,7 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 				continue;
 			if (!gainMultiplier)
 				continue;
-			let distSq = API3.SquareVectorDistance(market.position(), pos);
+			const distSq = API3.SquareVectorDistance(market.position(), pos);
 			if (gainMultiplier * distSq > maxVal)
 			{
 				maxVal = gainMultiplier * distSq;
@@ -1074,7 +1074,7 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 
 	if (bestVal === undefined)  // no constraints. For the time being, place it arbitrarily by the ConstructionPlan
 		return [-1, -1, -1, 0];
-	let expectedGain = Math.round(bestGainMult * TradeGain(bestDistSq, gameState.sharedScript.mapSize));
+	const expectedGain = Math.round(bestGainMult * TradeGain(bestDistSq, gameState.sharedScript.mapSize));
 	if (this.Config.debug > 1)
 		API3.warn("this would give a trading gain of " + expectedGain);
 	// Do not keep it if gain is too small, except if this is our first Market.
@@ -1090,8 +1090,8 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 	else
 		idx = this.baseAtIndex(bestJdx);
 
-	let x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
-	let z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
+	const x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
+	const z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
 	return [x, z, idx, expectedGain];
 };
 
@@ -1132,7 +1132,7 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 	}
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	const obstructions = PETRA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -1142,11 +1142,11 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 	let bestIdx;
 	let bestJdx;
 	let bestVal;
-	let width = this.territoryMap.width;
-	let cellSize = this.territoryMap.cellSize;
+	const width = this.territoryMap.width;
+	const cellSize = this.territoryMap.cellSize;
 
-	let isTower = template.hasClass("Tower");
-	let isFortress = template.hasClass("Fortress");
+	const isTower = template.hasClass("Tower");
+	const isFortress = template.hasClass("Fortress");
 	let radius;
 	if (isFortress)
 		radius = Math.floor((template.obstructionRadius().max + 8) / obstructions.cellSize);
@@ -1166,11 +1166,11 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 		if (this.baseAtIndex(j) == 0)   // inaccessible cell
 			continue;
 		// with enough room around to build the cc
-		let i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
+		const i = this.territoryMap.getNonObstructedTile(j, radius, obstructions);
 		if (i < 0)
 			continue;
 
-		let pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
+		const pos = [cellSize * (j%width+0.5), cellSize * (Math.floor(j/width)+0.5)];
 		// checking distances to other structures
 		let minDist = Math.min();
 
@@ -1183,14 +1183,14 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 			dista *= 200;   // empirical factor (TODO should depend on map size) to stay near the wonder
 		}
 
-		for (let str of enemyStructures)
+		for (const str of enemyStructures)
 		{
 			if (str.foundationProgress() !== undefined)
 				continue;
-			let strPos = str.position();
+			const strPos = str.position();
 			if (!strPos)
 				continue;
-			let dist = API3.SquareVectorDistance(strPos, pos);
+			const dist = API3.SquareVectorDistance(strPos, pos);
 			if (dist < 6400) // TODO check on true attack range instead of this 80×80
 			{
 				minDist = -1;
@@ -1202,10 +1202,10 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 		if (minDist < 0)
 			continue;
 
-		let cutDist = 900;  // 30×30 TODO maybe increase it
-		for (let str of ownStructures)
+		const cutDist = 900;  // 30×30 TODO maybe increase it
+		for (const str of ownStructures)
 		{
-			let strPos = str.position();
+			const strPos = str.position();
 			if (!strPos)
 				continue;
 			if (API3.SquareVectorDistance(strPos, pos) < cutDist)
@@ -1228,8 +1228,8 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 	if (bestVal === undefined)
 		return undefined;
 
-	let x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
-	let z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
+	const x = (bestIdx % obstructions.width + 0.5) * obstructions.cellSize;
+	const z = (Math.floor(bestIdx / obstructions.width) + 0.5) * obstructions.cellSize;
 	return [x, z, this.baseAtIndex(bestJdx)];
 };
 
@@ -1263,12 +1263,12 @@ PETRA.HQ.prototype.buildMarket = function(gameState, queues)
 		if (!queues.economicBuilding.paused)
 		{
 			// Put available resources in this market
-			let queueManager = gameState.ai.queueManager;
-			let cost = queues.economicBuilding.plans[0].getCost();
+			const queueManager = gameState.ai.queueManager;
+			const cost = queues.economicBuilding.plans[0].getCost();
 			queueManager.setAccounts(gameState, cost, "economicBuilding");
 			if (!queueManager.canAfford("economicBuilding", cost))
 			{
-				for (let q in queueManager.queues)
+				for (const q in queueManager.queues)
 				{
 					if (q == "economicBuilding")
 						continue;
@@ -1282,7 +1282,7 @@ PETRA.HQ.prototype.buildMarket = function(gameState, queues)
 	}
 
 	gameState.ai.queueManager.changePriority("economicBuilding", 3 * this.Config.priorities.economicBuilding);
-	let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/market");
+	const plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/market");
 	plan.queueToReset = "economicBuilding";
 	queues.economicBuilding.addPlan(plan);
 };
@@ -1319,13 +1319,13 @@ PETRA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 
 	if (!force)
 	{
-		let template = gameState.getTemplate(gameState.applyCiv("structures/{civ}/wonder"));
+		const template = gameState.getTemplate(gameState.applyCiv("structures/{civ}/wonder"));
 		// Check that we have enough resources to start thinking to build a wonder
-		let cost = template.cost();
-		let resources = gameState.getResources();
+		const cost = template.cost();
+		const resources = gameState.getResources();
 		let highLevel = 0;
 		let lowLevel = 0;
-		for (let res in cost)
+		for (const res in cost)
 		{
 			if (resources[res] && resources[res] > 0.7 * cost[res])
 				++highLevel;
@@ -1345,7 +1345,7 @@ PETRA.HQ.prototype.manageCorral = function(gameState, queues)
 	if (queues.corral.hasQueuedUnits())
 		return;
 
-	let nCorral = gameState.getOwnEntitiesByClass("Corral", true).length;
+	const nCorral = gameState.getOwnEntitiesByClass("Corral", true).length;
 	if (!nCorral || !gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/field")) &&
 	                nCorral < this.currentPhase && gameState.getPopulation() > 30 * nCorral)
 	{
@@ -1359,21 +1359,21 @@ PETRA.HQ.prototype.manageCorral = function(gameState, queues)
 	}
 
 	// And train some animals
-	let civ = gameState.getPlayerCiv();
-	for (let corral of gameState.getOwnEntitiesByClass("Corral", true).values())
+	const civ = gameState.getPlayerCiv();
+	for (const corral of gameState.getOwnEntitiesByClass("Corral", true).values())
 	{
 		if (corral.foundationProgress() !== undefined)
 			continue;
-		let trainables = corral.trainableEntities(civ);
-		for (let trainable of trainables)
+		const trainables = corral.trainableEntities(civ);
+		for (const trainable of trainables)
 		{
 			if (gameState.isTemplateDisabled(trainable))
 				continue;
-			let template = gameState.getTemplate(trainable);
+			const template = gameState.getTemplate(trainable);
 			if (!template || !template.isHuntable())
 				continue;
 			let count = gameState.countEntitiesByType(trainable, true);
-			for (let item of corral.trainingQueue())
+			for (const item of corral.trainingQueue())
 				count += item.count;
 			if (count > nCorral)
 				continue;
@@ -1400,10 +1400,10 @@ PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 	if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
 		return;
 
-	let numPlanned = queues.house.length();
+	const numPlanned = queues.house.length();
 	if (numPlanned < 3 || numPlanned < 5 && gameState.getPopulation() > 80)
 	{
-		let plan = new PETRA.ConstructionPlan(gameState, houseTemplateString);
+		const plan = new PETRA.ConstructionPlan(gameState, houseTemplateString);
 		// change the starting condition according to the situation.
 		plan.goRequirement = "houseNeeded";
 		queues.house.addPlan(plan);
@@ -1411,16 +1411,16 @@ PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 
 	if (numPlanned > 0 && this.phasing && gameState.getPhaseEntityRequirements(this.phasing).length)
 	{
-		let houseTemplateName = gameState.applyCiv(houseTemplateString);
-		let houseTemplate = gameState.getTemplate(houseTemplateName);
+		const houseTemplateName = gameState.applyCiv(houseTemplateString);
+		const houseTemplate = gameState.getTemplate(houseTemplateName);
 
 		let needed = 0;
-		for (let entityReq of gameState.getPhaseEntityRequirements(this.phasing))
+		for (const entityReq of gameState.getPhaseEntityRequirements(this.phasing))
 		{
 			if (!houseTemplate.hasClass(entityReq.class))
 				continue;
 
-			let count = gameState.getOwnStructures().filter(API3.Filters.byClass(entityReq.class)).length;
+			const count = gameState.getOwnStructures().filter(API3.Filters.byClass(entityReq.class)).length;
 			if (count < entityReq.count && this.buildManager.isUnbuildable(gameState, houseTemplateName))
 			{
 				if (this.Config.debug > 1)
@@ -1431,7 +1431,7 @@ PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 			needed = Math.max(needed, entityReq.count - count);
 		}
 
-		let houseQueue = queues.house.plans;
+		const houseQueue = queues.house.plans;
 		for (let i = 0; i < numPlanned; ++i)
 			if (houseQueue[i].isGo(gameState))
 				--needed;
@@ -1444,7 +1444,7 @@ PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 
 	if (this.requireHouses)
 	{
-		let houseTemplate = gameState.getTemplate(gameState.applyCiv(houseTemplateString));
+		const houseTemplate = gameState.getTemplate(gameState.applyCiv(houseTemplateString));
 		if (!this.phasing || gameState.getPhaseEntityRequirements(this.phasing).every(req =>
 			!houseTemplate.hasClass(req.class) || gameState.getOwnStructures().filter(API3.Filters.byClass(req.class)).length >= req.count))
 			this.requireHouses = undefined;
@@ -1453,10 +1453,10 @@ PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 	// When population limit too tight
 	//    - if no room to build, try to improve with technology
 	//    - otherwise increase temporarily the priority of houses
-	let house = gameState.applyCiv(houseTemplateString);
-	let HouseNb = gameState.getOwnFoundations().filter(API3.Filters.byClass("House")).length;
-	let popBonus = gameState.getTemplate(house).getPopulationBonus();
-	let freeSlots = gameState.getPopulationLimit() + HouseNb*popBonus - this.getAccountedPopulation(gameState);
+	const house = gameState.applyCiv(houseTemplateString);
+	const HouseNb = gameState.getOwnFoundations().filter(API3.Filters.byClass("House")).length;
+	const popBonus = gameState.getTemplate(house).getPopulationBonus();
+	const freeSlots = gameState.getPopulationLimit() + HouseNb*popBonus - this.getAccountedPopulation(gameState);
 	let priority;
 	if (freeSlots < 5)
 	{
@@ -1499,9 +1499,9 @@ PETRA.HQ.prototype.checkBaseExpansion = function(gameState, queues)
 	if (this.phasing)
 		return;
 	// Finally expand if we have lots of units (threshold depending on the aggressivity value)
-	let activeBases = this.numActiveBases();
-	let numUnits = gameState.getOwnUnits().length;
-	let numvar = 10 * (1 - this.Config.personality.aggressive);
+	const activeBases = this.numActiveBases();
+	const numUnits = gameState.getOwnUnits().length;
+	const numvar = 10 * (1 - this.Config.personality.aggressive);
 	if (numUnits > activeBases * (65 + numvar + (10 + numvar)*(activeBases-1)) || this.saveResources && numUnits > 50)
 	{
 		if (this.Config.debug > 2)
@@ -1520,7 +1520,7 @@ PETRA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
 	let template;
 	// We require at least one of this civ civCentre as they may allow specific units or techs
 	let hasOwnCC = false;
-	for (let ent of gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).values())
+	for (const ent of gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).values())
 	{
 		if (ent.owner() != PlayerID || ent.templateName() != gameState.applyCiv("structures/{civ}/civil_centre"))
 			continue;
@@ -1554,7 +1554,7 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 		// Try to build fortresses.
 		if (this.canBuild(gameState, "structures/{civ}/fortress"))
 		{
-			let numFortresses = gameState.getOwnEntitiesByClass("Fortress", true).length;
+			const numFortresses = gameState.getOwnEntitiesByClass("Fortress", true).length;
 			if ((!numFortresses || gameState.ai.elapsedTime > (1 + 0.10 * numFortresses) * this.fortressLapseTime + this.fortressStartTime) &&
 				numFortresses < this.numActiveBases() + 1 + this.extraFortresses &&
 				numFortresses < Math.floor(gameState.getPopulation() / 25) &&
@@ -1563,7 +1563,7 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 				this.fortressStartTime = gameState.ai.elapsedTime;
 				if (!numFortresses)
 					gameState.ai.queueManager.changePriority("defenseBuilding", 2 * this.Config.priorities.defenseBuilding);
-				let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/fortress");
+				const plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/fortress");
 				plan.queueToReset = "defenseBuilding";
 				queues.defenseBuilding.addPlan(plan);
 				return;
@@ -1574,8 +1574,8 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 	if (this.Config.Military.numSentryTowers && this.currentPhase < 2 && this.canBuild(gameState, "structures/{civ}/sentry_tower"))
 	{
 		// Count all towers + wall towers.
-		let numTowers = gameState.getOwnEntitiesByClass("Tower", true).length + gameState.getOwnEntitiesByClass("WallTower", true).length;
-		let towerLapseTime = this.saveResources ? (1 + 0.5 * numTowers) * this.towerLapseTime : this.towerLapseTime;
+		const numTowers = gameState.getOwnEntitiesByClass("Tower", true).length + gameState.getOwnEntitiesByClass("WallTower", true).length;
+		const towerLapseTime = this.saveResources ? (1 + 0.5 * numTowers) * this.towerLapseTime : this.towerLapseTime;
 		if (numTowers < this.Config.Military.numSentryTowers && gameState.ai.elapsedTime > towerLapseTime + this.fortStartTime)
 		{
 			this.fortStartTime = gameState.ai.elapsedTime;
@@ -1587,8 +1587,8 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 	if (this.currentPhase < 2 || !this.canBuild(gameState, "structures/{civ}/defense_tower"))
 		return;
 
-	let numTowers = gameState.getOwnEntitiesByClass("StoneTower", true).length;
-	let towerLapseTime = this.saveResources ? (1 + numTowers) * this.towerLapseTime : this.towerLapseTime;
+	const numTowers = gameState.getOwnEntitiesByClass("StoneTower", true).length;
+	const towerLapseTime = this.saveResources ? (1 + numTowers) * this.towerLapseTime : this.towerLapseTime;
 	if ((!numTowers || gameState.ai.elapsedTime > (1 + 0.1 * numTowers) * towerLapseTime + this.towerStartTime) &&
 		numTowers < 2 * this.numActiveBases() + 3 + this.extraTowers &&
 		numTowers < Math.floor(gameState.getPopulation() / 8) &&
@@ -1597,7 +1597,7 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 		this.towerStartTime = gameState.ai.elapsedTime;
 		if (numTowers > 2 * this.numActiveBases() + 3)
 			gameState.ai.queueManager.changePriority("defenseBuilding", Math.round(0.7 * this.Config.priorities.defenseBuilding));
-		let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/defense_tower");
+		const plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/defense_tower");
 		plan.queueToReset = "defenseBuilding";
 		queues.defenseBuilding.addPlan(plan);
 	}
@@ -1625,17 +1625,17 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.saveResources && !this.canBarter || queues.militaryBuilding.hasQueuedUnits())
 		return;
 
-	let numBarracks = gameState.getOwnEntitiesByClass("Barracks", true).length;
+	const numBarracks = gameState.getOwnEntitiesByClass("Barracks", true).length;
 	if (this.saveResources && numBarracks != 0)
 		return;
 
-	let barracksTemplate = this.canBuild(gameState, "structures/{civ}/barracks") ? "structures/{civ}/barracks" : undefined;
+	const barracksTemplate = this.canBuild(gameState, "structures/{civ}/barracks") ? "structures/{civ}/barracks" : undefined;
 
-	let rangeTemplate = this.canBuild(gameState, "structures/{civ}/range") ? "structures/{civ}/range" : undefined;
-	let numRanges = gameState.getOwnEntitiesByClass("Range", true).length;
+	const rangeTemplate = this.canBuild(gameState, "structures/{civ}/range") ? "structures/{civ}/range" : undefined;
+	const numRanges = gameState.getOwnEntitiesByClass("Range", true).length;
 
-	let stableTemplate = this.canBuild(gameState, "structures/{civ}/stable") ? "structures/{civ}/stable" : undefined;
-	let numStables = gameState.getOwnEntitiesByClass("Stable", true).length;
+	const stableTemplate = this.canBuild(gameState, "structures/{civ}/stable") ? "structures/{civ}/stable" : undefined;
+	const numStables = gameState.getOwnEntitiesByClass("Stable", true).length;
 
 	if (this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks1 ||
 	    this.phasing == 2 && gameState.getOwnStructures().filter(API3.Filters.byClass("Village")).length < 5)
@@ -1643,11 +1643,11 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		// First barracks/range and stable.
 		if (numBarracks + numRanges == 0)
 		{
-			let template = barracksTemplate || rangeTemplate;
+			const template = barracksTemplate || rangeTemplate;
 			if (template)
 			{
 				gameState.ai.queueManager.changePriority("militaryBuilding", 2 * this.Config.priorities.militaryBuilding);
-				let plan = new PETRA.ConstructionPlan(gameState, template, { "militaryBase": true });
+				const plan = new PETRA.ConstructionPlan(gameState, template, { "militaryBase": true });
 				plan.queueToReset = "militaryBuilding";
 				queues.militaryBuilding.addPlan(plan);
 				return;
@@ -1662,7 +1662,7 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		// Second barracks/range and stable.
 		if (numBarracks + numRanges == 1 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2)
 		{
-			let template = numBarracks == 0 ? (barracksTemplate || rangeTemplate) : (rangeTemplate || barracksTemplate);
+			const template = numBarracks == 0 ? (barracksTemplate || rangeTemplate) : (rangeTemplate || barracksTemplate);
 			if (template)
 			{
 				queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, template, { "militaryBase": true }));
@@ -1678,7 +1678,7 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		// Third barracks/range and stable, if needed.
 		if (numBarracks + numRanges + numStables == 2 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2 + 30)
 		{
-			let template = barracksTemplate || stableTemplate || rangeTemplate;
+			const template = barracksTemplate || stableTemplate || rangeTemplate;
 			if (template)
 			{
 				queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, template, { "militaryBase": true }));
@@ -1710,19 +1710,19 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 
 	// Build advanced military buildings
 	let nAdvanced = 0;
-	for (let advanced of this.bAdvanced)
+	for (const advanced of this.bAdvanced)
 		nAdvanced += gameState.countEntitiesAndQueuedByType(advanced, true);
 
 	if (!nAdvanced || nAdvanced < this.bAdvanced.length && this.getAccountedPopulation(gameState) > 110)
 	{
-		for (let advanced of this.bAdvanced)
+		for (const advanced of this.bAdvanced)
 		{
 			if (gameState.countEntitiesAndQueuedByType(advanced, true) > 0 || !this.canBuild(gameState, advanced))
 				continue;
-			let template = gameState.getTemplate(advanced);
+			const template = gameState.getTemplate(advanced);
 			if (!template)
 				continue;
-			let civ = gameState.getPlayerCiv();
+			const civ = gameState.getPlayerCiv();
 			if (template.hasDefensiveFire() || template.trainableEntities(civ))
 				queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, advanced, { "militaryBase": true }));
 			else	// not a military building, but still use this queue
@@ -1737,25 +1737,25 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
  */
 PETRA.HQ.prototype.findBestBaseForMilitary = function(gameState)
 {
-	let ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).toEntityArray();
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).toEntityArray();
 	let bestBase;
 	let enemyFound = false;
 	let distMin = Math.min();
-	for (let cce of ccEnts)
+	for (const cce of ccEnts)
 	{
 		if (gameState.isPlayerAlly(cce.owner()))
 			continue;
 		if (enemyFound && !gameState.isPlayerEnemy(cce.owner()))
 			continue;
-		let access = PETRA.getLandAccess(gameState, cce);
-		let isEnemy = gameState.isPlayerEnemy(cce.owner());
-		for (let cc of ccEnts)
+		const access = PETRA.getLandAccess(gameState, cce);
+		const isEnemy = gameState.isPlayerEnemy(cce.owner());
+		for (const cc of ccEnts)
 		{
 			if (cc.owner() != PlayerID)
 				continue;
 			if (PETRA.getLandAccess(gameState, cc) != access)
 				continue;
-			let dist = API3.SquareVectorDistance(cc.position(), cce.position());
+			const dist = API3.SquareVectorDistance(cc.position(), cce.position());
 			if (!enemyFound && isEnemy)
 				enemyFound = true;
 			else if (dist > distMin)
@@ -1776,14 +1776,14 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 	if (gameState.ai.queues.emergency.hasQueuedUnits())
 		return false;
 
-	let civ = gameState.getPlayerCiv();
+	const civ = gameState.getPlayerCiv();
 	// find nearest base anchor
-	let distcut = 20000;
+	const distcut = 20000;
 	let nearestAnchor;
 	let distmin;
-	for (let pos of positions)
+	for (const pos of positions)
 	{
-		let access = gameState.ai.accessibility.getAccessValue(pos);
+		const access = gameState.ai.accessibility.getAccessValue(pos);
 		// check nearest base anchor
 		for (const base of this.baseManagers())
 		{
@@ -1793,17 +1793,17 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 				continue;
 			if (!base.anchor.trainableEntities(civ))	// base still in construction
 				continue;
-			let queue = base.anchor._entity.trainingQueue;
+			const queue = base.anchor._entity.trainingQueue;
 			if (queue)
 			{
 				let time = 0;
-				for (let item of queue)
+				for (const item of queue)
 					if (item.progress > 0 || item.metadata && item.metadata.garrisonType)
 						time += item.timeRemaining;
 				if (time/1000 > 5)
 					continue;
 			}
-			let dist = API3.SquareVectorDistance(base.anchor.position(), pos);
+			const dist = API3.SquareVectorDistance(base.anchor.position(), pos);
 			if (nearestAnchor && dist > distmin)
 				continue;
 			distmin = dist;
@@ -1818,7 +1818,7 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 	let numGarrisoned = this.garrisonManager.numberOfGarrisonedSlots(nearestAnchor);
 	if (nearestAnchor._entity.trainingQueue)
 	{
-		for (let item of nearestAnchor._entity.trainingQueue)
+		for (const item of nearestAnchor._entity.trainingQueue)
 		{
 			if (item.metadata && item.metadata.garrisonType)
 				numGarrisoned += item.count;
@@ -1826,19 +1826,19 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 				nearestAnchor.stopProduction(item.id);
 		}
 	}
-	let autogarrison = numGarrisoned < nearestAnchor.garrisonMax() &&
+	const autogarrison = numGarrisoned < nearestAnchor.garrisonMax() &&
 	                   nearestAnchor.hitpoints() > nearestAnchor.garrisonEjectHealth() * nearestAnchor.maxHitpoints();
-	let rangedWanted = randBool() && autogarrison;
+	const rangedWanted = randBool() && autogarrison;
 
-	let total = gameState.getResources();
+	const total = gameState.getResources();
 	let templateFound;
-	let trainables = nearestAnchor.trainableEntities(civ);
-	let garrisonArrowClasses = nearestAnchor.getGarrisonArrowClasses();
-	for (let trainable of trainables)
+	const trainables = nearestAnchor.trainableEntities(civ);
+	const garrisonArrowClasses = nearestAnchor.getGarrisonArrowClasses();
+	for (const trainable of trainables)
 	{
 		if (gameState.isTemplateDisabled(trainable))
 			continue;
-		let template = gameState.getTemplate(trainable);
+		const template = gameState.getTemplate(trainable);
 		if (!template || !template.hasClasses(["Infantry+CitizenSoldier"]))
 			continue;
 		if (autogarrison && !template.hasClasses(garrisonArrowClasses))
@@ -1855,12 +1855,12 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 	// Check first if we can afford it without touching the other accounts
 	// and if not, take some of other accounted resources
 	// TODO sort the queues to be substracted
-	let queueManager = gameState.ai.queueManager;
-	let cost = new API3.Resources(templateFound[1].cost());
+	const queueManager = gameState.ai.queueManager;
+	const cost = new API3.Resources(templateFound[1].cost());
 	queueManager.setAccounts(gameState, cost, "emergency");
 	if (!queueManager.canAfford("emergency", cost))
 	{
-		for (let q in queueManager.queues)
+		for (const q in queueManager.queues)
 		{
 			if (q == "emergency")
 				continue;
@@ -1878,7 +1878,7 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 
 PETRA.HQ.prototype.canBuild = function(gameState, structure)
 {
-	let type = gameState.applyCiv(structure);
+	const type = gameState.applyCiv(structure);
 	if (this.buildManager.isUnbuildable(gameState, type))
 		return false;
 
@@ -1888,7 +1888,7 @@ PETRA.HQ.prototype.canBuild = function(gameState, structure)
 		return false;
 	}
 
-	let template = gameState.getTemplate(type);
+	const template = gameState.getTemplate(type);
 	if (!template)
 	{
 		this.buildManager.setUnbuildable(gameState, type, Infinity, "notemplate");
@@ -1910,7 +1910,7 @@ PETRA.HQ.prototype.canBuild = function(gameState, structure)
 	if (!this.hasActiveBase())
 	{
 		// if no base, check that we can build outside our territory
-		let buildTerritories = template.buildTerritories();
+		const buildTerritories = template.buildTerritories();
 		if (buildTerritories && (!buildTerritories.length || buildTerritories.length == 1 && buildTerritories[0] == "own"))
 		{
 			this.buildManager.setUnbuildable(gameState, type, 180, "room");
@@ -1919,8 +1919,8 @@ PETRA.HQ.prototype.canBuild = function(gameState, structure)
 	}
 
 	// build limits
-	let limits = gameState.getEntityLimits();
-	let category = template.buildCategory();
+	const limits = gameState.getEntityLimits();
+	const category = template.buildCategory();
 	if (category && limits[category] !== undefined && gameState.getEntityCounts()[category] >= limits[category])
 	{
 		this.buildManager.setUnbuildable(gameState, type, 90, "limit");
@@ -1933,12 +1933,12 @@ PETRA.HQ.prototype.canBuild = function(gameState, structure)
 PETRA.HQ.prototype.updateTerritories = function(gameState)
 {
 	const around = [ [-0.7, 0.7], [0, 1], [0.7, 0.7], [1, 0], [0.7, -0.7], [0, -1], [-0.7, -0.7], [-1, 0] ];
-	let alliedVictory = gameState.getAlliedVictory();
-	let passabilityMap = gameState.getPassabilityMap();
-	let width = this.territoryMap.width;
-	let cellSize = this.territoryMap.cellSize;
-	let insideSmall = Math.round(45 / cellSize);
-	let insideLarge = Math.round(80 / cellSize);	// should be about the range of towers
+	const alliedVictory = gameState.getAlliedVictory();
+	const passabilityMap = gameState.getPassabilityMap();
+	const width = this.territoryMap.width;
+	const cellSize = this.territoryMap.cellSize;
+	const insideSmall = Math.round(45 / cellSize);
+	const insideLarge = Math.round(80 / cellSize);	// should be about the range of towers
 	let expansion = 0;
 
 	for (let j = 0; j < this.territoryMap.length; ++j)
@@ -1953,10 +1953,10 @@ PETRA.HQ.prototype.updateTerritories = function(gameState)
 		else
 		{
 			// Update the frontier
-			let ix = j%width;
-			let iz = Math.floor(j/width);
+			const ix = j%width;
+			const iz = Math.floor(j/width);
 			let onFrontier = false;
-			for (let a of around)
+			for (const a of around)
 			{
 				let jx = ix + Math.round(insideSmall*a[0]);
 				if (jx < 0 || jx >= width)
@@ -1997,7 +1997,7 @@ PETRA.HQ.prototype.updateTerritories = function(gameState)
 	// We've increased our territory, so we may have some new room to build
 	this.buildManager.resetMissingRoom(gameState);
 	// And if sufficient expansion, check if building a new market would improve our present trade routes
-	let cellArea = this.territoryMap.cellSize * this.territoryMap.cellSize;
+	const cellArea = this.territoryMap.cellSize * this.territoryMap.cellSize;
 	if (expansion * cellArea > 960)
 		this.tradeManager.routeProspection = true;
 };
@@ -2043,7 +2043,7 @@ PETRA.HQ.prototype.isDangerousLocation = function(gameState, pos, radius)
 /** Check that the chosen position is not too near from an invading army */
 PETRA.HQ.prototype.isNearInvadingArmy = function(pos)
 {
-	for (let army of this.defenseManager.armies)
+	for (const army of this.defenseManager.armies)
 		if (army.foePosition && API3.SquareVectorDistance(army.foePosition, pos) < 12000)
 			return true;
 	return false;
@@ -2053,9 +2053,9 @@ PETRA.HQ.prototype.isUnderEnemyFire = function(gameState, pos, radius = 0)
 {
 	if (!this.turnCache.firingStructures)
 		this.turnCache.firingStructures = gameState.updatingCollection("diplo-FiringStructures", API3.Filters.hasDefensiveFire(), gameState.getEnemyStructures());
-	for (let ent of this.turnCache.firingStructures.values())
+	for (const ent of this.turnCache.firingStructures.values())
 	{
-		let range = radius + ent.attackRange("Ranged").max;
+		const range = radius + ent.attackRange("Ranged").max;
 		if (API3.SquareVectorDistance(ent.position(), pos) < range*range)
 			return true;
 	}
@@ -2066,18 +2066,18 @@ PETRA.HQ.prototype.isUnderEnemyFire = function(gameState, pos, radius = 0)
 PETRA.HQ.prototype.updateCaptureStrength = function(gameState)
 {
 	this.capturableTargets.clear();
-	for (let ent of gameState.getOwnUnits().values())
+	for (const ent of gameState.getOwnUnits().values())
 	{
 		if (!ent.canCapture())
 			continue;
-		let state = ent.unitAIState();
+		const state = ent.unitAIState();
 		if (!state || !state.split(".")[1] || state.split(".")[1] != "COMBAT")
 			continue;
-		let orderData = ent.unitAIOrderData();
+		const orderData = ent.unitAIOrderData();
 		if (!orderData || !orderData.length || !orderData[0].target)
 			continue;
-		let targetId = orderData[0].target;
-		let target = gameState.getEntityById(targetId);
+		const targetId = orderData[0].target;
+		const target = gameState.getEntityById(targetId);
 		if (!target || !target.isCapturable() || !ent.canCapture(target))
 			continue;
 		if (!this.capturableTargets.has(targetId))
@@ -2087,22 +2087,22 @@ PETRA.HQ.prototype.updateCaptureStrength = function(gameState)
 			});
 		else
 		{
-			let capturableTarget = this.capturableTargets.get(target.id());
+			const capturableTarget = this.capturableTargets.get(target.id());
 			capturableTarget.strength += ent.captureStrength() * PETRA.getAttackBonus(ent, target, "Capture");
 			capturableTarget.ents.add(ent.id());
 		}
 	}
 
-	for (let [targetId, capturableTarget] of this.capturableTargets)
+	for (const [targetId, capturableTarget] of this.capturableTargets)
 	{
-		let target = gameState.getEntityById(targetId);
+		const target = gameState.getEntityById(targetId);
 		let allowCapture;
-		for (let entId of capturableTarget.ents)
+		for (const entId of capturableTarget.ents)
 		{
-			let ent = gameState.getEntityById(entId);
+			const ent = gameState.getEntityById(entId);
 			if (allowCapture === undefined)
 				allowCapture = PETRA.allowCapture(gameState, ent, target);
-			let orderData = ent.unitAIOrderData();
+			const orderData = ent.unitAIOrderData();
 			if (!orderData || !orderData.length || !orderData[0].attackType)
 				continue;
 			if ((orderData[0].attackType == "Capture") !== allowCapture)
@@ -2133,13 +2133,13 @@ PETRA.HQ.prototype.getAccountedPopulation = function(gameState)
 	if (this.turnCache.accountedPopulation == undefined)
 	{
 		let pop = gameState.getPopulation();
-		for (let ent of gameState.getOwnTrainingFacilities().values())
+		for (const ent of gameState.getOwnTrainingFacilities().values())
 		{
-			for (let item of ent.trainingQueue())
+			for (const item of ent.trainingQueue())
 			{
 				if (!item.unitTemplate)
 					continue;
-				let unitPop = gameState.getTemplate(item.unitTemplate).get("Cost/Population");
+				const unitPop = gameState.getTemplate(item.unitTemplate).get("Cost/Population");
 				if (unitPop)
 					pop += item.count * unitPop;
 			}
@@ -2157,9 +2157,9 @@ PETRA.HQ.prototype.getAccountedWorkers = function(gameState)
 	if (this.turnCache.accountedWorkers == undefined)
 	{
 		let workers = gameState.getOwnEntitiesByRole(PETRA.Worker.ROLE_WORKER, true).length;
-		for (let ent of gameState.getOwnTrainingFacilities().values())
+		for (const ent of gameState.getOwnTrainingFacilities().values())
 		{
-			for (let item of ent.trainingQueue())
+			for (const item of ent.trainingQueue())
 			{
 				if (!item.metadata || !item.metadata.role || item.metadata.role !== PETRA.Worker.ROLE_WORKER)
 					continue;
@@ -2300,7 +2300,7 @@ PETRA.HQ.prototype.update = function(gameState, queues, events)
 
 PETRA.HQ.prototype.Serialize = function()
 {
-	let properties = {
+	const properties = {
 		"phasing": this.phasing,
 		"lastFailedGather": this.lastFailedGather,
 		"firstBaseConfig": this.firstBaseConfig,
@@ -2362,7 +2362,7 @@ PETRA.HQ.prototype.Serialize = function()
 
 PETRA.HQ.prototype.Deserialize = function(gameState, data)
 {
-	for (let key in data.properties)
+	for (const key in data.properties)
 		this[key] = data.properties[key];
 
 
