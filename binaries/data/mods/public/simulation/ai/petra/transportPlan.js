@@ -42,7 +42,7 @@ PETRA.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, s
 		this.sea = ship.getMetadata(PlayerID, "sea");
 		ship.setMetadata(PlayerID, "transporter", this.ID);
 		ship.setStance("none");
-		for (let ent of units)
+		for (const ent of units)
 			ent.setMetadata(PlayerID, "onBoard", "onBoard");
 	}
 	else
@@ -57,7 +57,7 @@ PETRA.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, s
 		}
 	}
 
-	for (let ent of units)
+	for (const ent of units)
 	{
 		ent.setMetadata(PlayerID, "transport", this.ID);
 		ent.setMetadata(PlayerID, "endPos", endPos);
@@ -100,7 +100,7 @@ PETRA.TransportPlan.prototype.init = function(gameState)
 PETRA.TransportPlan.prototype.countFreeSlots = function()
 {
 	let slots = 0;
-	for (let ship of this.transportShips.values())
+	for (const ship of this.transportShips.values())
 		slots += this.countFreeSlotsOnShip(ship);
 	return slots;
 };
@@ -109,7 +109,7 @@ PETRA.TransportPlan.prototype.countFreeSlotsOnShip = function(ship)
 {
 	if (ship.hitpoints() < ship.garrisonEjectHealth() * ship.maxHitpoints())
 		return 0;
-	let occupied = ship.garrisoned().length +
+	const occupied = ship.garrisoned().length +
 		this.units.filter(API3.Filters.byMetadata(PlayerID, "onBoard", ship.id())).length;
 	return Math.max(ship.garrisonMax() - occupied, 0);
 };
@@ -119,7 +119,7 @@ PETRA.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
 	if (this.needTransportShips)
 		return;
 
-	for (let ship of this.transportShips.values())
+	for (const ship of this.transportShips.values())
 	{
 		if (this.countFreeSlotsOnShip(ship) == 0)
 			continue;
@@ -150,7 +150,7 @@ PETRA.TransportPlan.prototype.assignShip = function(gameState)
 {
 	let pos;
 	// choose a unit of this plan not yet assigned to a ship
-	for (let ent of this.units.values())
+	for (const ent of this.units.values())
 	{
 		if (!ent.position() || ent.getMetadata(PlayerID, "onBoard") !== undefined)
 			continue;
@@ -165,7 +165,7 @@ PETRA.TransportPlan.prototype.assignShip = function(gameState)
 			return;
 		if (pos)
 		{
-			let dist = API3.SquareVectorDistance(pos, ship.position());
+			const dist = API3.SquareVectorDistance(pos, ship.position());
 			if (dist > distmin)
 				return;
 			distmin = dist;
@@ -196,7 +196,7 @@ PETRA.TransportPlan.prototype.addUnit = function(unit, endPos)
 /** remove a unit from this plan, if not yet on board */
 PETRA.TransportPlan.prototype.removeUnit = function(gameState, unit)
 {
-	let shipId = unit.getMetadata(PlayerID, "onBoard");
+	const shipId = unit.getMetadata(PlayerID, "onBoard");
 	if (shipId == "onBoard")
 		return;			// too late, already onBoard
 	else if (shipId !== undefined)
@@ -207,7 +207,7 @@ PETRA.TransportPlan.prototype.removeUnit = function(gameState, unit)
 	if (shipId)
 	{
 		unit.setMetadata(PlayerID, "onBoard", undefined);
-		let ship = gameState.getEntityById(shipId);
+		const ship = gameState.getEntityById(shipId);
 		if (ship && !ship.garrisoned().length &&
 		            !this.units.filter(API3.Filters.byMetadata(PlayerID, "onBoard", shipId)).length)
 		{
@@ -227,7 +227,7 @@ PETRA.TransportPlan.prototype.releaseShip = function(ship)
 		return;
 	}
 
-	let defaultStance = ship.get("UnitAI/DefaultStance");
+	const defaultStance = ship.get("UnitAI/DefaultStance");
 	if (defaultStance)
 		ship.setStance(defaultStance);
 
@@ -238,10 +238,10 @@ PETRA.TransportPlan.prototype.releaseShip = function(ship)
 
 PETRA.TransportPlan.prototype.releaseAll = function()
 {
-	for (let ship of this.ships.values())
+	for (const ship of this.ships.values())
 		this.releaseShip(ship);
 
-	for (let ent of this.units.values())
+	for (const ent of this.units.values())
 	{
 		ent.setMetadata(PlayerID, "endPos", undefined);
 		ent.setMetadata(PlayerID, "onBoard", undefined);
@@ -258,7 +258,7 @@ PETRA.TransportPlan.prototype.releaseAll = function()
 /** TODO not currently used ... to be fixed */
 PETRA.TransportPlan.prototype.cancelTransport = function(gameState)
 {
-	let ent = this.units.toEntityArray()[0];
+	const ent = this.units.toEntityArray()[0];
 	let base = gameState.ai.HQ.getBaseByID(ent.getMetadata(PlayerID, "base"));
 	if (!base.anchor || !base.anchor.position())
 	{
@@ -297,10 +297,10 @@ PETRA.TransportPlan.prototype.update = function(gameState)
 PETRA.TransportPlan.prototype.onBoarding = function(gameState)
 {
 	let ready = true;
-	let time = gameState.ai.elapsedTime;
-	let shipTested = {};
+	const time = gameState.ai.elapsedTime;
+	const shipTested = {};
 
-	for (let ent of this.units.values())
+	for (const ent of this.units.values())
 	{
 		if (!ent.getMetadata(PlayerID, "onBoard"))
 		{
@@ -308,8 +308,8 @@ PETRA.TransportPlan.prototype.onBoarding = function(gameState)
 			this.assignUnitToShip(gameState, ent);
 			if (ent.getMetadata(PlayerID, "onBoard"))
 			{
-				let shipId = ent.getMetadata(PlayerID, "onBoard");
-				let ship = gameState.getEntityById(shipId);
+				const shipId = ent.getMetadata(PlayerID, "onBoard");
+				const ship = gameState.getEntityById(shipId);
 				if (!this.boardingPos[shipId])
 				{
 					this.boardingPos[shipId] = this.getBoardingPos(gameState, ship, this.startIndex, this.sea, ent.position(), false);
@@ -324,26 +324,26 @@ PETRA.TransportPlan.prototype.onBoarding = function(gameState)
 		else if (ent.getMetadata(PlayerID, "onBoard") != "onBoard" && !this.isOnBoard(ent))
 		{
 			ready = false;
-			let shipId = ent.getMetadata(PlayerID, "onBoard");
-			let ship = gameState.getEntityById(shipId);
+			const shipId = ent.getMetadata(PlayerID, "onBoard");
+			const ship = gameState.getEntityById(shipId);
 			if (!ship)    // the ship must have been destroyed
 			{
 				ent.setMetadata(PlayerID, "onBoard", undefined);
 				continue;
 			}
-			let distShip = API3.SquareVectorDistance(this.boardingPos[shipId], ship.position());
+			const distShip = API3.SquareVectorDistance(this.boardingPos[shipId], ship.position());
 			if (!shipTested[shipId] && distShip > this.boardingRange)
 			{
 				shipTested[shipId] = true;
 				let retry = false;
-				let unitAIState = ship.unitAIState();
+				const unitAIState = ship.unitAIState();
 				if (unitAIState == "INDIVIDUAL.WALKING" ||
 				    unitAIState == "INDIVIDUAL.PICKUP.APPROACHING")
 				{
 					if (time - ship.getMetadata(PlayerID, "timeGarrison") > 2)
 					{
-						let oldPos = ent.getMetadata(PlayerID, "posGarrison");
-						let newPos = ent.position();
+						const oldPos = ent.getMetadata(PlayerID, "posGarrison");
+						const newPos = ent.position();
 						if (oldPos[0] == newPos[0] && oldPos[1] == newPos[1])
 							retry = true;
 						ent.setMetadata(PlayerID, "posGarrison", newPos);
@@ -379,8 +379,8 @@ PETRA.TransportPlan.prototype.onBoarding = function(gameState)
 
 			if (time - ent.getMetadata(PlayerID, "timeGarrison") > 2)
 			{
-				let oldPos = ent.getMetadata(PlayerID, "posGarrison");
-				let newPos = ent.position();
+				const oldPos = ent.getMetadata(PlayerID, "posGarrison");
+				const newPos = ent.position();
 				if (oldPos[0] == newPos[0] && oldPos[1] == newPos[1])
 				{
 					if (distShip < this.boardingRange)	// looks like we are blocked ... try to go out of this trap
@@ -421,7 +421,7 @@ PETRA.TransportPlan.prototype.onBoarding = function(gameState)
 	if (!ready)
 		return;
 
-	for (let ship of this.ships.values())
+	for (const ship of this.ships.values())
 	{
 		this.boardingPos[ship.id()] = undefined;
 		this.boardingPos[ship.id()] = this.getBoardingPos(gameState, ship, this.endIndex, this.sea, this.endPos, true);
@@ -436,7 +436,7 @@ PETRA.TransportPlan.prototype.onBoarding = function(gameState)
 /** tell if a unit is garrisoned in one of the ships of this plan, and update its metadata if yes */
 PETRA.TransportPlan.prototype.isOnBoard = function(ent)
 {
-	for (let ship of this.transportShips.values())
+	for (const ship of this.transportShips.values())
 	{
 		if (ship.garrisoned().indexOf(ent.id()) == -1)
 			continue;
@@ -460,14 +460,14 @@ PETRA.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landInd
 		return destination;
 	}
 
-	let startPos = ship.position();
+	const startPos = ship.position();
 	let distmin = Math.min();
 	let posmin = destination;
-	let width = gameState.getPassabilityMap().width;
-	let cell = gameState.getPassabilityMap().cellSize;
-	let alliedDocks = gameState.getAllyStructures().filter(API3.Filters.and(
+	const width = gameState.getPassabilityMap().width;
+	const cell = gameState.getPassabilityMap().cellSize;
+	const alliedDocks = gameState.getAllyStructures().filter(API3.Filters.and(
 		API3.Filters.byClass("Dock"), API3.Filters.byMetadata(PlayerID, "sea", seaIndex))).toEntityArray();
-	for (let i of gameState.ai.HQ.navalManager.landingZones[landIndex][seaIndex])
+	for (const i of gameState.ai.HQ.navalManager.landingZones[landIndex][seaIndex])
 	{
 		let pos = [i%width+0.5, Math.floor(i/width)+0.5];
 		pos = [cell*pos[0], cell*pos[1]];
@@ -476,25 +476,25 @@ PETRA.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landInd
 			dist += API3.VectorDistance(pos, destination);
 		if (avoidEnnemy)
 		{
-			let territoryOwner = gameState.ai.HQ.territoryMap.getOwner(pos);
+			const territoryOwner = gameState.ai.HQ.territoryMap.getOwner(pos);
 			if (territoryOwner != 0 && !gameState.isPlayerAlly(territoryOwner))
 				dist += 100000000;
 		}
 		// require a small distance between all ships of the transport plan to avoid path finder problems
 		// this is also used when the ship is blocked and we want to find a new boarding point
-		for (let shipId in this.boardingPos)
+		for (const shipId in this.boardingPos)
 			if (this.boardingPos[shipId] !== undefined &&
 			    API3.SquareVectorDistance(this.boardingPos[shipId], pos) < this.boardingRange)
 				dist += 1000000;
 		// and not too near our allied docks to not disturb naval traffic
 		let distSquare;
-		for (let dock of alliedDocks)
+		for (const dock of alliedDocks)
 		{
 			if (dock.foundationProgress() !== undefined)
 				distSquare = 900;
 			else
 				distSquare = 4900;
-			let dockDist = API3.SquareVectorDistance(dock.position(), pos);
+			const dockDist = API3.SquareVectorDistance(dock.position(), pos);
 			if (dockDist < distSquare)
 				dist += 100000 * (distSquare - dockDist) / distSquare;
 		}
@@ -513,14 +513,14 @@ PETRA.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landInd
 PETRA.TransportPlan.prototype.onSailing = function(gameState)
 {
 	// Check that the units recovered on the previous turn have been reloaded
-	for (let recov of this.recovered)
+	for (const recov of this.recovered)
 	{
-		let ent = gameState.getEntityById(recov.entId);
+		const ent = gameState.getEntityById(recov.entId);
 		if (!ent)  // entity destroyed
 			continue;
 		if (!ent.position())  // reloading succeeded ... move a bit the ship before trying again
 		{
-			let ship = gameState.getEntityById(recov.shipId);
+			const ship = gameState.getEntityById(recov.shipId);
 			if (ship)
 				ship.moveApart(recov.entPos, 15);
 			continue;
@@ -528,7 +528,7 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 		if (this.debug > 1)
 			API3.warn(">>> transport " + this.ID + " reloading failed ... <<<");
 		// destroy the unit if inaccessible otherwise leave it there
-		let index = PETRA.getLandAccess(gameState, ent);
+		const index = PETRA.getLandAccess(gameState, ent);
 		if (gameState.ai.HQ.landRegions[index])
 		{
 			if (this.debug > 1)
@@ -549,15 +549,15 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 	this.recovered = [];
 
 	// Check that the units unloaded on the previous turn have been really unloaded and in the right position
-	let shipsToMove = {};
-	for (let entId of this.unloaded)
+	const shipsToMove = {};
+	for (const entId of this.unloaded)
 	{
-		let ent = gameState.getEntityById(entId);
+		const ent = gameState.getEntityById(entId);
 		if (!ent)  // entity destroyed
 			continue;
 		else if (!ent.position())  // unloading failed
 		{
-			let ship = gameState.getEntityById(ent.getMetadata(PlayerID, "onBoard"));
+			const ship = gameState.getEntityById(ent.getMetadata(PlayerID, "onBoard"));
 			if (ship)
 			{
 				if (ship.garrisoned().indexOf(entId) != -1)
@@ -581,7 +581,7 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 			// unit unloaded on a wrong region - try to regarrison it and move a bit the ship
 			if (this.debug > 1)
 				API3.warn(">>> unit unloaded on a wrong region ! try to garrison it again <<<");
-			let ship = gameState.getEntityById(ent.getMetadata(PlayerID, "onBoard"));
+			const ship = gameState.getEntityById(ent.getMetadata(PlayerID, "onBoard"));
 			if (ship && !this.canceled)
 			{
 				shipsToMove[ship.id()] = ship;
@@ -600,9 +600,9 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 		else
 		{
 			// And make some room for other units
-			let pos = ent.position();
-			let goal = ent.getMetadata(PlayerID, "endPos");
-			let dist = goal ? API3.VectorDistance(pos, goal) : 0;
+			const pos = ent.position();
+			const goal = ent.getMetadata(PlayerID, "endPos");
+			const dist = goal ? API3.VectorDistance(pos, goal) : 0;
 			if (dist > 30)
 				ent.moveToRange(goal[0], goal[1], dist-25, dist-20);
 			else
@@ -612,7 +612,7 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 			ent.setMetadata(PlayerID, "endPos", undefined);
 		}
 	}
-	for (let shipId in shipsToMove)
+	for (const shipId in shipsToMove)
 	{
 		this.boardingPos[shipId] = this.getBoardingPos(gameState, shipsToMove[shipId], this.endIndex, this.sea, this.endPos, true);
 		shipsToMove[shipId].move(this.boardingPos[shipId][0], this.boardingPos[shipId][1]);
@@ -621,7 +621,7 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 
 	if (this.canceled)
 	{
-		for (let ship of this.ships.values())
+		for (const ship of this.ships.values())
 		{
 			this.boardingPos[ship.id()] = undefined;
 			this.boardingPos[ship.id()] = this.getBoardingPos(gameState, ship, this.endIndex, this.sea, this.endPos, true);
@@ -630,16 +630,16 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 		this.canceled = undefined;
 	}
 
-	for (let ship of this.transportShips.values())
+	for (const ship of this.transportShips.values())
 	{
 		if (ship.unitAIState() == "INDIVIDUAL.WALKING")
 			continue;
-		let shipId = ship.id();
-		let dist = API3.SquareVectorDistance(ship.position(), this.boardingPos[shipId]);
+		const shipId = ship.id();
+		const dist = API3.SquareVectorDistance(ship.position(), this.boardingPos[shipId]);
 		let remaining = 0;
-		for (let entId of ship.garrisoned())
+		for (const entId of ship.garrisoned())
 		{
-			let ent = gameState.getEntityById(entId);
+			const ent = gameState.getEntityById(entId);
 			if (!ent.getMetadata(PlayerID, "transport"))
 				continue;
 			remaining++;
@@ -652,7 +652,7 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 		}
 
 		let recovering = 0;
-		for (let recov of this.recovered)
+		for (const recov of this.recovered)
 			if (recov.shipId == shipId)
 				recovering++;
 
@@ -688,13 +688,13 @@ PETRA.TransportPlan.prototype.resetUnit = function(gameState, ent)
 	// if from an army or attack, remove it
 	if (ent.getMetadata(PlayerID, "plan") !== undefined && ent.getMetadata(PlayerID, "plan") >= 0)
 	{
-		let attackPlan = gameState.ai.HQ.attackManager.getPlan(ent.getMetadata(PlayerID, "plan"));
+		const attackPlan = gameState.ai.HQ.attackManager.getPlan(ent.getMetadata(PlayerID, "plan"));
 		if (attackPlan)
 			attackPlan.removeUnit(ent, true);
 	}
 	if (ent.getMetadata(PlayerID, "PartOfArmy"))
 	{
-		let army = gameState.ai.HQ.defenseManager.getArmy(ent.getMetadata(PlayerID, "PartOfArmy"));
+		const army = gameState.ai.HQ.defenseManager.getArmy(ent.getMetadata(PlayerID, "PartOfArmy"));
 		if (army)
 			army.removeOwn(gameState, ent.id());
 	}
@@ -721,7 +721,7 @@ PETRA.TransportPlan.prototype.Serialize = function()
 
 PETRA.TransportPlan.prototype.Deserialize = function(data)
 {
-	for (let key in data)
+	for (const key in data)
 		this[key] = data[key];
 
 	this.failed = false;
