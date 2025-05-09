@@ -17,7 +17,7 @@ PETRA.Queue.prototype.addPlan = function(newPlan)
 {
 	if (!newPlan)
 		return;
-	for (let plan of this.plans)
+	for (const plan of this.plans)
 	{
 		if (newPlan.category === "unit" && plan.type == newPlan.type && plan.number + newPlan.number <= plan.maxMerge)
 		{
@@ -36,7 +36,7 @@ PETRA.Queue.prototype.check= function(gameState)
 	{
 		if (!this.plans[0].isInvalid(gameState))
 			return;
-		let plan = this.plans.shift();
+		const plan = this.plans.shift();
 		if (plan.queueToReset)
 			gameState.ai.queueManager.changePriority(plan.queueToReset, gameState.ai.Config.priorities[plan.queueToReset]);
 	}
@@ -65,12 +65,12 @@ PETRA.Queue.prototype.startNext = function(gameState)
  */
 PETRA.Queue.prototype.maxAccountWanted = function(gameState, fraction)
 {
-	let cost = new API3.Resources();
+	const cost = new API3.Resources();
 	if (this.plans.length > 0 && this.plans[0].isGo(gameState))
 		cost.add(this.plans[0].getCost());
 	if (this.plans.length > 1 && this.plans[1].isGo(gameState) && fraction > 0)
 	{
-		let costs = this.plans[1].getCost();
+		const costs = this.plans[1].getCost();
 		costs.multiply(fraction);
 		cost.add(costs);
 	}
@@ -79,8 +79,8 @@ PETRA.Queue.prototype.maxAccountWanted = function(gameState, fraction)
 
 PETRA.Queue.prototype.queueCost = function()
 {
-	let cost = new API3.Resources();
-	for (let plan of this.plans)
+	const cost = new API3.Resources();
+	for (const plan of this.plans)
 		cost.add(plan.getCost());
 	return cost;
 };
@@ -98,7 +98,7 @@ PETRA.Queue.prototype.hasQueuedUnits = function()
 PETRA.Queue.prototype.countQueuedUnits = function()
 {
 	let count = 0;
-	for (let plan of this.plans)
+	for (const plan of this.plans)
 		count += plan.number;
 	return count;
 };
@@ -111,7 +111,7 @@ PETRA.Queue.prototype.hasQueuedUnitsWithClass = function(classe)
 PETRA.Queue.prototype.countQueuedUnitsWithClass = function(classe)
 {
 	let count = 0;
-	for (let plan of this.plans)
+	for (const plan of this.plans)
 		if (plan.template && plan.template.hasClass(classe))
 			count += plan.number;
 	return count;
@@ -120,7 +120,7 @@ PETRA.Queue.prototype.countQueuedUnitsWithClass = function(classe)
 PETRA.Queue.prototype.countQueuedUnitsWithMetadata = function(data, value)
 {
 	let count = 0;
-	for (let plan of this.plans)
+	for (const plan of this.plans)
 		if (plan.metadata[data] && plan.metadata[data] == value)
 			count += plan.number;
 	return count;
@@ -128,8 +128,8 @@ PETRA.Queue.prototype.countQueuedUnitsWithMetadata = function(data, value)
 
 PETRA.Queue.prototype.Serialize = function()
 {
-	let plans = [];
-	for (let plan of this.plans)
+	const plans = [];
+	for (const plan of this.plans)
 		plans.push(plan.Serialize());
 
 	return { "plans": plans, "paused": this.paused, "switched": this.switched };
@@ -140,7 +140,7 @@ PETRA.Queue.prototype.Deserialize = function(gameState, data)
 	this.paused = data.paused;
 	this.switched = data.switched;
 	this.plans = [];
-	for (let dataPlan of data.plans)
+	for (const dataPlan of data.plans)
 	{
 		let plan;
 		if (dataPlan.category == "unit")

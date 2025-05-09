@@ -212,19 +212,19 @@ PETRA.Config.prototype.setConfig = function(gameState)
 		// The parameter used to define the personality is basically the aggressivity or (1-defensiveness)
 		// as they are anticorrelated, although some small smearing to decorelate them will be added.
 		// And for each user choice, this parameter can vary between min and max
-		let personalityList = {
+		const personalityList = {
 			"random": { "min": 0, "max": 1 },
 			"defensive": { "min": 0, "max": 0.27 },
 			"balanced": { "min": 0.37, "max": 0.63 },
 			"aggressive": { "min": 0.73, "max": 1 }
 		};
-		let behavior = randFloat(-0.5, 0.5);
+		const behavior = randFloat(-0.5, 0.5);
 		// make agressive and defensive quite anticorrelated (aggressive ~ 1 - defensive) but not completelety
-		let variation = 0.15 * randFloat(-1, 1) * Math.sqrt(Math.square(0.5) - Math.square(behavior));
-		let aggressive = Math.max(Math.min(behavior + variation, 0.5), -0.5) + 0.5;
-		let defensive = Math.max(Math.min(-behavior + variation, 0.5), -0.5) + 0.5;
-		let min = personalityList[this.behavior].min;
-		let max = personalityList[this.behavior].max;
+		const variation = 0.15 * randFloat(-1, 1) * Math.sqrt(Math.square(0.5) - Math.square(behavior));
+		const aggressive = Math.max(Math.min(behavior + variation, 0.5), -0.5) + 0.5;
+		const defensive = Math.max(Math.min(-behavior + variation, 0.5), -0.5) + 0.5;
+		const min = personalityList[this.behavior].min;
+		const max = personalityList[this.behavior].max;
 		this.personality = {
 			"aggressive": min + aggressive * (max - min),
 			"defensive": 1 - max + defensive * (max - min),
@@ -282,7 +282,7 @@ PETRA.Config.prototype.setConfig = function(gameState)
 		}
 	}
 
-	let maxPop = gameState.getPopulationMax();
+	const maxPop = gameState.getPopulationMax();
 	if (this.difficulty < PETRA.DIFFICULTY_EASY)
 		this.Economy.targetNumWorkers = Math.max(1, Math.min(40, maxPop));
 	else if (this.difficulty < PETRA.DIFFICULTY_MEDIUM)
@@ -345,7 +345,7 @@ PETRA.Config.prototype.Cheat = function(gameState)
 PETRA.Config.prototype.Serialize = function()
 {
 	var data = {};
-	for (let key in this)
+	for (const key in this)
 		if (this.hasOwnProperty(key) && key != "debug")
 			data[key] = this[key];
 	return data;
@@ -353,6 +353,6 @@ PETRA.Config.prototype.Serialize = function()
 
 PETRA.Config.prototype.Deserialize = function(data)
 {
-	for (let key in data)
+	for (const key in data)
 		this[key] = data[key];
 };

@@ -5,9 +5,9 @@ PETRA.TERRITORY_BLINKING_MASK = 0x40;
 
 PETRA.createObstructionMap = function(gameState, accessIndex, template)
 {
-	let passabilityMap = gameState.getPassabilityMap();
-	let territoryMap = gameState.ai.territoryMap;
-	let ratio = territoryMap.cellSize / passabilityMap.cellSize;
+	const passabilityMap = gameState.getPassabilityMap();
+	const territoryMap = gameState.ai.territoryMap;
+	const ratio = territoryMap.cellSize / passabilityMap.cellSize;
 
 	// default values
 	let placementType = "land";
@@ -24,7 +24,7 @@ PETRA.createObstructionMap = function(gameState, accessIndex, template)
 		buildNeutral = template.hasBuildTerritory("neutral");
 		buildEnemy = template.hasBuildTerritory("enemy");
 	}
-	let obstructionTiles = new Uint8Array(passabilityMap.data.length);
+	const obstructionTiles = new Uint8Array(passabilityMap.data.length);
 
 	let passMap;
 	let obstructionMask;
@@ -41,8 +41,8 @@ PETRA.createObstructionMap = function(gameState, accessIndex, template)
 
 	for (let k = 0; k < territoryMap.data.length; ++k)
 	{
-		let tilePlayer = territoryMap.data[k] & PETRA.TERRITORY_PLAYER_MASK;
-		let isConnected = (territoryMap.data[k] & PETRA.TERRITORY_BLINKING_MASK) == 0;
+		const tilePlayer = territoryMap.data[k] & PETRA.TERRITORY_PLAYER_MASK;
+		const isConnected = (territoryMap.data[k] & PETRA.TERRITORY_BLINKING_MASK) == 0;
 		if (tilePlayer === PlayerID)
 		{
 			if (!buildOwn || !buildNeutral && !isConnected)
@@ -64,13 +64,13 @@ PETRA.createObstructionMap = function(gameState, accessIndex, template)
 				continue;
 		}
 
-		let x = ratio * (k % territoryMap.width);
-		let y = ratio * Math.floor(k / territoryMap.width);
+		const x = ratio * (k % territoryMap.width);
+		const y = ratio * Math.floor(k / territoryMap.width);
 		for (let ix = 0; ix < ratio; ++ix)
 		{
 			for (let iy = 0; iy < ratio; ++iy)
 			{
-				let i = x + ix + (y + iy)*passabilityMap.width;
+				const i = x + ix + (y + iy)*passabilityMap.width;
 				if (placementType != "shore" && accessIndex && accessIndex !== passMap[i])
 					continue;
 				if (!(passabilityMap.data[i] & obstructionMask))
@@ -79,29 +79,29 @@ PETRA.createObstructionMap = function(gameState, accessIndex, template)
 		}
 	}
 
-	let map = new API3.Map(gameState.sharedScript, "passability", obstructionTiles);
+	const map = new API3.Map(gameState.sharedScript, "passability", obstructionTiles);
 	map.setMaxVal(255);
 
 	if (template && template.buildDistance())
 	{
-		let distance = template.buildDistance();
+		const distance = template.buildDistance();
 		let minDist = distance.MinDistance ? +distance.MinDistance : 0;
 		if (minDist)
 		{
-			let obstructionRadius = template.obstructionRadius();
+			const obstructionRadius = template.obstructionRadius();
 			if (obstructionRadius)
 				minDist -= obstructionRadius.min;
-			let fromClass = distance.FromClass;
-			let cellSize = passabilityMap.cellSize;
-			let cellDist = 1 + minDist / cellSize;
-			let structures = gameState.getOwnStructures().filter(API3.Filters.byClass(fromClass));
-			for (let ent of structures.values())
+			const fromClass = distance.FromClass;
+			const cellSize = passabilityMap.cellSize;
+			const cellDist = 1 + minDist / cellSize;
+			const structures = gameState.getOwnStructures().filter(API3.Filters.byClass(fromClass));
+			for (const ent of structures.values())
 			{
 				if (!ent.position())
 					continue;
-				let pos = ent.position();
-				let x = Math.round(pos[0] / cellSize);
-				let z = Math.round(pos[1] / cellSize);
+				const pos = ent.position();
+				const x = Math.round(pos[0] / cellSize);
+				const z = Math.round(pos[1] / cellSize);
 				map.addInfluence(x, z, cellDist, -255, "constant");
 			}
 		}
@@ -113,9 +113,9 @@ PETRA.createObstructionMap = function(gameState, accessIndex, template)
 
 PETRA.createTerritoryMap = function(gameState)
 {
-	let map = gameState.ai.territoryMap;
+	const map = gameState.ai.territoryMap;
 
-	let ret = new API3.Map(gameState.sharedScript, "territory", map.data);
+	const ret = new API3.Map(gameState.sharedScript, "territory", map.data);
 	ret.getOwner = function(p) { return this.point(p) & PETRA.TERRITORY_PLAYER_MASK; };
 	ret.getOwnerIndex = function(p) { return this.map[p] & PETRA.TERRITORY_PLAYER_MASK; };
 	ret.isBlinking = function(p) { return (this.point(p) & PETRA.TERRITORY_BLINKING_MASK) != 0; };
@@ -141,25 +141,25 @@ PETRA.fullFrontier_Mask = PETRA.narrowFrontier_Mask | PETRA.largeFrontier_Mask;
 
 PETRA.createBorderMap = function(gameState)
 {
-	let map = new API3.Map(gameState.sharedScript, "territory");
-	let width = map.width;
-	let border = Math.round(80 / map.cellSize);
-	let passabilityMap = gameState.getPassabilityMap();
-	let obstructionMask = gameState.getPassabilityClassMask("unrestricted");
+	const map = new API3.Map(gameState.sharedScript, "territory");
+	const width = map.width;
+	const border = Math.round(80 / map.cellSize);
+	const passabilityMap = gameState.getPassabilityMap();
+	const obstructionMask = gameState.getPassabilityClassMask("unrestricted");
 	if (gameState.circularMap)
 	{
-		let ic = (width - 1) / 2;
-		let radcut = (ic - border) * (ic - border);
+		const ic = (width - 1) / 2;
+		const radcut = (ic - border) * (ic - border);
 		for (let j = 0; j < map.length; ++j)
 		{
-			let dx = j%width - ic;
-			let dy = Math.floor(j/width) - ic;
-			let radius = dx*dx + dy*dy;
+			const dx = j%width - ic;
+			const dy = Math.floor(j/width) - ic;
+			const radius = dx*dx + dy*dy;
 			if (radius < radcut)
 				continue;
 			map.map[j] = PETRA.outside_Mask;
-			let ind = API3.getMapIndices(j, map, passabilityMap);
-			for (let k of ind)
+			const ind = API3.getMapIndices(j, map, passabilityMap);
+			for (const k of ind)
 			{
 				if (passabilityMap.data[k] & obstructionMask)
 					continue;
@@ -170,16 +170,16 @@ PETRA.createBorderMap = function(gameState)
 	}
 	else
 	{
-		let borderCut = width - border;
+		const borderCut = width - border;
 		for (let j = 0; j < map.length; ++j)
 		{
-			let ix = j%width;
-			let iy = Math.floor(j/width);
+			const ix = j%width;
+			const iy = Math.floor(j/width);
 			if (ix < border || ix >= borderCut || iy < border || iy >= borderCut)
 			{
 				map.map[j] = PETRA.outside_Mask;
-				let ind = API3.getMapIndices(j, map, passabilityMap);
-				for (let k of ind)
+				const ind = API3.getMapIndices(j, map, passabilityMap);
+				for (const k of ind)
 				{
 					if (passabilityMap.data[k] & obstructionMask)
 						continue;
@@ -196,15 +196,15 @@ PETRA.createBorderMap = function(gameState)
 
 PETRA.debugMap = function(gameState, map)
 {
-	let width = map.width;
-	let cell = map.cellSize;
+	const width = map.width;
+	const cell = map.cellSize;
 	gameState.getEntities().forEach(ent => {
-		let pos = ent.position();
+		const pos = ent.position();
 		if (!pos)
 			return;
-		let x = Math.round(pos[0] / cell);
-		let z = Math.round(pos[1] / cell);
-		let id = x + width*z;
+		const x = Math.round(pos[0] / cell);
+		const z = Math.round(pos[1] / cell);
+		const id = x + width*z;
 		if (map.map[id] == 1)
 			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [2, 0, 0] });
 		else if (map.map[id] == 2)

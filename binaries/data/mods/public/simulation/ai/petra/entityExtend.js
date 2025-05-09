@@ -15,18 +15,18 @@ PETRA.isFastMoving = function(ent)
 PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstClass)
 {
 	let strength = 0;
-	let attackTypes = ent.attackTypes();
-	let damageTypes = Object.keys(DamageTypeImportance);
+	const attackTypes = ent.attackTypes();
+	const damageTypes = Object.keys(DamageTypeImportance);
 	if (!attackTypes)
 		return strength;
 
-	for (let type of attackTypes)
+	for (const type of attackTypes)
 	{
 		if (type == "Slaughter")
 			continue;
 
-		let attackStrength = ent.attackStrengths(type);
-		for (let str in attackStrength)
+		const attackStrength = ent.attackStrengths(type);
+		for (const str in attackStrength)
 		{
 			let val = parseFloat(attackStrength[str]);
 			if (againstClass)
@@ -37,14 +37,14 @@ PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 				API3.warn("Petra: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
 
-		let attackRange = ent.attackRange(type);
+		const attackRange = ent.attackRange(type);
 		if (attackRange)
 			strength += attackRange.max * 0.0125;
 
-		let attackTimes = ent.attackTimes(type);
-		for (let str in attackTimes)
+		const attackTimes = ent.attackTimes(type);
+		for (const str in attackTimes)
 		{
-			let val = parseFloat(attackTimes[str]);
+			const val = parseFloat(attackTimes[str]);
 			switch (str)
 			{
 			case "repeat":
@@ -59,12 +59,12 @@ PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 		}
 	}
 
-	let resistanceStrength = ent.resistanceStrengths();
+	const resistanceStrength = ent.resistanceStrengths();
 
 	if (resistanceStrength.Damage)
-		for (let str in resistanceStrength.Damage)
+		for (const str in resistanceStrength.Damage)
 		{
-			let val = +resistanceStrength.Damage[str];
+			const val = +resistanceStrength.Damage[str];
 			if (DamageTypeImportance[str])
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
 			else if (debugLevel > 0)
@@ -81,10 +81,10 @@ PETRA.getLandAccess = function(gameState, ent)
 {
 	if (ent.hasClass("Unit"))
 	{
-		let pos = ent.position();
+		const pos = ent.position();
 		if (!pos)
 		{
-			let holder = PETRA.getHolder(gameState, ent);
+			const holder = PETRA.getHolder(gameState, ent);
 			if (holder)
 				return PETRA.getLandAccess(gameState, holder);
 
@@ -107,12 +107,12 @@ PETRA.getLandAccess = function(gameState, ent)
 				halfDepth = +ent.get("Footprint/Square/@depth") / 2;
 			else if (ent.get("Footprint/Circle"))
 				halfDepth = +ent.get("Footprint/Circle/@radius");
-			let entPos = ent.position();
-			let cosa = Math.cos(ent.angle());
-			let sina = Math.sin(ent.angle());
+			const entPos = ent.position();
+			const cosa = Math.cos(ent.angle());
+			const sina = Math.sin(ent.angle());
 			for (let d = 3; d < halfDepth; d += 3)
 			{
-				let pos = [ entPos[0] - d * sina,
+				const pos = [ entPos[0] - d * sina,
 				            entPos[1] - d * cosa];
 				access = gameState.ai.accessibility.getAccessValue(pos);
 				if (access > 1)
@@ -134,12 +134,12 @@ PETRA.getSeaAccess = function(gameState, ent)
 		// Docks are sometimes not as expected
 		if (sea < 2 && ent.buildPlacementType() == "shore")
 		{
-			let entPos = ent.position();
-			let cosa = Math.cos(ent.angle());
-			let sina = Math.sin(ent.angle());
+			const entPos = ent.position();
+			const cosa = Math.cos(ent.angle());
+			const sina = Math.sin(ent.angle());
 			for (let d = 3; d < 15; d += 3)
 			{
-				let pos = [ entPos[0] + d * sina,
+				const pos = [ entPos[0] + d * sina,
 				            entPos[1] + d * cosa];
 				sea = gameState.ai.accessibility.getAccessValue(pos, true);
 				if (sea > 1)
@@ -179,7 +179,7 @@ PETRA.allowCapture = function(gameState, ent, target)
 		antiCapture -= target.territoryDecayRate();
 
 	let capture;
-	let capturableTargets = gameState.ai.HQ.capturableTargets;
+	const capturableTargets = gameState.ai.HQ.capturableTargets;
 	if (!capturableTargets.has(target.id()))
 	{
 		capture = ent.captureStrength() * PETRA.getAttackBonus(ent, target, "Capture");
@@ -187,7 +187,7 @@ PETRA.allowCapture = function(gameState, ent, target)
 	}
 	else
 	{
-		let capturable = capturableTargets.get(target.id());
+		const capturable = capturableTargets.get(target.id());
 		if (!capturable.ents.has(ent.id()))
 		{
 			capturable.strength += ent.captureStrength() * PETRA.getAttackBonus(ent, target, "Capture");
@@ -196,7 +196,7 @@ PETRA.allowCapture = function(gameState, ent, target)
 		capture = capturable.strength;
 	}
 	capture *= 1 / (0.1 + 0.9*target.healthLevel());
-	let sumCapturePoints = target.capturePoints().reduce((a, b) => a + b);
+	const sumCapturePoints = target.capturePoints().reduce((a, b) => a + b);
 	if (target.hasDefensiveFire() && target.isGarrisonHolder() && target.garrisoned())
 		return capture > antiCapture + sumCapturePoints/50;
 	return capture > antiCapture + sumCapturePoints/80;
@@ -207,10 +207,10 @@ PETRA.getAttackBonus = function(ent, target, type)
 	let attackBonus = 1;
 	if (!ent.get("Attack/" + type) || !ent.get("Attack/" + type + "/Bonuses"))
 		return attackBonus;
-	let bonuses = ent.get("Attack/" + type + "/Bonuses");
-	for (let key in bonuses)
+	const bonuses = ent.get("Attack/" + type + "/Bonuses");
+	for (const key in bonuses)
 	{
-		let bonus = bonuses[key];
+		const bonus = bonuses[key];
 		if (bonus.Civ && bonus.Civ !== target.civ())
 			continue;
 		if (!bonus.Classes || target.hasClasses(bonus.Classes))
@@ -225,24 +225,24 @@ PETRA.returnResources = function(gameState, ent)
 	if (!ent.resourceCarrying() || !ent.resourceCarrying().length || !ent.position())
 		return false;
 
-	let resource = ent.resourceCarrying()[0].type;
+	const resource = ent.resourceCarrying()[0].type;
 
 	let closestDropsite;
 	let distmin = Math.min();
-	let access = PETRA.getLandAccess(gameState, ent);
-	let dropsiteCollection = gameState.playerData.hasSharedDropsites ?
+	const access = PETRA.getLandAccess(gameState, ent);
+	const dropsiteCollection = gameState.playerData.hasSharedDropsites ?
 	                         gameState.getAnyDropsites(resource) : gameState.getOwnDropsites(resource);
-	for (let dropsite of dropsiteCollection.values())
+	for (const dropsite of dropsiteCollection.values())
 	{
 		if (!dropsite.position())
 			continue;
-		let owner = dropsite.owner();
+		const owner = dropsite.owner();
 		// owner !== PlayerID can only happen when hasSharedDropsites === true, so no need to test it again
 		if (owner !== PlayerID && (!dropsite.isSharedDropsite() || !gameState.isPlayerMutualAlly(owner)))
 			continue;
 		if (PETRA.getLandAccess(gameState, dropsite) != access)
 			continue;
-		let dist = API3.SquareVectorDistance(ent.position(), dropsite.position());
+		const dist = API3.SquareVectorDistance(ent.position(), dropsite.position());
 		if (dist > distmin)
 			continue;
 		distmin = dist;
@@ -274,7 +274,7 @@ PETRA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclud
 	let accessIndex;
 	if (!pos)
 	{
-		let holder = PETRA.getHolder(gameState, ent);
+		const holder = PETRA.getHolder(gameState, ent);
 		if (!holder || !holder.position())
 		{
 			API3.warn("Petra error: entity without position, but not garrisoned");
@@ -303,7 +303,7 @@ PETRA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclud
 		else
 		{
 			let found = false;
-			for (let structure of base.buildings.values())
+			for (const structure of base.buildings.values())
 			{
 				if (!structure.position())
 					continue;
@@ -330,7 +330,7 @@ PETRA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclud
 
 PETRA.getHolder = function(gameState, ent)
 {
-	for (let holder of gameState.getEntities().values())
+	for (const holder of gameState.getEntities().values())
 	{
 		if (holder.isGarrisonHolder() && holder.garrisoned().indexOf(ent.id()) !== -1)
 			return holder;
@@ -355,7 +355,7 @@ PETRA.isNotWorthBuilding = function(gameState, ent)
 {
 	if (gameState.ai.HQ.territoryMap.getOwner(ent.position()) !== PlayerID)
 	{
-		let buildTerritories = ent.buildTerritories();
+		const buildTerritories = ent.buildTerritories();
 		if (buildTerritories && (!buildTerritories.length || buildTerritories.length === 1 && buildTerritories[0] === "own"))
 			return true;
 	}
@@ -367,13 +367,13 @@ PETRA.isNotWorthBuilding = function(gameState, ent)
  */
 PETRA.isLineInsideEnemyTerritory = function(gameState, pos1, pos2, step=70)
 {
-	let n = Math.floor(Math.sqrt(API3.SquareVectorDistance(pos1, pos2))/step) + 1;
-	let stepx = (pos2[0] - pos1[0]) / n;
-	let stepy = (pos2[1] - pos1[1]) / n;
+	const n = Math.floor(Math.sqrt(API3.SquareVectorDistance(pos1, pos2))/step) + 1;
+	const stepx = (pos2[0] - pos1[0]) / n;
+	const stepy = (pos2[1] - pos1[1]) / n;
 	for (let i = 1; i < n; ++i)
 	{
-		let pos = [pos1[0]+i*stepx, pos1[1]+i*stepy];
-		let owner = gameState.ai.HQ.territoryMap.getOwner(pos);
+		const pos = [pos1[0]+i*stepx, pos1[1]+i*stepy];
+		const owner = gameState.ai.HQ.territoryMap.getOwner(pos);
 		if (owner && gameState.isPlayerEnemy(owner))
 			return true;
 	}
@@ -390,21 +390,21 @@ PETRA.gatherTreasure = function(gameState, ent, water = false)
 		return false;
 	let treasureFound;
 	let distmin = Math.min();
-	let access = water ? PETRA.getSeaAccess(gameState, ent) : PETRA.getLandAccess(gameState, ent);
-	for (let treasure of gameState.ai.HQ.treasures.values())
+	const access = water ? PETRA.getSeaAccess(gameState, ent) : PETRA.getLandAccess(gameState, ent);
+	for (const treasure of gameState.ai.HQ.treasures.values())
 	{
 		// let some time for the previous gatherer to reach the treasure before trying again
-		let lastGathered = treasure.getMetadata(PlayerID, "lastGathered");
+		const lastGathered = treasure.getMetadata(PlayerID, "lastGathered");
 		if (lastGathered && gameState.ai.elapsedTime - lastGathered < 20)
 			continue;
 		if (!water && access != PETRA.getLandAccess(gameState, treasure))
 			continue;
 		if (water && access != PETRA.getSeaAccess(gameState, treasure))
 			continue;
-		let territoryOwner = gameState.ai.HQ.territoryMap.getOwner(treasure.position());
+		const territoryOwner = gameState.ai.HQ.territoryMap.getOwner(treasure.position());
 		if (territoryOwner != 0 && !gameState.isPlayerAlly(territoryOwner))
 			continue;
-		let dist = API3.SquareVectorDistance(ent.position(), treasure.position());
+		const dist = API3.SquareVectorDistance(ent.position(), treasure.position());
 		if (dist > 120000 || territoryOwner != PlayerID && dist > 14000) // AI has no LOS, so restrict it a bit
 			continue;
 		if (dist > distmin)

@@ -16,18 +16,18 @@ PETRA.BuildManager = function()
 /** Initialization at start of game */
 PETRA.BuildManager.prototype.init = function(gameState)
 {
-	let civ = gameState.getPlayerCiv();
-	for (let ent of gameState.getOwnUnits().values())
+	const civ = gameState.getPlayerCiv();
+	for (const ent of gameState.getOwnUnits().values())
 		this.incrementBuilderCounters(civ, ent, 1);
 };
 
 PETRA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
 {
-	for (let buildable of ent.buildableEntities(civ))
+	for (const buildable of ent.buildableEntities(civ))
 	{
 		if (this.builderCounters.has(buildable))
 		{
-			let count = this.builderCounters.get(buildable) + increment;
+			const count = this.builderCounters.get(buildable) + increment;
 			if (count < 0)
 			{
 				API3.warn(" Petra error in incrementBuilderCounters for " + buildable + " with count < 0");
@@ -46,27 +46,27 @@ PETRA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, incre
 PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
 {
 	this.elapsedTime = gameState.ai.elapsedTime;
-	let civ = gameState.getPlayerCiv();
+	const civ = gameState.getPlayerCiv();
 
-	for (let evt of events.Create)
+	for (const evt of events.Create)
 	{
 		if (events.Destroy.some(e => e.entity == evt.entity))
 			continue;
-		let ent = gameState.getEntityById(evt.entity);
+		const ent = gameState.getEntityById(evt.entity);
 		if (ent && ent.isOwn(PlayerID) && ent.hasClass("Unit"))
 			this.incrementBuilderCounters(civ, ent, 1);
 	}
 
-	for (let evt of events.Destroy)
+	for (const evt of events.Destroy)
 	{
 		if (events.Create.some(e => e.entity == evt.entity) || !evt.entityObj)
 			continue;
-		let ent = evt.entityObj;
+		const ent = evt.entityObj;
 		if (ent && ent.isOwn(PlayerID) && ent.hasClass("Unit"))
 			this.incrementBuilderCounters(civ, ent, -1);
 	}
 
-	for (let evt of events.OwnershipChanged)   // capture events
+	for (const evt of events.OwnershipChanged)   // capture events
 	{
 		let increment;
 		if (evt.from == PlayerID)
@@ -75,12 +75,12 @@ PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
 			increment = 1;
 		else
 			continue;
-		let ent = gameState.getEntityById(evt.entity);
+		const ent = gameState.getEntityById(evt.entity);
 		if (ent && ent.hasClass("Unit"))
 			this.incrementBuilderCounters(civ, ent, increment);
 	}
 
-	for (let evt of events.ValueModification)
+	for (const evt of events.ValueModification)
 	{
 		if (evt.component != "Builder" ||
 		        !evt.valueNames.some(val => val.startsWith("Builder/Entities/")))
@@ -90,8 +90,8 @@ PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
 		// at this stage, so we simply have to dump the cache.
 		this.builderCounters = new Map();
 
-		let civ = gameState.getPlayerCiv();
-		for (let ent of gameState.getOwnUnits().values())
+		const civ = gameState.getPlayerCiv();
+		for (const ent of gameState.getOwnUnits().values())
 			this.incrementBuilderCounters(civ, ent, 1);
 	}
 };
@@ -103,11 +103,11 @@ PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
 PETRA.BuildManager.prototype.findStructuresByFilter = function(gameState, filter)
 {
 	const result = [];
-	for (let [templateName, count] of this.builderCounters)
+	for (const [templateName, count] of this.builderCounters)
 	{
 		if (!count || gameState.isTemplateDisabled(templateName))
 			continue;
-		let template = gameState.getTemplate(templateName);
+		const template = gameState.getTemplate(templateName);
 		if (!template || !template.available(gameState))
 			continue;
 		if (filter.func(template))
@@ -127,7 +127,7 @@ PETRA.BuildManager.prototype.findStructureWithClass = function(gameState, classe
 
 PETRA.BuildManager.prototype.hasBuilder = function(template)
 {
-	let numBuilders = this.builderCounters.get(template);
+	const numBuilders = this.builderCounters.get(template);
 	return numBuilders && numBuilders > 0;
 };
 
@@ -149,7 +149,7 @@ PETRA.BuildManager.prototype.setUnbuildable = function(gameState, template, time
 		this.unbuildables.set(template, { "reason": reason, "time": gameState.ai.elapsedTime + time });
 	else
 	{
-		let unbuildable = this.unbuildables.get(template);
+		const unbuildable = this.unbuildables.get(template);
 		if (unbuildable.time < gameState.ai.elapsedTime + time)
 		{
 			unbuildable.reason = reason;
@@ -162,7 +162,7 @@ PETRA.BuildManager.prototype.setUnbuildable = function(gameState, template, time
 PETRA.BuildManager.prototype.numberMissingRoom = function(gameState)
 {
 	let num = 0;
-	for (let unbuildable of this.unbuildables.values())
+	for (const unbuildable of this.unbuildables.values())
 		if (unbuildable.reason == "room" && unbuildable.time > gameState.ai.elapsedTime)
 			++num;
 	return num;
@@ -171,7 +171,7 @@ PETRA.BuildManager.prototype.numberMissingRoom = function(gameState)
 /** Reset the unbuildables due to missing room */
 PETRA.BuildManager.prototype.resetMissingRoom = function(gameState)
 {
-	for (let [key, unbuildable] of this.unbuildables)
+	for (const [key, unbuildable] of this.unbuildables)
 		if (unbuildable.reason == "room")
 			this.unbuildables.delete(key);
 };
@@ -186,6 +186,6 @@ PETRA.BuildManager.prototype.Serialize = function()
 
 PETRA.BuildManager.prototype.Deserialize = function(data)
 {
-	for (let key in data)
+	for (const key in data)
 		this[key] = data[key];
 };

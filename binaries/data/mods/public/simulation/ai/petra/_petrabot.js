@@ -32,15 +32,15 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 		this.playedTurn = this.data.playedTurn;
 		this.elapsedTime = this.data.elapsedTime;
 		this.savedEvents = this.data.savedEvents;
-		for (let key in this.savedEvents)
+		for (const key in this.savedEvents)
 		{
-			for (let i in this.savedEvents[key])
+			for (const i in this.savedEvents[key])
 			{
 				if (!this.savedEvents[key][i].entityObj)
 					continue;
-				let evt = this.savedEvents[key][i];
-				let evtmod = {};
-				for (let keyevt in evt)
+				const evt = this.savedEvents[key][i];
+				const evtmod = {};
+				for (const keyevt in evt)
 				{
 					evtmod[keyevt] = evt[keyevt];
 					evtmod.entityObj = new API3.Entity(gameState.sharedScript, evt.entityObj);
@@ -72,7 +72,7 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 
 		// this.queues can only be modified by the queue manager or things will go awry.
 		this.queues = {};
-		for (let i in this.Config.priorities)
+		for (const i in this.Config.priorities)
 			this.queues[i] = new PETRA.Queue();
 
 		this.queueManager = new PETRA.QueueManager(this.Config, this.queues);
@@ -91,7 +91,7 @@ PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
 	if (this.gameFinished || this.gameState.playerData.state == "defeated")
 		return;
 
-	for (let i in this.events)
+	for (const i in this.events)
 	{
 		if (i == "AIMetadata")   // not used inside petra
 			continue;
@@ -119,7 +119,7 @@ PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
 
 		this.queueManager.update(this.gameState);
 
-		for (let i in this.savedEvents)
+		for (const i in this.savedEvents)
 			this.savedEvents[i] = [];
 
 		Engine.ProfileStop();
@@ -130,17 +130,17 @@ PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
 
 PETRA.PetraBot.prototype.Serialize = function()
 {
-	let savedEvents = {};
-	for (let key in this.savedEvents)
+	const savedEvents = {};
+	for (const key in this.savedEvents)
 	{
 		savedEvents[key] = this.savedEvents[key].slice();
-		for (let i in savedEvents[key])
+		for (const i in savedEvents[key])
 		{
 			if (!savedEvents[key][i] || !savedEvents[key][i].entityObj)
 				continue;
-			let evt = savedEvents[key][i];
-			let evtmod = {};
-			for (let keyevt in evt)
+			const evt = savedEvents[key][i];
+			const evtmod = {};
+			for (const keyevt in evt)
 				evtmod[keyevt] = evt[keyevt];
 			evtmod.entityObj = evt.entityObj._entity;
 			savedEvents[key][i] = evtmod;
