@@ -22,7 +22,7 @@ m.Template = m.Class({
 			return this._entityModif.get(string);
 		else if (this._templateModif)
 		{
-			let owner = this._entity ? this._entity.owner : PlayerID;
+			const owner = this._entity ? this._entity.owner : PlayerID;
 			if (this._templateModif[owner] && this._templateModif[owner].has(string))
 				return this._templateModif[owner].get(string);
 		}
@@ -30,8 +30,8 @@ m.Template = m.Class({
 		if (!this._tpCache.has(string))
 		{
 			let value = this._template;
-			let args = string.split("/");
-			for (let arg of args)
+			const args = string.split("/");
+			for (const arg of args)
 			{
 				value = value[arg];
 				if (value == undefined)
@@ -55,7 +55,7 @@ m.Template = m.Class({
 	},
 
 	"classes": function() {
-		let template = this.get("Identity");
+		const template = this.get("Identity");
 		if (!template)
 			return undefined;
 		return GetIdentityClasses(template);
@@ -86,18 +86,18 @@ m.Template = m.Class({
 		if (!this.get("Cost"))
 			return {};
 
-		let ret = {};
-		for (let type in this.get("Cost/Resources"))
+		const ret = {};
+		for (const type in this.get("Cost/Resources"))
 			ret[type] = +this.get("Cost/Resources/" + type);
 		return ret;
 	},
 
 	"costSum": function(productionQueue) {
-		let cost = this.cost(productionQueue);
+		const cost = this.cost(productionQueue);
 		if (!cost)
 			return 0;
 		let ret = 0;
-		for (let type in cost)
+		for (const type in cost)
 			ret += cost[type];
 		return ret;
 	},
@@ -117,23 +117,23 @@ m.Template = m.Class({
 
 		if (this.get("Obstruction/Static"))
 		{
-			let w = +this.get("Obstruction/Static/@width");
-			let h = +this.get("Obstruction/Static/@depth");
+			const w = +this.get("Obstruction/Static/@width");
+			const h = +this.get("Obstruction/Static/@depth");
 			return { "max": Math.sqrt(w * w + h * h) / 2, "min": Math.min(h, w) / 2 };
 		}
 
 		if (this.get("Obstruction/Unit"))
 		{
-			let r = +this.get("Obstruction/Unit/@radius");
+			const r = +this.get("Obstruction/Unit/@radius");
 			return { "max": r, "min": r };
 		}
 
-		let right = this.get("Obstruction/Obstructions/Right");
-		let left = this.get("Obstruction/Obstructions/Left");
+		const right = this.get("Obstruction/Obstructions/Right");
+		const left = this.get("Obstruction/Obstructions/Left");
 		if (left && right)
 		{
-			let w = +right["@x"] + right["@width"] / 2 - left["@x"] + left["@width"] / 2;
-			let h = Math.max(+right["@z"] + right["@depth"] / 2, +left["@z"] + left["@depth"] / 2) -
+			const w = +right["@x"] + right["@width"] / 2 - left["@x"] + left["@width"] / 2;
+			const h = Math.max(+right["@z"] + right["@depth"] / 2, +left["@z"] + left["@depth"] / 2) -
 			        Math.min(+right["@z"] - right["@depth"] / 2, +left["@z"] - left["@depth"] / 2);
 			return { "max": Math.sqrt(w * w + h * h) / 2, "min": Math.min(h, w) / 2 };
 		}
@@ -150,8 +150,8 @@ m.Template = m.Class({
 
 		if (this.get("Footprint/Square"))
 		{
-			let w = +this.get("Footprint/Square/@width");
-			let h = +this.get("Footprint/Square/@depth");
+			const w = +this.get("Footprint/Square/@width");
+			const h = +this.get("Footprint/Square/@depth");
 			return Math.sqrt(w * w + h * h) / 2;
 		}
 
@@ -180,18 +180,18 @@ m.Template = m.Class({
 	},
 
 	"resistanceStrengths": function() {
-		let resistanceTypes = this.get("Resistance");
+		const resistanceTypes = this.get("Resistance");
 		if (!resistanceTypes || !resistanceTypes.Entity)
 			return undefined;
 
-		let resistance = {};
+		const resistance = {};
 		if (resistanceTypes.Entity.Capture)
 			resistance.Capture = +this.get("Resistance/Entity/Capture");
 
 		if (resistanceTypes.Entity.Damage)
 		{
 			resistance.Damage = {};
-			for (let damageType in resistanceTypes.Entity.Damage)
+			for (const damageType in resistanceTypes.Entity.Damage)
 				resistance.Damage[damageType] = +this.get("Resistance/Entity/Damage/" + damageType);
 		}
 
@@ -201,12 +201,12 @@ m.Template = m.Class({
 	},
 
 	"attackTypes": function() {
-		let attack = this.get("Attack");
+		const attack = this.get("Attack");
 		if (!attack)
 			return undefined;
 
-		let ret = [];
-		for (let type in attack)
+		const ret = [];
+		for (const type in attack)
 			ret.push(type);
 		return ret;
 	},
@@ -222,12 +222,12 @@ m.Template = m.Class({
 	},
 
 	"attackStrengths": function(type) {
-		let attackDamageTypes = this.get("Attack/" + type + "/Damage");
+		const attackDamageTypes = this.get("Attack/" + type + "/Damage");
 		if (!attackDamageTypes)
 			return undefined;
 
-		let damage = {};
-		for (let damageType in attackDamageTypes)
+		const damage = {};
+		for (const damageType in attackDamageTypes)
 			damage[damageType] = +attackDamageTypes[damageType];
 
 		return damage;
@@ -253,19 +253,19 @@ m.Template = m.Class({
 	// returns the classes this templates counters:
 	// Return type is [ [-neededClasses- , multiplier], … ].
 	"getCounteredClasses": function() {
-		let attack = this.get("Attack");
+		const attack = this.get("Attack");
 		if (!attack)
 			return undefined;
 
-		let Classes = [];
-		for (let type in attack)
+		const Classes = [];
+		for (const type in attack)
 		{
-			let bonuses = this.get("Attack/" + type + "/Bonuses");
+			const bonuses = this.get("Attack/" + type + "/Bonuses");
 			if (!bonuses)
 				continue;
-			for (let b in bonuses)
+			for (const b in bonuses)
 			{
-				let bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
+				const bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
 				if (bonusClasses)
 					Classes.push([bonusClasses.split(" "), +this.get("Attack/" + type +"/Bonuses/" + b +"/Multiplier")]);
 			}
@@ -276,18 +276,18 @@ m.Template = m.Class({
 	// returns true if the entity counters the target entity.
 	// TODO: refine using the multiplier
 	"counters": function(target) {
-		let attack = this.get("Attack");
+		const attack = this.get("Attack");
 		if (!attack)
 			return false;
-		let mcounter = [];
-		for (let type in attack)
+		const mcounter = [];
+		for (const type in attack)
 		{
-			let bonuses = this.get("Attack/" + type + "/Bonuses");
+			const bonuses = this.get("Attack/" + type + "/Bonuses");
 			if (!bonuses)
 				continue;
-			for (let b in bonuses)
+			for (const b in bonuses)
 			{
-				let bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
+				const bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
 				if (bonusClasses)
 					mcounter.concat(bonusClasses.split(" "));
 			}
@@ -300,15 +300,15 @@ m.Template = m.Class({
 		if (!this.get("Attack/" + type +""))
 			return undefined;
 
-		let bonuses = this.get("Attack/" + type + "/Bonuses");
+		const bonuses = this.get("Attack/" + type + "/Bonuses");
 		if (bonuses)
 		{
-			for (let b in bonuses)
+			for (const b in bonuses)
 			{
-				let bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
+				const bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
 				if (!bonusClasses)
 					continue;
-				for (let bcl of bonusClasses.split(" "))
+				for (const bcl of bonusClasses.split(" "))
 					if (bcl == againstClass)
 						return +this.get("Attack/" + type + "/Bonuses/" + b + "/Multiplier");
 			}
@@ -317,7 +317,7 @@ m.Template = m.Class({
 	},
 
 	"buildableEntities": function(civ) {
-		let templates = this.get("Builder/Entities/_string");
+		const templates = this.get("Builder/Entities/_string");
 		if (!templates)
 			return [];
 		return templates.replace(/\{native\}/g, this.civ()).replace(/\{civ\}/g, civ).split(/\s+/);
@@ -334,13 +334,13 @@ m.Template = m.Class({
 		const templates = this.get("Researcher/Technologies/_string");
 		if (!templates)
 			return undefined;
-		let techs = templates.split(/\s+/);
+		const techs = templates.split(/\s+/);
 		for (let i = 0; i < techs.length; ++i)
 		{
-			let tech = techs[i];
+			const tech = techs[i];
 			if (tech.indexOf("{civ}") == -1)
 				continue;
-			let civTech = tech.replace("{civ}", civ);
+			const civTech = tech.replace("{civ}", civ);
 			techs[i] = TechnologyTemplates.Has(civTech) ?
 			           civTech : tech.replace("{civ}", "generic");
 		}
@@ -350,7 +350,7 @@ m.Template = m.Class({
 	"resourceSupplyType": function() {
 		if (!this.get("ResourceSupply"))
 			return undefined;
-		let [type, subtype] = this.get("ResourceSupply/Type").split('.');
+		const [type, subtype] = this.get("ResourceSupply/Type").split('.');
 		return { "generic": type, "specific": subtype };
 	},
 
@@ -369,9 +369,9 @@ m.Template = m.Class({
 	"resourceGatherRates": function() {
 		if (!this.get("ResourceGatherer"))
 			return undefined;
-		let ret = {};
-		let baseSpeed = +this.get("ResourceGatherer/BaseSpeed");
-		for (let r in this.get("ResourceGatherer/Rates"))
+		const ret = {};
+		const baseSpeed = +this.get("ResourceGatherer/BaseSpeed");
+		for (const r in this.get("ResourceGatherer/Rates"))
 			ret[r] = +this.get("ResourceGatherer/Rates/" + r) * baseSpeed;
 		return ret;
 	},
@@ -380,7 +380,7 @@ m.Template = m.Class({
 		if (!this.get("ResourceDropsite"))
 			return undefined;
 
-		let types = this.get("ResourceDropsite/Types");
+		const types = this.get("ResourceDropsite/Types");
 		return types ? types.split(/\s+/) : [];
 	},
 
@@ -394,8 +394,8 @@ m.Template = m.Class({
 	"treasureResources": function() {
 		if (!this.get("Treasure"))
 			return undefined;
-		let ret = {};
-		for (let r in this.get("Treasure/Resources"))
+		const ret = {};
+		for (const r in this.get("Treasure/Resources"))
 			ret[r] = +this.get("Treasure/Resources/" + r);
 		return ret;
 	},
@@ -446,11 +446,11 @@ m.Template = m.Class({
 	"buildCategory": function() { return this.get("BuildRestrictions/Category"); },
 
 	"buildDistance": function() {
-		let distance = this.get("BuildRestrictions/Distance");
+		const distance = this.get("BuildRestrictions/Distance");
 		if (!distance)
 			return undefined;
-		let ret = {};
-		for (let key in distance)
+		const ret = {};
+		for (const key in distance)
 			ret[key] = this.get("BuildRestrictions/Distance/" + key);
 		return ret;
 	},
@@ -460,12 +460,12 @@ m.Template = m.Class({
 	"buildTerritories": function() {
 		if (!this.get("BuildRestrictions"))
 			return undefined;
-		let territory = this.get("BuildRestrictions/Territory");
+		const territory = this.get("BuildRestrictions/Territory");
 		return !territory ? undefined : territory.split(/\s+/);
 	},
 
 	"hasBuildTerritory": function(territory) {
-		let territories = this.buildTerritories();
+		const territories = this.buildTerritories();
 		return territories && territories.indexOf(territory) != -1;
 	},
 
@@ -512,10 +512,10 @@ m.Template = m.Class({
 	"isGatherer": function() { return this.get("ResourceGatherer") !== undefined; },
 
 	"canGather": function(type) {
-		let gatherRates = this.get("ResourceGatherer/Rates");
+		const gatherRates = this.get("ResourceGatherer/Rates");
 		if (!gatherRates)
 			return false;
-		for (let r in gatherRates)
+		for (const r in gatherRates)
 			if (r.split('.')[0] === type)
 				return true;
 		return false;
@@ -537,7 +537,7 @@ m.Template = m.Class({
 			return true;
 		if (!target.get("Capturable"))
 			return false;
-		let restrictedClasses = this.get("Attack/Capture/RestrictedClasses/_string");
+		const restrictedClasses = this.get("Attack/Capture/RestrictedClasses/_string");
 		return !restrictedClasses || !target.hasClasses(restrictedClasses);
 	},
 
@@ -627,11 +627,11 @@ m.Entity = m.Class({
 	},
 
 	"trainingQueueTime": function() {
-		let queue = this._entity.trainingQueue;
+		const queue = this._entity.trainingQueue;
 		if (!queue)
 			return undefined;
 		let time = 0;
-		for (let item of queue)
+		for (const item of queue)
 			time += item.timeRemaining;
 		return time / 1000;
 	},
@@ -677,7 +677,7 @@ m.Entity = m.Class({
 
 	"isFull": function()
 	{
-		let numGatherers = this.resourceSupplyNumGatherers();
+		const numGatherers = this.resourceSupplyNumGatherers();
 		if (numGatherers)
 			return this.maxGatherers() === numGatherers;
 
@@ -704,11 +704,11 @@ m.Entity = m.Class({
 				res = this._ai._entities.get(this.unitAIOrderData()[1].target);
 			if (!res)
 				return 0;
-			let type = res.resourceSupplyType();
+			const type = res.resourceSupplyType();
 			if (!type)
 				return 0;
 
-			let tstring = type.generic + "." + type.specific;
+			const tstring = type.generic + "." + type.specific;
 			let rate = +this.get("ResourceGatherer/BaseSpeed");
 			rate *= +this.get("ResourceGatherer/Rates/" +tstring);
 			if (rate)
@@ -728,7 +728,7 @@ m.Entity = m.Class({
 		let count = 0;
 
 		if (this._entity.garrisoned)
-			for (let ent of this._entity.garrisoned)
+			for (const ent of this._entity.garrisoned)
 				count += +this._ai._entities.get(ent).garrisonSize();
 
 		return count;
@@ -744,15 +744,15 @@ m.Entity = m.Class({
 	 */
 	"canAttackClass": function(aClass)
 	{
-		let attack = this.get("Attack");
+		const attack = this.get("Attack");
 		if (!attack)
 			return false;
 
-		for (let type in attack)
+		for (const type in attack)
 		{
 			if (type == "Slaughter")
 				continue;
-			let restrictedClasses = this.get("Attack/" + type + "/RestrictedClasses/_string");
+			const restrictedClasses = this.get("Attack/" + type + "/RestrictedClasses/_string");
 			if (!restrictedClasses || !MatchesClassList([aClass], restrictedClasses))
 				return true;
 		}
@@ -765,21 +765,21 @@ m.Entity = m.Class({
 	 */
 	"canAttackTarget": function(target, allowCapture)
 	{
-		let attackTypes = this.get("Attack");
+		const attackTypes = this.get("Attack");
 		if (!attackTypes)
 			return false;
 
-		let canCapture = allowCapture && this.canCapture(target);
-		let health = target.get("Health");
+		const canCapture = allowCapture && this.canCapture(target);
+		const health = target.get("Health");
 		if (!health)
 			return canCapture;
 
-		for (let type in attackTypes)
+		for (const type in attackTypes)
 		{
 			if (type == "Capture" ? !canCapture : target.isInvulnerable())
 				continue;
 
-			let restrictedClasses = this.get("Attack/" + type + "/RestrictedClasses/_string");
+			const restrictedClasses = this.get("Attack/" + type + "/RestrictedClasses/_string");
 			if (!restrictedClasses || !target.hasClasses(restrictedClasses))
 				return true;
 		}
@@ -860,7 +860,7 @@ m.Entity = m.Class({
 		if (this.position() !== undefined)
 		{
 			let direction = [this.position()[0] - point[0], this.position()[1] - point[1]];
-			let norm = m.VectorDistance(point, this.position());
+			const norm = m.VectorDistance(point, this.position());
 			if (norm === 0)
 				direction = [1, 0];
 			else
@@ -877,9 +877,9 @@ m.Entity = m.Class({
 	"flee": function(unitToFleeFrom) {
 		if (this.position() !== undefined && unitToFleeFrom.position() !== undefined)
 		{
-			let FleeDirection = [this.position()[0] - unitToFleeFrom.position()[0],
+			const FleeDirection = [this.position()[0] - unitToFleeFrom.position()[0],
 			                     this.position()[1] - unitToFleeFrom.position()[1]];
-			let dist = m.VectorDistance(unitToFleeFrom.position(), this.position());
+			const dist = m.VectorDistance(unitToFleeFrom.position(), this.position());
 			FleeDirection[0] = 40 * FleeDirection[0] / dist;
 			FleeDirection[1] = 40 * FleeDirection[1] / dist;
 
@@ -919,7 +919,7 @@ m.Entity = m.Class({
 	},
 
 	"setRallyPoint": function(target, command) {
-		let data = { "command": command, "target": target.id() };
+		const data = { "command": command, "target": target.id() };
 		Engine.PostCommand(PlayerID, { "type": "set-rallypoint", "entities": [this.id()], "x": target.position()[0], "z": target.position()[1], "data": data });
 		return this;
 	},
@@ -931,7 +931,7 @@ m.Entity = m.Class({
 
 	"train": function(civ, type, count, metadata, pushFront = false)
 	{
-		let trainable = this.trainableEntities(civ);
+		const trainable = this.trainableEntities(civ);
 		if (!trainable)
 		{
 			error("Called train("+type+", "+count+") on non-training entity "+this);
@@ -990,10 +990,10 @@ m.Entity = m.Class({
 	},
 
 	"stopAllProduction": function(percentToStopAt) {
-		let queue = this._entity.trainingQueue;
+		const queue = this._entity.trainingQueue;
 		if (!queue)
 			return true;	// no queue, so technically we stopped all production.
-		for (let item of queue)
+		for (const item of queue)
 			if (item.progress < percentToStopAt)
 				Engine.PostCommand(PlayerID, { "type": "stop-production", "entity": this.id(), "id": item.id });
 		return this;

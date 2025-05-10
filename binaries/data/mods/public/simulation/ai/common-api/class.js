@@ -15,7 +15,7 @@ m.Class = function(data)
 	if (data._super)
 		ctor.prototype = { "__proto__": data._super.prototype };
 
-	for (let key in data)
+	for (const key in data)
 		ctor.prototype[key] = data[key];
 
 	return ctor;

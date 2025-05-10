@@ -7,7 +7,7 @@ m.EntityCollection = function(sharedAI, entities = new Map(), filters = [])
 	this._entities = entities;
 	this._filters = filters;
 	this.dynamicProp = [];
-	for (let filter of this._filters)
+	for (const filter of this._filters)
 		if (filter.dynamicProperties.length)
 			this.dynamicProp = this.dynamicProp.concat(filter.dynamicProperties);
 
@@ -17,8 +17,8 @@ m.EntityCollection = function(sharedAI, entities = new Map(), filters = [])
 
 m.EntityCollection.prototype.Serialize = function()
 {
-	let filters = [];
-	for (let f of this._filters)
+	const filters = [];
+	for (const f of this._filters)
 		filters.push(uneval(f));
 	return {
 		"ents": this.toIdArray(),
@@ -30,10 +30,10 @@ m.EntityCollection.prototype.Serialize = function()
 m.EntityCollection.prototype.Deserialize = function(data, sharedAI)
 {
 	this._ai = sharedAI;
-	for (let id of data.ents)
+	for (const id of data.ents)
 		this._entities.set(id, sharedAI._entities.get(id));
 
-	for (let f of data.filters)
+	for (const f of data.filters)
 		this._filters.push(eval(f));
 
 	if (data.frozen)
@@ -83,8 +83,8 @@ m.EntityCollection.prototype.filter = function(filter, thisp)
 	if (typeof filter == "function")
 		filter = { "func": filter, "dynamicProperties": [] };
 
-	let ret = new Map();
-	for (let [id, ent] of this._entities)
+	const ret = new Map();
+	for (const [id, ent] of this._entities)
 		if (filter.func.call(thisp, ent, id, this))
 			ret.set(id, ent);
 
@@ -97,8 +97,8 @@ m.EntityCollection.prototype.filter = function(filter, thisp)
 m.EntityCollection.prototype.filterNearest = function(targetPos, n)
 {
 	// Compute the distance of each entity
-	let data = []; // [ [id, ent, distance], ... ]
-	for (let [id, ent] of this._entities)
+	const data = []; // [ [id, ent, distance], ... ]
+	for (const [id, ent] of this._entities)
 		if (ent.position())
 			data.push([id, ent, m.SquareVectorDistance(targetPos, ent.position())]);
 
@@ -111,7 +111,7 @@ m.EntityCollection.prototype.filterNearest = function(targetPos, n)
 		n = Math.min(n, data.length);
 
 	// Extract the first n
-	let ret = new Map();
+	const ret = new Map();
 	for (let i = 0; i < n; ++i)
 		ret.set(data[i][0], data[i][1]);
 
@@ -120,10 +120,10 @@ m.EntityCollection.prototype.filterNearest = function(targetPos, n)
 
 m.EntityCollection.prototype.filter_raw = function(callback, thisp)
 {
-	let ret = new Map();
-	for (let [id, ent] of this._entities)
+	const ret = new Map();
+	for (const [id, ent] of this._entities)
 	{
-		let val = ent._entity;
+		const val = ent._entity;
 		if (callback.call(thisp, val, id, this))
 			ret.set(id, ent);
 	}
@@ -132,7 +132,7 @@ m.EntityCollection.prototype.filter_raw = function(callback, thisp)
 
 m.EntityCollection.prototype.forEach = function(callback)
 {
-	for (let ent of this._entities.values())
+	for (const ent of this._entities.values())
 		callback(ent);
 	return this;
 };
@@ -187,7 +187,7 @@ m.EntityCollection.prototype.attackMove = function(x, z, targetClasses, allowCap
 
 m.EntityCollection.prototype.moveIndiv = function(x, z, queued = false, pushFront = false)
 {
-	for (let id of this._entities.keys())
+	for (const id of this._entities.keys())
 		Engine.PostCommand(PlayerID, {
 			"type": "walk",
 			"entities": [id],
@@ -255,9 +255,9 @@ m.EntityCollection.prototype.setStance = function(stance)
 /** Returns the average position of all units */
 m.EntityCollection.prototype.getCentrePosition = function()
 {
-	let sumPos = [0, 0];
+	const sumPos = [0, 0];
 	let count = 0;
-	for (let ent of this._entities.values())
+	for (const ent of this._entities.values())
 	{
 		if (!ent.position())
 			continue;
@@ -276,9 +276,9 @@ m.EntityCollection.prototype.getCentrePosition = function()
  */
 m.EntityCollection.prototype.getApproximatePosition = function(sample)
 {
-	let sumPos = [0, 0];
+	const sumPos = [0, 0];
 	let i = 0;
-	for (let ent of this._entities.values())
+	for (const ent of this._entities.values())
 	{
 		if (!ent.position())
 			continue;
@@ -325,7 +325,7 @@ m.EntityCollection.prototype.addEnt = function(ent)
 m.EntityCollection.prototype.updateEnt = function(ent, force)
 {
 	let passesFilters = true;
-	for (let filter of this._filters)
+	for (const filter of this._filters)
 		passesFilters = passesFilters && filter.func(ent);
 
 	if (passesFilters)

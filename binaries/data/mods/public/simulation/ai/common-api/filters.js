@@ -119,7 +119,7 @@ m.Filters = {
 
 			// Don't go for floating treasures since we might not be able
 			// to reach them and that kills the pathfinder.
-			let template = ent.templateName();
+			const template = ent.templateName();
 			return template != "gaia/treasure/shipwreck_debris" &&
 			    template != "gaia/treasure/shipwreck";
 		},
@@ -131,7 +131,7 @@ m.Filters = {
 			if (!ent.resourceSupplyMax())
 				return false;
 
-			let type = ent.resourceSupplyType();
+			const type = ent.resourceSupplyType();
 			if (!type)
 				return false;
 
