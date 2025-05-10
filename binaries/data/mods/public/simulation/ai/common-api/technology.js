@@ -8,13 +8,13 @@ var API3 = function(m)
 m.Technology = function(templateName)
 {
 	this._templateName = templateName;
-	let template = TechnologyTemplates.Get(templateName);
+	const template = TechnologyTemplates.Get(templateName);
 
 	// check if this is one of two paired technologies.
 	this._isPair = template.pair !== undefined;
 	if (this._isPair)
 	{
-		let pairTech = TechnologyTemplates.Get(template.pair);
+		const pairTech = TechnologyTemplates.Get(template.pair);
 		this._pairedWith = pairTech.top == templateName ? pairTech.bottom : pairTech.top;
 	}
 
@@ -69,8 +69,8 @@ m.Technology.prototype.cost = function(researcher)
 {
 	if (!this._template.cost)
 		return undefined;
-	let cost = {};
-	for (let type in this._template.cost)
+	const cost = {};
+	for (const type in this._template.cost)
 	{
 		cost[type] = +this._template.cost[type];
 		if (researcher)
@@ -85,7 +85,7 @@ m.Technology.prototype.costSum = function(researcher)
 	if (!cost)
 		return 0;
 	let ret = 0;
-	for (let type in cost)
+	for (const type in cost)
 		ret += cost[type];
 	return ret;
 };

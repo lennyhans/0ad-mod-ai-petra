@@ -10,7 +10,7 @@ var API3 = function(m)
 m.Map = function Map(sharedScript, type, originalMap, actualCopy)
 {
 	// get the correct dimensions according to the map type
-	let map = type == "territory" || type == "resource" ? sharedScript.territoryMap : sharedScript.passabilityMap;
+	const map = type == "territory" || type == "resource" ? sharedScript.territoryMap : sharedScript.passabilityMap;
 	this.width = map.width;
 	this.height = map.height;
 	this.cellSize = map.cellSize;
@@ -46,7 +46,7 @@ m.Map.prototype.gamePosToMapPos = function(p)
 
 m.Map.prototype.point = function(p)
 {
-	let q = this.gamePosToMapPos(p);
+	const q = this.gamePosToMapPos(p);
 	q[0] = q[0] >= this.width ? this.width-1 : q[0] < 0 ? 0 : q[0];
 	q[1] = q[1] >= this.width ? this.width-1 : q[1] < 0 ? 0 : q[1];
 	return this.map[q[0] + this.width * q[1]];
@@ -141,7 +141,7 @@ m.Map.prototype.findBestTile = function(radius, obstruction)
 	{
 		if (this.map[j] <= bestVal)
 			continue;
-		let i = this.getNonObstructedTile(j, radius, obstruction);
+		const i = this.getNonObstructedTile(j, radius, obstruction);
 		if (i < 0)
 			continue;
 		bestVal = this.map[j];
@@ -154,11 +154,11 @@ m.Map.prototype.findBestTile = function(radius, obstruction)
 /** return any non obstructed (small) tile inside the (big) tile i from obstruction map */
 m.Map.prototype.getNonObstructedTile = function(i, radius, obstruction)
 {
-	let ratio = this.cellSize / obstruction.cellSize;
-	let ix = (i % this.width) * ratio;
-	let iy = Math.floor(i / this.width) * ratio;
-	let w = obstruction.width;
-	let r2 = radius * radius;
+	const ratio = this.cellSize / obstruction.cellSize;
+	const ix = (i % this.width) * ratio;
+	const iy = Math.floor(i / this.width) * ratio;
+	const w = obstruction.width;
+	const r2 = radius * radius;
 	let lastPoint;
 	for (let kx = ix; kx < ix + ratio; ++kx)
 	{
@@ -181,21 +181,21 @@ m.Map.prototype.getNonObstructedTile = function(i, radius, obstruction)
 /** return true if the area centered on tile kx-ky and with radius is obstructed */
 m.Map.prototype.isObstructedTile = function(kx, ky, radius)
 {
-	let w = this.width;
+	const w = this.width;
 	if (kx < radius || kx >= w - radius || ky < radius || ky >= w - radius || this.map[kx+ky*w] == 0)
 		return { "x": kx, "y": ky };
 	if (!this.pattern || this.pattern[0] != radius)
 	{
 		this.pattern = [radius];
-		let r2 = radius * radius;
+		const r2 = radius * radius;
 		for (let i = 1; i <= radius; ++i)
 			this.pattern.push(Math.floor(Math.sqrt(r2 - (i-0.5)*(i-0.5)) + 0.5));
 	}
 	for (let dy = 0; dy <= radius; ++dy)
 	{
-		let dxmax = this.pattern[dy];
-		let xp = kx + (ky + dy)*w;
-		let xm = kx + (ky - dy)*w;
+		const dxmax = this.pattern[dy];
+		const xp = kx + (ky + dy)*w;
+		const xm = kx + (ky - dy)*w;
 		for (let dx = 0; dx <= dxmax; ++dx)
 		{
 			if (this.map[xp + dx] == 0)

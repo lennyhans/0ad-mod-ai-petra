@@ -34,15 +34,15 @@ m.TerrainAnalysis.prototype.LAND = 255;
 
 m.TerrainAnalysis.prototype.init = function(sharedScript, rawState)
 {
-	let passabilityMap = rawState.passabilityMap;
+	const passabilityMap = rawState.passabilityMap;
 	this.width = passabilityMap.width;
 	this.height = passabilityMap.height;
 	this.cellSize = passabilityMap.cellSize;
 
-	let obstructionMaskLand = rawState.passabilityClasses["default-terrain-only"];
-	let obstructionMaskWater = rawState.passabilityClasses["ship-terrain-only"];
+	const obstructionMaskLand = rawState.passabilityClasses["default-terrain-only"];
+	const obstructionMaskWater = rawState.passabilityClasses["ship-terrain-only"];
 
-	let obstructionTiles = new Uint8Array(passabilityMap.data.length);
+	const obstructionTiles = new Uint8Array(passabilityMap.data.length);
 
 
 	for (let i = 0; i < passabilityMap.data.length; ++i)
@@ -107,18 +107,18 @@ m.Accessibility.prototype.init = function(rawState, terrainAnalyser)
 
 	// calculating region links. Regions only touching diagonaly are not linked.
 	// since we're checking all of them, we'll check from the top left to the bottom right
-	let w = this.width;
+	const w = this.width;
 	for (let x = 0; x < this.width-1; ++x)
 	{
 		for (let y = 0; y < this.height-1; ++y)
 		{
 			// checking right.
-			let thisLID = this.landPassMap[x+y*w];
-			let thisNID = this.navalPassMap[x+y*w];
-			let rightLID = this.landPassMap[x+1+y*w];
-			let rightNID = this.navalPassMap[x+1+y*w];
-			let bottomLID = this.landPassMap[x+y*w+w];
-			let bottomNID = this.navalPassMap[x+y*w+w];
+			const thisLID = this.landPassMap[x+y*w];
+			const thisNID = this.navalPassMap[x+y*w];
+			const rightLID = this.landPassMap[x+1+y*w];
+			const rightNID = this.navalPassMap[x+1+y*w];
+			const bottomLID = this.landPassMap[x+y*w+w];
+			const bottomNID = this.navalPassMap[x+y*w+w];
 			if (thisLID > 1)
 			{
 				if (rightNID > 1)
@@ -149,18 +149,18 @@ m.Accessibility.prototype.init = function(rawState, terrainAnalyser)
 
 m.Accessibility.prototype.getAccessValue = function(position, onWater)
 {
-	let gamePos = this.gamePosToMapPos(position);
+	const gamePos = this.gamePosToMapPos(position);
 	if (onWater)
 		return this.navalPassMap[gamePos[0] + this.width*gamePos[1]];
 	let ret = this.landPassMap[gamePos[0] + this.width*gamePos[1]];
 	if (ret === 1)
 	{
 		// quick spiral search.
-		let indx = [ [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1]];
-		for (let i of indx)
+		const indx = [ [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1]];
+		for (const i of indx)
 		{
-			let id0 = gamePos[0] + i[0];
-			let id1 = gamePos[1] + i[1];
+			const id0 = gamePos[0] + i[0];
+			const id1 = gamePos[1] + i[1];
 			if (id0 < 0 || id0 >= this.width || id1 < 0 || id1 >= this.width)
 				continue;
 			ret = this.landPassMap[id0 + this.width*id1];
@@ -173,10 +173,10 @@ m.Accessibility.prototype.getAccessValue = function(position, onWater)
 
 m.Accessibility.prototype.getTrajectTo = function(start, end)
 {
-	let pstart = this.gamePosToMapPos(start);
-	let istart = pstart[0] + pstart[1]*this.width;
-	let pend = this.gamePosToMapPos(end);
-	let iend = pend[0] + pend[1]*this.width;
+	const pstart = this.gamePosToMapPos(start);
+	const istart = pstart[0] + pstart[1]*this.width;
+	const pend = this.gamePosToMapPos(end);
+	const iend = pend[0] + pend[1]*this.width;
 
 	let onLand = true;
 	if (this.landPassMap[istart] <= 1 && this.navalPassMap[istart] > 1)
@@ -190,7 +190,7 @@ m.Accessibility.prototype.getTrajectTo = function(start, end)
 	else if (endRegion <= 1)
 		return false;
 
-	let startRegion = onLand ? this.landPassMap[istart] : this.navalPassMap[istart];
+	const startRegion = onLand ? this.landPassMap[istart] : this.navalPassMap[istart];
 	return this.getTrajectToIndex(startRegion, endRegion);
 };
 
@@ -204,16 +204,16 @@ m.Accessibility.prototype.getTrajectToIndex = function(istart, iend)
 	if (istart === iend)
 		return [istart];
 
-	let trajects = new Set();
-	let explored = new Set();
+	const trajects = new Set();
+	const explored = new Set();
 	trajects.add([istart]);
 	explored.add(istart);
 	while (trajects.size)
 	{
-		for (let traj of trajects)
+		for (const traj of trajects)
 		{
-			let ilast = traj[traj.length-1];
-			for (let inew of this.regionLinks[ilast])
+			const ilast = traj[traj.length-1];
+			for (const inew of this.regionLinks[ilast])
 			{
 				if (inew === iend)
 					return traj.concat(iend);
@@ -230,9 +230,9 @@ m.Accessibility.prototype.getTrajectToIndex = function(istart, iend)
 
 m.Accessibility.prototype.getRegionSize = function(position, onWater)
 {
-	let pos = this.gamePosToMapPos(position);
-	let index = pos[0] + pos[1]*this.width;
-	let ID = onWater === true ? this.navalPassMap[index] : this.landPassMap[index];
+	const pos = this.gamePosToMapPos(position);
+	const index = pos[0] + pos[1]*this.width;
+	const ID = onWater === true ? this.navalPassMap[index] : this.landPassMap[index];
 	if (this.regionSize[ID] === undefined)
 		return 0;
 	return this.regionSize[ID];
@@ -291,12 +291,12 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 		this.regionSize.push(0);
 		this.regionType.push("inaccessible");
 	}
-	let w = this.width;
-	let h = this.height;
+	const w = this.width;
+	const h = this.height;
 
 	let y = 0;
 	// Get x and y from index
-	let IndexArray = [startIndex];
+	const IndexArray = [startIndex];
 	let newIndex;
 	while(IndexArray.length)
 	{
@@ -309,7 +309,7 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 		{
 			--y;
 			loop = false;
-			let index = newIndex + w*y;
+			const index = newIndex + w*y;
 			if (index < 0)
 				break;
 			if (floodFor === "land" && this.landPassMap[index] === 0 && this.map[index] !== this.IMPASSABLE && this.map[index] !== this.DEEP_WATER)

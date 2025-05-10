@@ -35,9 +35,9 @@ m.SquareVectorDistance = function(a, b)
  */
 m.getMaxMapIndex = function(i, map1, map2)
 {
-	let ratio = map1.cellSize / map2.cellSize;
-	let ix = (i % map1.width) * ratio;
-	let iy = Math.floor(i / map1.width) * ratio;
+	const ratio = map1.cellSize / map2.cellSize;
+	const ix = (i % map1.width) * ratio;
+	const iy = Math.floor(i / map1.width) * ratio;
 	let index;
 	for (let kx = 0; kx < ratio; ++kx)
 		for (let ky = 0; ky < ratio; ++ky)
@@ -52,10 +52,10 @@ m.getMaxMapIndex = function(i, map1, map2)
  */
 m.getMapIndices = function(i, map1, map2)
 {
-	let ratio = map1.cellSize / map2.cellSize;	// TODO check that this is integer >= 1 ?
-	let ix = (i % map1.width) * ratio;
-	let iy = Math.floor(i / map1.width) * ratio;
-	let ret = [];
+	const ratio = map1.cellSize / map2.cellSize;	// TODO check that this is integer >= 1 ?
+	const ix = (i % map1.width) * ratio;
+	const iy = Math.floor(i / map1.width) * ratio;
+	const ret = [];
 	for (let kx = 0; kx < ratio; ++kx)
 		for (let ky = 0; ky < ratio; ++ky)
 			ret.push(ix+kx+(iy+ky)*map2.width);
@@ -68,10 +68,10 @@ m.getMapIndices = function(i, map1, map2)
  */
 m.getMapPoints = function(i, map1, map2)
 {
-	let ratio = map1.cellSize / map2.cellSize;	// TODO check that this is integer >= 1 ?
-	let ix = (i % map1.width) * ratio;
-	let iy = Math.floor(i / map1.width) * ratio;
-	let ret = [];
+	const ratio = map1.cellSize / map2.cellSize;	// TODO check that this is integer >= 1 ?
+	const ix = (i % map1.width) * ratio;
+	const iy = Math.floor(i / map1.width) * ratio;
+	const ret = [];
 	for (let kx = 0; kx < ratio; ++kx)
 		for (let ky = 0; ky < ratio; ++ky)
 			ret.push([ix+kx, iy+ky]);
