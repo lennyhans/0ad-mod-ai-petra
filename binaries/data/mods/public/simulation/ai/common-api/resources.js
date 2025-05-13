@@ -1,6 +1,6 @@
 Resources = new Resources();
 
-var API3 = function(m)
+API3 = function(m)
 {
 
 m.Resources = function(amounts = {}, population = 0)

@@ -1,6 +1,6 @@
 LoadModificationTemplates();
 
-var API3 = function(m)
+API3 = function(m)
 {
 
 /** Wrapper around a technology template */

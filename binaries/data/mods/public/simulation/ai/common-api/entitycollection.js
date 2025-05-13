@@ -1,4 +1,4 @@
-var API3 = function(m)
+API3 = function(m)
 {
 
 m.EntityCollection = function(sharedAI, entities = new Map(), filters = [])

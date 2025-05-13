@@ -1,4 +1,4 @@
-var API3 = function(m)
+API3 = function(m)
 {
 /**
  * Provides a nicer syntax for defining classes,
