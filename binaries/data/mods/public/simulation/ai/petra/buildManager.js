@@ -90,7 +90,6 @@ PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
 		// at this stage, so we simply have to dump the cache.
 		this.builderCounters = new Map();
 
-		const civ = gameState.getPlayerCiv();
 		for (const ent of gameState.getOwnUnits().values())
 			this.incrementBuilderCounters(civ, ent, 1);
 	}
