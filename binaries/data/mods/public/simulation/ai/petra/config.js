@@ -21,7 +21,7 @@ PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
 	this.popScaling = 1;	// scale factor depending on the max population
 
 	this.Military = {
-		"towerLapseTime": 90,	// Time to wait between building 2 towers
+		"towerLapseTime": 360,	// Time to wait between building 2 towers
 		"fortressLapseTime": 390,	// Time to wait between building 2 fortresses
 		"popForBarracks1": 25,
 		"popForBarracks2": 95,
@@ -37,14 +37,14 @@ PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
 	};
 
 	this.Economy = {
-		"popPhase2": 38,	// How many units we want before aging to phase2.
-		"workPhase3": 65,	// How many workers we want before aging to phase3.
-		"workPhase4": 80,	// How many workers we want before aging to phase4 or higher.
+		"popPhase2": 150,	// How many units we want before aging to phase2.
+		"workPhase3": 180,	// How many workers we want before aging to phase3.
+		"workPhase4": 200,	// How many workers we want before aging to phase4 or higher.
 		"popForDock": 25,
-		"targetNumWorkers": 40,	// dummy, will be changed later
-		"targetNumTraders": 5,	// Target number of traders
+		"targetNumWorkers": 60,	// dummy, will be changed later
+		"targetNumTraders": 1,	// Target number of traders
 		"targetNumFishers": 1,	// Target number of fishers per sea
-		"supportRatio": 0.35,	// fraction of support workers among the workforce
+		"supportRatio": 0.3,	// fraction of support workers among the workforce
 		"provisionFields": 2
 	};
 
@@ -119,23 +119,23 @@ PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
 
 	this.priorities =
 	{
-		"villager": 30,      // should be slightly lower than the citizen soldier one to not get all the food
-		"citizenSoldier": 60,
-		"trader": 50,
+		"villager": 300,      // should be slightly lower than the citizen soldier one to not get all the food
+		"citizenSoldier": 600,
+		"trader": 1,
 		"healer": 20,
-		"ships": 70,
-		"house": 350,
-		"dropsites": 200,
-		"field": 400,
+		"ships": 1,
+		"house": 250,
+		"dropsites": 950,
+		"field": 450,
 		"dock": 90,
-		"corral": 100,
-		"economicBuilding": 90,
-		"militaryBuilding": 130,
+		"corral": 1,
+		"economicBuilding": 700,
+		"militaryBuilding": 330,
 		"defenseBuilding": 70,
-		"civilCentre": 950,
+		"civilCentre": 1,
 		"majorTech": 700,
 		"minorTech": 250,
-		"wonder": 1000,
+		"wonder": 1,
 		"emergency": 1000    // used only in emergency situations, should be the highest one
 	};
 
@@ -314,11 +314,11 @@ PETRA.Config.prototype.setConfig = function(gameState)
 	if (this.difficulty < PETRA.DIFFICULTY_EASY)
 		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
-	this.emergencyValues = {
-		"population": this.criticalPopulationFactors[this.difficulty],
-		"structures": this.criticalStructureFactors[this.difficulty],
-		"roots": this.criticalRootFactors[this.difficulty],
-	};
+		this.emergencyValues = {
+			"population": this.criticalPopulationFactors[this.difficulty],
+			"structures": this.criticalStructureFactors[this.difficulty],
+			"roots": this.criticalRootFactors[this.difficulty],
+		};
 
 	this.Cheat(gameState);
 
