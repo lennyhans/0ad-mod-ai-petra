@@ -24,16 +24,16 @@ PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
 		"towerLapseTime": 360,	// Time to wait between building 2 towers
 		"fortressLapseTime": 390,	// Time to wait between building 2 fortresses
 		"popForBarracks1": 25,
-		"popForBarracks2": 95,
+		"popForBarracks2": 55,
 		"popForForge": 65,
 		"numSentryTowers": 1
 	};
 
 	this.DamageTypeImportance = {
-		"Hack": 0.085,
-		"Pierce": 0.075,
-		"Crush": 0.065,
-		"Fire": 0.095
+		"Hack": 0.075,
+		"Pierce": 0.085,
+		"Crush": 0.045,
+		"Fire": 0.001
 	};
 
 	this.Economy = {
@@ -126,7 +126,7 @@ PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
 		"ships": 1,
 		"house": 250,
 		"dropsites": 950,
-		"field": 450,
+		"field": 480,
 		"dock": 90,
 		"corral": 1,
 		"economicBuilding": 700,
