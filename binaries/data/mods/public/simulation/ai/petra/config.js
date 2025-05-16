@@ -314,11 +314,11 @@ PETRA.Config.prototype.setConfig = function(gameState)
 	if (this.difficulty < PETRA.DIFFICULTY_EASY)
 		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
-		this.emergencyValues = {
-			"population": this.criticalPopulationFactors[this.difficulty],
-			"structures": this.criticalStructureFactors[this.difficulty],
-			"roots": this.criticalRootFactors[this.difficulty],
-		};
+	this.emergencyValues = {
+		"population": this.criticalPopulationFactors[this.difficulty],
+		"structures": this.criticalStructureFactors[this.difficulty],
+		"roots": this.criticalRootFactors[this.difficulty],
+	};
 
 	this.Cheat(gameState);
 
