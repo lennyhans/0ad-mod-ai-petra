@@ -259,22 +259,21 @@ m.GameState.prototype.checkTechRequirements = function(reqs)
 	if (!reqs.length)
 		return true;
 
-	function doesEntitySpecPass(entity)
-	{
+	const doesEntitySpecPass = entity => {
 		switch (entity.check)
 		{
 		case "count":
-			if (!this.playerData.classCounts[entity.class] || this.playerData.classCounts[entity.class] < entity.number)
-				return false;
-			break;
+			return this.playerData.classCounts[entity.class] &&
+					this.playerData.classCounts[entity.class] >= entity.number;
 
 		case "variants":
-			if (!this.playerData.typeCountsByClass[entity.class] || Object.keys(this.playerData.typeCountsByClass[entity.class]).length < entity.number)
-				return false;
-			break;
+			return this.playerData.typeCountsByClass[entity.class] &&
+					Object.keys(this.playerData.typeCountsByClass[entity.class]).length >= entity.number;
+
+		default:
+			return true;
 		}
-		return true;
-	}
+	};
 
 	return reqs.some(req => {
 		return Object.keys(req).every(type => {
@@ -284,9 +283,10 @@ m.GameState.prototype.checkTechRequirements = function(reqs)
 				return req[type].every(tech => this.playerData.researchedTechs.has(tech));
 
 			case "entities":
-				return req[type].every(doesEntitySpecPass, this);
+				return req[type].every(doesEntitySpecPass);
+			default:
+				return false;
 			}
-			return false;
 		});
 	});
 };
