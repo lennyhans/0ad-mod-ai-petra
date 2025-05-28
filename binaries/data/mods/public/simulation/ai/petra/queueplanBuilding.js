@@ -591,9 +591,8 @@ PETRA.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template
 	const oldTemplate = this.template;
 	const oldMetadata = this.metadata;
 	this.template = template;
-	let pos;
 	this.metadata = { "land": land, "oversea": true };
-	pos = this.findDockPosition(gameState);
+	const pos = this.findDockPosition(gameState);
 	if (pos)
 	{
 		const type = template.templateName();
