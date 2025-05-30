@@ -116,7 +116,7 @@ PETRA.NavalManager.prototype.init = function(gameState, deserializing)
 		if (!this.landingZones[land])
 			this.landingZones[land] = {};
 		if (!this.landingZones[land][naval])
-		    this.landingZones[land][naval] = new Set();
+			this.landingZones[land][naval] = new Set();
 		this.landingZones[land][naval].add(i);
 	}
 	// and keep only thoses with enough room around when possible

@@ -113,7 +113,7 @@ PETRA.getLandAccess = function(gameState, ent)
 			for (let d = 3; d < halfDepth; d += 3)
 			{
 				const pos = [ entPos[0] - d * sina,
-				            entPos[1] - d * cosa];
+					entPos[1] - d * cosa];
 				access = gameState.ai.accessibility.getAccessValue(pos);
 				if (access > 1)
 					break;
@@ -140,7 +140,7 @@ PETRA.getSeaAccess = function(gameState, ent)
 			for (let d = 3; d < 15; d += 3)
 			{
 				const pos = [ entPos[0] + d * sina,
-				            entPos[1] + d * cosa];
+					entPos[1] + d * cosa];
 				sea = gameState.ai.accessibility.getAccessValue(pos, true);
 				if (sea > 1)
 					break;
@@ -231,7 +231,7 @@ PETRA.returnResources = function(gameState, ent)
 	let distmin = Math.min();
 	const access = PETRA.getLandAccess(gameState, ent);
 	const dropsiteCollection = gameState.playerData.hasSharedDropsites ?
-	                         gameState.getAnyDropsites(resource) : gameState.getOwnDropsites(resource);
+		gameState.getAnyDropsites(resource) : gameState.getOwnDropsites(resource);
 	for (const dropsite of dropsiteCollection.values())
 	{
 		if (!dropsite.position())

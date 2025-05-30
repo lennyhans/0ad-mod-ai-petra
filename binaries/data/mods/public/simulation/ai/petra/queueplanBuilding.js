@@ -739,7 +739,7 @@ PETRA.ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, 
  * if wantedSea is given, this tile should be inside this sea
  */
 PETRA.ConstructionPlan.prototype.around = [[ 1.0, 0.0], [ 0.87, 0.50], [ 0.50, 0.87], [ 0.0, 1.0], [-0.50, 0.87], [-0.87, 0.50],
-	        [-1.0, 0.0], [-0.87, -0.50], [-0.50, -0.87], [ 0.0, -1.0], [ 0.50, -0.87], [ 0.87, -0.50]];
+	[-1.0, 0.0], [-0.87, -0.50], [-0.50, -0.87], [ 0.0, -1.0], [ 0.50, -0.87], [ 0.87, -0.50]];
 
 PETRA.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimension, wantedLand, wantedSea)
 {

@@ -5,8 +5,7 @@ API3 = function(m)
  * The map module.
  * Copied with changes from QuantumState's original for qBot, it's a component for storing 8 bit values.
  */
-
-/** The function needs to be named too because of the copyConstructor functionality */
+// The function needs to be named too because of the copyConstructor functionality
 m.Map = function Map(sharedScript, type, originalMap, actualCopy)
 {
 	// get the correct dimensions according to the map type

@@ -133,7 +133,7 @@ PETRA.Worker.prototype.update = function(gameState, ent)
 						const distanceSquare = PETRA.isFastMoving(ent) ? 90000 : 30000;
 						const targetAccess = PETRA.getLandAccess(gameState, target);
 						const foodDropsites = gameState.playerData.hasSharedDropsites ?
-						                    gameState.getAnyDropsites("food") : gameState.getOwnDropsites("food");
+							gameState.getAnyDropsites("food") : gameState.getOwnDropsites("food");
 						let hasFoodDropsiteWithinDistance = false;
 						for (const dropsite of foodDropsites.values())
 						{
@@ -153,7 +153,7 @@ PETRA.Worker.prototype.update = function(gameState, ent)
 						}
 						if (!hasFoodDropsiteWithinDistance)
 						{
-							 if (this.retryWorking(gameState, subrole))
+							if (this.retryWorking(gameState, subrole))
 								return;
 							ent.stopMoving();
 						}
@@ -766,7 +766,7 @@ PETRA.Worker.prototype.startHunting = function(gameState, position)
 	const isRanged = this.ent.hasClass("Ranged");
 	const entPosition = position ? position : this.ent.position();
 	const foodDropsites = gameState.playerData.hasSharedDropsites ?
-	                    gameState.getAnyDropsites("food") : gameState.getOwnDropsites("food");
+		gameState.getAnyDropsites("food") : gameState.getOwnDropsites("food");
 
 	const hasFoodDropsiteWithinDistance = function(supplyPosition, supplyAccess, distSquare)
 	{
@@ -875,7 +875,7 @@ PETRA.Worker.prototype.startFishing = function(gameState)
 
 	const fisherSea = PETRA.getSeaAccess(gameState, this.ent);
 	const fishDropsites = (gameState.playerData.hasSharedDropsites ? gameState.getAnyDropsites("food") : gameState.getOwnDropsites("food")).
-	                    filter(API3.Filters.byClass("Dock")).toEntityArray();
+		filter(API3.Filters.byClass("Dock")).toEntityArray();
 
 	const nearestDropsiteDist = function(supply) {
 		let distMin = 1000000;

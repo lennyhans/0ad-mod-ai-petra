@@ -431,7 +431,7 @@ PETRA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 		return true;
 	// no minsize as we don't want the plan to fail at the last minute though.
 	const stat = { "priority": 1, "minSize": 0, "targetSize": targetSize, "batchSize": Math.min(targetSize, 2),
-		 "classes": classes[i], "interests": [ ["siegeStrength", 3] ] };
+		"classes": classes[i], "interests": [ ["siegeStrength", 3] ] };
 	this.addBuildOrder(gameState, "Siege", stat, true);
 	return true;
 };
@@ -995,7 +995,7 @@ PETRA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 	// TODO Should add naval attacks against the last remaining ships.
 	if (!targets.hasEntities())
 		targets = gameState.getEntities(playerEnemy).filter(API3.Filters.byClass("ConquestCritical")).
-		                                       filter(API3.Filters.not(API3.Filters.byClass("Ship")));
+			filter(API3.Filters.not(API3.Filters.byClass("Ship")));
 	return targets;
 };
 

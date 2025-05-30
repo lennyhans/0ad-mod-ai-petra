@@ -11,7 +11,6 @@ API3 = function(m)
  * This is intended for use with 8 bit maps for reduced memory usage.
  * Upgraded from QuantumState's original TerrainAnalysis for qBot.
  */
-
 m.TerrainAnalysis = function()
 {
 };

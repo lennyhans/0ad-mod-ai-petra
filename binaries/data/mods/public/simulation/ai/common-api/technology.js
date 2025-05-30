@@ -4,7 +4,6 @@ API3 = function(m)
 {
 
 /** Wrapper around a technology template */
-
 m.Technology = function(templateName)
 {
 	this._templateName = templateName;

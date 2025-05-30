@@ -342,7 +342,7 @@ m.Template = m.Class({
 				continue;
 			const civTech = tech.replace("{civ}", civ);
 			techs[i] = TechnologyTemplates.Has(civTech) ?
-			           civTech : tech.replace("{civ}", "generic");
+				civTech : tech.replace("{civ}", "generic");
 		}
 		return techs;
 	},
@@ -878,7 +878,7 @@ m.Entity = m.Class({
 		if (this.position() !== undefined && unitToFleeFrom.position() !== undefined)
 		{
 			const FleeDirection = [this.position()[0] - unitToFleeFrom.position()[0],
-			                     this.position()[1] - unitToFleeFrom.position()[1]];
+				this.position()[1] - unitToFleeFrom.position()[1]];
 			const dist = m.VectorDistance(unitToFleeFrom.position(), this.position());
 			FleeDirection[0] = 40 * FleeDirection[0] / dist;
 			FleeDirection[1] = 40 * FleeDirection[1] / dist;

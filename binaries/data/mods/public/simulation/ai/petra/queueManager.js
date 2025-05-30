@@ -181,7 +181,7 @@ PETRA.QueueManager.prototype.printQueues = function(gameState)
 	}
 	API3.warn("Accounts");
 	for (const p in this.accounts)
-	    API3.warn(p + ": " + uneval(this.accounts[p]));
+		API3.warn(p + ": " + uneval(this.accounts[p]));
 	API3.warn("Current Resources: " + uneval(gameState.getResources()));
 	API3.warn("Available Resources: " + uneval(this.getAvailableResources(gameState)));
 	API3.warn("Wanted Gather Rates: " + uneval(gameState.ai.HQ.GetWantedGatherRates(gameState)));
