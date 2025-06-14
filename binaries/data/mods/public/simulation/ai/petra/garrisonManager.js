@@ -295,6 +295,7 @@ PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 	case PETRA.GarrisonManager.TYPE_TRADE:		// trader garrisoned in ship
 		return true;
 	case PETRA.GarrisonManager.TYPE_PROTECTION:	// hurt unit for healing or infantry for defense
+	{
 		if (holder.buffHeal() && ent.isHealable() && ent.healthLevel() < this.Config.garrisonHealthLevel.high)
 			return true;
 		const capture = ent.capturePoints();
@@ -315,6 +316,7 @@ PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 		if (PETRA.isSiegeUnit(ent))
 			return around.meleeSiege;
 		return holder.buffHeal() && ent.needsHeal();
+	}
 	case PETRA.GarrisonManager.TYPE_DECAY:
 		return ent.captureStrength() && this.decayingStructures.has(holder.id());
 	case PETRA.GarrisonManager.TYPE_EMERGENCY: // f.e. hero in regicide mode
