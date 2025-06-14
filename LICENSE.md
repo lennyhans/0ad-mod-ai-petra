@@ -96,8 +96,8 @@ please inform Wildfire Games at webmaster at wildfiregames dot com.
 - source/tools/atlas/
   - GPL version 2 (or later) - see license_gpl-2.0.txt
 
-- binaries/data/mods/public/gui/prelobby/common/terms/  
-  binaries/data/mods/public/gui/userreport/Terms_and_Conditions.txt  
+- binaries/data/mods/public/gui/prelobby/common/terms/
+  binaries/data/mods/public/gui/userreport/Terms_and_Conditions.txt
   binaries/data/mods/mod/gui/modio/Disclaimer.txt
   - Redistributing modified Terms and Conditions of online services may be within the licensing,
     but may not change the legality or enforceability of the terms of the service provider.
