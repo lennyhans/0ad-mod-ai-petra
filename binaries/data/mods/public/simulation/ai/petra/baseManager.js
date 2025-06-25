@@ -1081,7 +1081,7 @@ PETRA.BaseManager.prototype.update = function(gameState, queues, events)
 	if (this.constructing)
 	{
 		const owner = gameState.ai.HQ.territoryMap.getOwner(this.anchor.position());
-		if(owner != 0 && !gameState.isPlayerAlly(owner))
+		if (owner != 0 && !gameState.isPlayerAlly(owner))
 		{
 			// we're in enemy territory. If we're too close from the enemy, destroy us.
 			const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));

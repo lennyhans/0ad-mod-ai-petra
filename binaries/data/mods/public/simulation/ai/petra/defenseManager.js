@@ -354,7 +354,7 @@ PETRA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 				continue;
 			if (API3.SquareVectorDistance(base.position(), army.foePosition) > 40000)
 				continue;
-			if(this.Config.debug > 1)
+			if (this.Config.debug > 1)
 				API3.warn("army in neutral territory, but still near one of our CC");
 			stillDangerous = true;
 			break;

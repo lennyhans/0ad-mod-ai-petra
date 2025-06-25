@@ -95,7 +95,7 @@ PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
 	{
 		if (i == "AIMetadata")   // not used inside petra
 			continue;
-		if(this.savedEvents[i] !== undefined)
+		if (this.savedEvents[i] !== undefined)
 			this.savedEvents[i] = this.savedEvents[i].concat(this.events[i]);
 		else
 			this.savedEvents[i] = this.events[i];

@@ -297,7 +297,7 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 	// Get x and y from index
 	const IndexArray = [startIndex];
 	let newIndex;
-	while(IndexArray.length)
+	while (IndexArray.length)
 	{
 		newIndex = IndexArray.pop();
 
