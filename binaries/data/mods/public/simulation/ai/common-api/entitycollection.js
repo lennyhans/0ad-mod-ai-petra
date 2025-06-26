@@ -80,7 +80,7 @@ m.EntityCollection.prototype.toString = function()
 
 m.EntityCollection.prototype.filter = function(filter, thisp)
 {
-	if (typeof filter == "function")
+	if (typeof filter === "function")
 		filter = { "func": filter, "dynamicProperties": [] };
 
 	const ret = new Map();
