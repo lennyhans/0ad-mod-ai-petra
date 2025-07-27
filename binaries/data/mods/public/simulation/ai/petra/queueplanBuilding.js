@@ -314,7 +314,7 @@ PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	const obstructions = PETRA.createObstructionMap(gameState, 0, template);
 	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
 
-	let radius = 0;
+	let radius;
 	if (template.hasClasses(["Fortress", "Arsenal"]) ||
 		this.type == gameState.applyCiv("structures/{civ}/elephant_stable"))
 		radius = Math.floor((template.obstructionRadius().max + 8) / obstructions.cellSize);

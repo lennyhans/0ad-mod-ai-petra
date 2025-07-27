@@ -307,7 +307,6 @@ PETRA.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 	}
 
 	let playerToTurnAgainst;
-	let turnFactor = 0;
 	let max = 0;
 
 	// count the amount of entities remaining players have
@@ -316,7 +315,7 @@ PETRA.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 		if (i === PlayerID || gameState.ai.HQ.attackManager.defeated[i])
 			continue;
 
-		turnFactor = gameState.getEntities(i).length;
+		let turnFactor = gameState.getEntities(i).length;
 
 		if (gameState.isPlayerNeutral(i)) // be more inclined to turn against neutral players
 			turnFactor += this.betrayWeighting;

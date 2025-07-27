@@ -293,7 +293,6 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 	const w = this.width;
 	const h = this.height;
 
-	let y = 0;
 	// Get x and y from index
 	const IndexArray = [startIndex];
 	let newIndex;
@@ -301,23 +300,20 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 	{
 		newIndex = IndexArray.pop();
 
-		y = 0;
-		let loop = false;
+		let y = 0;
 		// vertical iteration
-		do
+		while (true)
 		{
 			--y;
-			loop = false;
 			const index = newIndex + w*y;
 			if (index < 0)
 				break;
 			if (floodFor === "land" && this.landPassMap[index] === 0 && this.map[index] !== this.IMPASSABLE && this.map[index] !== this.DEEP_WATER)
-				loop = true;
-			else if (floodFor === "water" && this.navalPassMap[index] === 0 && (this.map[index] === this.DEEP_WATER || this.map[index] === this.SHALLOW_WATER))
-				loop = true;
-			else
-				break;
-		} while (loop === true);	// should actually break
+				continue;
+			if (floodFor === "water" && this.navalPassMap[index] === 0 && (this.map[index] === this.DEEP_WATER || this.map[index] === this.SHALLOW_WATER))
+				continue;
+			break;
+		} // should actually break
 		++y;
 		let reachLeft = false;
 		let reachRight = false;

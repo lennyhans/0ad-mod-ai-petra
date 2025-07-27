@@ -241,9 +241,9 @@ PETRA.NavalManager.prototype.getUnconnectedSeas = function(gameState, region)
 	this.docks.forEach(dock => {
 		if (!dock.hasClass("Dock") || PETRA.getLandAccess(gameState, dock) != region)
 			return;
-		let i = seas.indexOf(PETRA.getSeaAccess(gameState, dock));
+		const i = seas.indexOf(PETRA.getSeaAccess(gameState, dock));
 		if (i != -1)
-			seas.splice(i--, 1);
+			seas.splice(i, 1);
 	});
 	return seas;
 };

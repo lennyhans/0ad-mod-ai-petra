@@ -102,7 +102,7 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 	this.maxCompletingTime = 0;
 
 	// priority of the queues we'll create.
-	let priority = 70;
+	let priority;
 
 	// unitStat priority is relative. If all are 0, the only relevant criteria is "currentsize/targetsize".
 	// if not, this is a "bonus". The higher the priority, the faster this unit will get built.
@@ -417,7 +417,7 @@ PETRA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 	{
 		if (hasTrainer[i])
 			break;
-		i = ++i % classes.length;
+		i = (i + 1) % classes.length;
 	}
 
 	this.siegeState = PETRA.AttackPlan.SIEGE_ADDED;
