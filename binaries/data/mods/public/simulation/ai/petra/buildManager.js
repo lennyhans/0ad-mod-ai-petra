@@ -4,24 +4,24 @@
  * It also takes care of the structures we can't currently build and should not try to build endlessly.
  */
 
-PETRA.BuildManager = function()
+export function BuildManager()
 {
 	// List of buildings we have builders for, with number of possible builders.
 	this.builderCounters = new Map();
 	// List of buildings we can't currently build (because no room, no builder or whatever),
 	// with time we should wait before trying again to build it.
 	this.unbuildables = new Map();
-};
+}
 
 /** Initialization at start of game */
-PETRA.BuildManager.prototype.init = function(gameState)
+BuildManager.prototype.init = function(gameState)
 {
 	const civ = gameState.getPlayerCiv();
 	for (const ent of gameState.getOwnUnits().values())
 		this.incrementBuilderCounters(civ, ent, 1);
 };
 
-PETRA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
+BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
 {
 	for (const buildable of ent.buildableEntities(civ))
 	{
@@ -43,7 +43,7 @@ PETRA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, incre
 };
 
 /** Update the builders counters */
-PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
+BuildManager.prototype.checkEvents = function(gameState, events)
 {
 	this.elapsedTime = gameState.ai.elapsedTime;
 	const civ = gameState.getPlayerCiv();
@@ -99,7 +99,7 @@ PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
 /**
  * Get the buildable structures passing a filter.
  */
-PETRA.BuildManager.prototype.findStructuresByFilter = function(gameState, filter)
+BuildManager.prototype.findStructuresByFilter = function(gameState, filter)
 {
 	const result = [];
 	for (const [templateName, count] of this.builderCounters)
@@ -119,30 +119,30 @@ PETRA.BuildManager.prototype.findStructuresByFilter = function(gameState, filter
  * Get the first buildable structure with a given class
  * TODO when several available, choose the best one
  */
-PETRA.BuildManager.prototype.findStructureWithClass = function(gameState, classes)
+BuildManager.prototype.findStructureWithClass = function(gameState, classes)
 {
 	return this.findStructuresByFilter(gameState, API3.Filters.byClasses(classes))[0];
 };
 
-PETRA.BuildManager.prototype.hasBuilder = function(template)
+BuildManager.prototype.hasBuilder = function(template)
 {
 	const numBuilders = this.builderCounters.get(template);
 	return numBuilders && numBuilders > 0;
 };
 
-PETRA.BuildManager.prototype.isUnbuildable = function(gameState, template)
+BuildManager.prototype.isUnbuildable = function(gameState, template)
 {
 	return this.unbuildables.has(template) && this.unbuildables.get(template).time > gameState.ai.elapsedTime;
 };
 
-PETRA.BuildManager.prototype.setBuildable = function(template)
+BuildManager.prototype.setBuildable = function(template)
 {
 	if (this.unbuildables.has(template))
 		this.unbuildables.delete(template);
 };
 
 /** Time is the duration in second that we will wait before checking again if it is buildable */
-PETRA.BuildManager.prototype.setUnbuildable = function(gameState, template, time = 90, reason = "room")
+BuildManager.prototype.setUnbuildable = function(gameState, template, time = 90, reason = "room")
 {
 	if (!this.unbuildables.has(template))
 		this.unbuildables.set(template, { "reason": reason, "time": gameState.ai.elapsedTime + time });
@@ -158,7 +158,7 @@ PETRA.BuildManager.prototype.setUnbuildable = function(gameState, template, time
 };
 
 /** Return the number of unbuildables due to missing room */
-PETRA.BuildManager.prototype.numberMissingRoom = function(gameState)
+BuildManager.prototype.numberMissingRoom = function(gameState)
 {
 	let num = 0;
 	for (const unbuildable of this.unbuildables.values())
@@ -168,14 +168,14 @@ PETRA.BuildManager.prototype.numberMissingRoom = function(gameState)
 };
 
 /** Reset the unbuildables due to missing room */
-PETRA.BuildManager.prototype.resetMissingRoom = function(gameState)
+BuildManager.prototype.resetMissingRoom = function(gameState)
 {
 	for (const [key, unbuildable] of this.unbuildables)
 		if (unbuildable.reason == "room")
 			this.unbuildables.delete(key);
 };
 
-PETRA.BuildManager.prototype.Serialize = function()
+BuildManager.prototype.Serialize = function()
 {
 	return {
 		"builderCounters": this.builderCounters,
@@ -183,7 +183,7 @@ PETRA.BuildManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.BuildManager.prototype.Deserialize = function(data)
+BuildManager.prototype.Deserialize = function(data)
 {
 	for (const key in data)
 		this[key] = data[key];

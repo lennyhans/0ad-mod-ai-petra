@@ -1,4 +1,6 @@
-PETRA.launchAttackMessages = {
+import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
+
+const launchAttackMessages = {
 	"hugeAttack": [
 		markForTranslation("I am starting a massive military campaign against %(_player_)s, come and join me."),
 		markForTranslation("I have set up a huge army to crush %(_player_)s. Join me and you will have your share of the loot."),
@@ -11,7 +13,7 @@ PETRA.launchAttackMessages = {
 	]
 };
 
-PETRA.answerRequestAttackMessages = {
+const answerRequestAttackMessages = {
 	"join": [
 		markForTranslation("Let me regroup my army and I will then join you against %(_player_)s."),
 		markForTranslation("I am finishing preparations to attack %(_player_)s.")
@@ -25,24 +27,24 @@ PETRA.answerRequestAttackMessages = {
 	]
 };
 
-PETRA.sentTributeMessages = [
+const sentTributeMessages = [
 	markForTranslation("Here is a gift for you, %(_player_)s. Make good use of it."),
 	markForTranslation("I see you are in a bad situation, %(_player_)s. I hope this helps."),
 	markForTranslation("I can help you this time, %(_player_)s, but you should manage your resources more carefully in the future.")
 ];
 
-PETRA.requestTributeMessages = [
+const requestTributeMessages = [
 	markForTranslation("I am in need of %(resource)s, can you help? I will make it up to you."),
 	markForTranslation("I would participate more efficiently in our common war effort if you could provide me some %(resource)s."),
 	markForTranslation("If you can spare me some %(resource)s, I will be able to strengthen my army.")
 ];
 
-PETRA.newTradeRouteMessages = [
+const newTradeRouteMessages = [
 	markForTranslation("I have set up a new route with %(_player_)s. Trading will be profitable for all of us."),
 	markForTranslation("A new trade route is set up with %(_player_)s. Take your share of the profits.")
 ];
 
-PETRA.newDiplomacyMessages = {
+const newDiplomacyMessages = {
 	"ally": [
 		markForTranslation("%(_player_)s and I are now allies.")
 	],
@@ -54,7 +56,7 @@ PETRA.newDiplomacyMessages = {
 	]
 };
 
-PETRA.answerDiplomacyRequestMessages = {
+const answerDiplomacyRequestMessages = {
 	"ally": {
 		"decline": [
 			markForTranslation("I cannot accept your offer to become allies, %(_player_)s."),
@@ -114,7 +116,7 @@ PETRA.answerDiplomacyRequestMessages = {
 	}
 };
 
-PETRA.sendDiplomacyRequestMessages = {
+const sendDiplomacyRequestMessages = {
 	"ally": {
 		"sendRequest": [
 			markForTranslation("%(_player_)s, it would help both of our civilizations if we formed an alliance. If you become allies with me, I will respond in kind.")
@@ -136,7 +138,7 @@ PETRA.sendDiplomacyRequestMessages = {
 	}
 };
 
-PETRA.emergencyMessages = {
+const emergencyMessages = {
 	"enter": [
 		markForTranslation("My armies failed while defending my empire. Please honor our alliance and send help!"),
 		markForTranslation("My humble armies feel weak and tired. My civilization depends on our alliance, please send help!"),
@@ -148,114 +150,114 @@ PETRA.emergencyMessages = {
 	]
 };
 
-PETRA.chatLaunchAttack = function(gameState, player, type)
+export function launchAttack(gameState, player, type)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": "/allies " + pickRandom(this.launchAttackMessages[type === PETRA.AttackPlan.TYPE_HUGE_ATTACK ? "hugeAttack" : "other"]),
+		"message": "/allies " + pickRandom(launchAttackMessages[type === AttackPlan.TYPE_HUGE_ATTACK ? "hugeAttack" : "other"]),
 		"translateMessage": true,
 		"translateParameters": ["_player_"],
 		"parameters": { "_player_": player }
 	});
-};
+}
 
-PETRA.chatAnswerRequestAttack = function(gameState, player, answer, other)
+export function answerRequestAttack(gameState, player, answer, other)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": "/allies " + pickRandom(this.answerRequestAttackMessages[answer]),
+		"message": "/allies " + pickRandom(answerRequestAttackMessages[answer]),
 		"translateMessage": true,
 		"translateParameters": answer != "other" ? ["_player_"] : ["_player_", "_player_2"],
 		"parameters": answer != "other" ? { "_player_": player } : { "_player_": player, "_player_2": other }
 	});
-};
+}
 
-PETRA.chatSentTribute = function(gameState, player)
+export function sentTribute(gameState, player)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": "/allies " + pickRandom(this.sentTributeMessages),
+		"message": "/allies " + pickRandom(sentTributeMessages),
 		"translateMessage": true,
 		"translateParameters": ["_player_"],
 		"parameters": { "_player_": player }
 	});
-};
+}
 
-PETRA.chatRequestTribute = function(gameState, resource)
+export function requestTribute(gameState, resource)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": "/allies " + pickRandom(this.requestTributeMessages),
+		"message": "/allies " + pickRandom(requestTributeMessages),
 		"translateMessage": true,
 		"translateParameters": { "resource": "withinSentence" },
 		"parameters": { "resource": Resources.GetNames()[resource] }
 	});
-};
+}
 
-PETRA.chatNewTradeRoute = function(gameState, player)
+export function newTradeRoute(gameState, player)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": "/allies " + pickRandom(this.newTradeRouteMessages),
+		"message": "/allies " + pickRandom(newTradeRouteMessages),
 		"translateMessage": true,
 		"translateParameters": ["_player_"],
 		"parameters": { "_player_": player }
 	});
-};
+}
 
-PETRA.chatNewPhase = function(gameState, phase, status)
+function newPhase(gameState, phase, status)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": "/allies " + pickRandom(this.newPhaseMessages[status]),
+		"message": "/allies " + pickRandom(newPhaseMessages[status]),
 		"translateMessage": true,
 		"translateParameters": ["phase"],
 		"parameters": { "phase": phase }
 	});
-};
+}
 
-PETRA.chatNewDiplomacy = function(gameState, player, newDiplomaticStance)
+export function newDiplomacy(gameState, player, newDiplomaticStance)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": pickRandom(this.newDiplomacyMessages[newDiplomaticStance]),
+		"message": pickRandom(newDiplomacyMessages[newDiplomaticStance]),
 		"translateMessage": true,
 		"translateParameters": ["_player_"],
 		"parameters": { "_player_": player }
 	});
-};
+}
 
-PETRA.chatAnswerRequestDiplomacy = function(gameState, player, requestType, response, requiredTribute)
+export function answerRequestDiplomacy(gameState, player, requestType, response, requiredTribute)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
 		"message": "/msg " + gameState.sharedScript.playersData[player].name + " " +
-			pickRandom(this.answerDiplomacyRequestMessages[requestType][response]),
+			pickRandom(answerDiplomacyRequestMessages[requestType][response]),
 		"translateMessage": true,
 		"translateParameters": requiredTribute ? { "_amount_": null, "_resource_": "withinSentence", "_player_": null } : ["_player_"],
 		"parameters": requiredTribute ?
 			{ "_amount_": requiredTribute.wanted, "_resource_": Resources.GetNames()[requiredTribute.type], "_player_": player } :
 			{ "_player_": player }
 	});
-};
+}
 
-PETRA.chatNewRequestDiplomacy = function(gameState, player, requestType, status)
+export function newRequestDiplomacy(gameState, player, requestType, status)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
 		"message": "/msg " + gameState.sharedScript.playersData[player].name + " " +
-			pickRandom(this.sendDiplomacyRequestMessages[requestType][status]),
+			pickRandom(sendDiplomacyRequestMessages[requestType][status]),
 		"translateMessage": true,
 		"translateParameters": ["_player_"],
 		"parameters": { "_player_": player }
 	});
-};
+}
 
-PETRA.chatEmergency = function(gameState, enable)
+export function emergency(gameState, enable)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
-		"message": "/allies " + pickRandom(this.emergencyMessages[enable ? "enter" : "exit"]),
+		"message": "/allies " + pickRandom(emergencyMessages[enable ? "enter" : "exit"]),
 		"translateMessage": true
 	});
-};
+}

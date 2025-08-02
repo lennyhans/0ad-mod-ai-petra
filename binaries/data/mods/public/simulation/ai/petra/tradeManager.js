@@ -1,35 +1,44 @@
+import { newTradeRoute as chatNewTradeRoute } from "simulation/ai/petra/chatHelper.js";
+import { Config, DIFFICULTY_VERY_EASY } from "simulation/ai/petra/config.js";
+import { gatherTreasure, getBestBase, getLandAccess, getSeaAccess, isLineInsideEnemyTerritory } from
+	"simulation/ai/petra/entityExtend.js";
+import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
+import { TrainingPlan } from "simulation/ai/petra/queueplanTraining.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
 /**
  * Manage the trade
  */
-PETRA.TradeManager = function(Config)
+export function TradeManager(config)
 {
-	this.Config = Config;
+	this.Config = config;
 	this.tradeRoute = undefined;
 	this.potentialTradeRoute = undefined;
 	this.routeProspection = false;
 	this.targetNumTraders = this.Config.Economy.targetNumTraders;
 	this.warnedAllies = {};
-};
+}
 
-PETRA.TradeManager.prototype.init = function(gameState)
+TradeManager.prototype.init = function(gameState)
 {
-	this.traders = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "role", PETRA.Worker.ROLE_TRADER));
+	this.traders = gameState.getOwnUnits().filter(
+		API3.Filters.byMetadata(PlayerID, "role", Worker.ROLE_TRADER));
 	this.traders.registerUpdates();
 	this.minimalGain = gameState.ai.HQ.navalMap ? 3 : 5;
 };
 
-PETRA.TradeManager.prototype.hasTradeRoute = function()
+TradeManager.prototype.hasTradeRoute = function()
 {
 	return this.tradeRoute !== undefined;
 };
 
-PETRA.TradeManager.prototype.assignTrader = function(ent)
+TradeManager.prototype.assignTrader = function(ent)
 {
-	ent.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_TRADER);
+	ent.setMetadata(PlayerID, "role", Worker.ROLE_TRADER);
 	this.traders.updateEnt(ent);
 };
 
-PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
+TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 {
 	if (!this.hasTradeRoute() || queues.trader.hasQueuedUnits())
 		return;
@@ -41,7 +50,7 @@ PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 	gameState.getOwnTrainingFacilities().forEach(function(ent) {
 		for (const item of ent.trainingQueue())
 		{
-			if (!item.metadata || !item.metadata.role || item.metadata.role !== PETRA.Worker.ROLE_TRADER)
+			if (!item.metadata || !item.metadata.role || item.metadata.role !== Worker.ROLE_TRADER)
 				continue;
 			numTraders += item.count;
 			if (item.metadata.sea !== undefined)
@@ -56,7 +65,7 @@ PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 		return;
 
 	let template;
-	const metadata = { "role": PETRA.Worker.ROLE_TRADER };
+	const metadata = { "role": Worker.ROLE_TRADER };
 	if (this.tradeRoute.sea)
 	{
 		// if we have some merchand ships assigned to transport, try first to reassign them
@@ -67,7 +76,7 @@ PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 		gameState.ai.HQ.navalManager.seaTransportShips[this.tradeRoute.sea].forEach(function(ship) {
 			if (already || !ship.hasClass("Trader"))
 				return;
-			if (ship.getMetadata(PlayerID, "role") === PETRA.Worker.ROLE_SWITCH_TO_TRADER)
+			if (ship.getMetadata(PlayerID, "role") === Worker.ROLE_SWITCH_TO_TRADER)
 			{
 				already = true;
 				return;
@@ -79,9 +88,9 @@ PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 		if (shipToSwitch)
 		{
 			if (shipToSwitch.getMetadata(PlayerID, "transporter") === undefined)
-				shipToSwitch.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_TRADER);
+				shipToSwitch.setMetadata(PlayerID, "role", Worker.ROLE_TRADER);
 			else
-				shipToSwitch.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_SWITCH_TO_TRADER);
+				shipToSwitch.setMetadata(PlayerID, "role", Worker.ROLE_SWITCH_TO_TRADER);
 			return;
 		}
 
@@ -104,15 +113,17 @@ PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 			          gameState.getPlayerCiv() + " but no template found.");
 		return;
 	}
-	queues.trader.addPlan(new PETRA.TrainingPlan(gameState, template, metadata, 1, 1));
+	queues.trader.addPlan(new TrainingPlan(gameState, template, metadata, 1, 1));
 };
 
-PETRA.TradeManager.prototype.updateTrader = function(gameState, ent)
+TradeManager.prototype.updateTrader = function(gameState, ent)
 {
 	if (ent.hasClass("Ship") && gameState.ai.playedTurn % 5 == 0 &&
-	    !ent.unitAIState().startsWith("INDIVIDUAL.COLLECTTREASURE") &&
-	    PETRA.gatherTreasure(gameState, ent, true))
+		!ent.unitAIState().startsWith("INDIVIDUAL.COLLECTTREASURE") &&
+		gatherTreasure(gameState, ent, true))
+	{
 		return;
+	}
 
 	if (!this.hasTradeRoute() || !ent.isIdle() || !ent.position())
 		return;
@@ -122,7 +133,7 @@ PETRA.TradeManager.prototype.updateTrader = function(gameState, ent)
 	// TODO if the trader is idle and has workOrders, restore them to avoid losing the current gain
 
 	Engine.ProfileStart("Trade Manager");
-	const access = ent.hasClass("Ship") ? PETRA.getSeaAccess(gameState, ent) : PETRA.getLandAccess(gameState, ent);
+	const access = ent.hasClass("Ship") ? getSeaAccess(gameState, ent) : getLandAccess(gameState, ent);
 	const route = this.checkRoutes(gameState, access);
 	if (!route)
 	{
@@ -155,7 +166,7 @@ PETRA.TradeManager.prototype.updateTrader = function(gameState, ent)
 	Engine.ProfileStop();
 };
 
-PETRA.TradeManager.prototype.setTradingGoods = function(gameState)
+TradeManager.prototype.setTradingGoods = function(gameState)
 {
 	const resTradeCodes = Resources.GetTradableCodes();
 	if (!resTradeCodes.length)
@@ -212,7 +223,7 @@ PETRA.TradeManager.prototype.setTradingGoods = function(gameState)
  * Try to barter unneeded resources for needed resources.
  * only once per turn because the info is not updated within a turn
  */
-PETRA.TradeManager.prototype.performBarter = function(gameState)
+TradeManager.prototype.performBarter = function(gameState)
 {
 	const barterers = gameState.getOwnEntitiesByClass("Barter", true).filter(API3.Filters.isBuilt()).toEntityArray();
 	if (barterers.length == 0)
@@ -329,7 +340,7 @@ PETRA.TradeManager.prototype.performBarter = function(gameState)
 	return false;
 };
 
-PETRA.TradeManager.prototype.checkEvents = function(gameState, events)
+TradeManager.prototype.checkEvents = function(gameState, events)
 {
 	// check if one market from a traderoute is renamed, change the route accordingly
 	for (const evt of events.EntityRenamed)
@@ -398,7 +409,7 @@ PETRA.TradeManager.prototype.checkEvents = function(gameState, events)
 	return false;
 };
 
-PETRA.TradeManager.prototype.activateProspection = function(gameState)
+TradeManager.prototype.activateProspection = function(gameState)
 {
 	this.routeProspection = true;
 	gameState.ai.HQ.buildManager.setBuildable(gameState.applyCiv("structures/{civ}/market"));
@@ -409,7 +420,7 @@ PETRA.TradeManager.prototype.activateProspection = function(gameState)
  * fills the best trade route in this.tradeRoute and the best potential route in this.potentialTradeRoute
  * If an index is given, it returns the best route with this index or the best land route if index is a land index
  */
-PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
+TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 {
 	// If we cannot trade, do not bother checking routes.
 	if (!Resources.GetTradableCodes().length)
@@ -443,21 +454,21 @@ PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 	{
 		if (!m1.position())
 			continue;
-		const access1 = PETRA.getLandAccess(gameState, m1);
-		const sea1 = m1.hasClass("Naval") ? PETRA.getSeaAccess(gameState, m1) : undefined;
+		const access1 = getLandAccess(gameState, m1);
+		const sea1 = m1.hasClass("Naval") ? getSeaAccess(gameState, m1) : undefined;
 		for (const m2 of market2.values())
 		{
 			if (onlyOurs && m1.id() >= m2.id())
 				continue;
 			if (!m2.position())
 				continue;
-			const access2 = PETRA.getLandAccess(gameState, m2);
-			const sea2 = m2.hasClass("Naval") ? PETRA.getSeaAccess(gameState, m2) : undefined;
+			const access2 = getLandAccess(gameState, m2);
+			const sea2 = m2.hasClass("Naval") ? getSeaAccess(gameState, m2) : undefined;
 			const land = access1 == access2 ? access1 : undefined;
 			const sea = sea1 && sea1 == sea2 ? sea1 : undefined;
 			if (!land && !sea)
 				continue;
-			if (land && PETRA.isLineInsideEnemyTerritory(gameState, m1.position(), m2.position()))
+			if (land && isLineInsideEnemyTerritory(gameState, m1.position(), m2.position()))
 				continue;
 			let gainMultiplier;
 			if (land && traderTemplatesGains.landGainMultiplier)
@@ -531,7 +542,7 @@ PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 			owner = this.tradeRoute.target.owner();
 		if (owner != PlayerID && !this.warnedAllies[owner])
 		{	// Warn an ally that we have a trade route with him
-			PETRA.chatNewTradeRoute(gameState, owner);
+			chatNewTradeRoute(gameState, owner);
 			this.warnedAllies[owner] = true;
 		}
 	}
@@ -548,7 +559,7 @@ PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 };
 
 /** Called when a market was built or destroyed, and checks if trader orders should be changed */
-PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
+TradeManager.prototype.checkTrader = function(gameState, ent)
 {
 	const presentRoute = ent.getMetadata(PlayerID, "route");
 	if (!presentRoute)
@@ -561,7 +572,7 @@ PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
 		return;
 	}
 
-	const access = ent.hasClass("Ship") ? PETRA.getSeaAccess(gameState, ent) : PETRA.getLandAccess(gameState, ent);
+	const access = ent.hasClass("Ship") ? getSeaAccess(gameState, ent) : getLandAccess(gameState, ent);
 	const possibleRoute = this.checkRoutes(gameState, access);
 	// Warning:  presentRoute is from metadata, so contains entity ids
 	if (!possibleRoute ||
@@ -572,7 +583,7 @@ PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
 		ent.setMetadata(PlayerID, "route", undefined);
 		if (!possibleRoute && !ent.hasClass("Ship"))
 		{
-			const closestBase = PETRA.getBestBase(gameState, ent, true);
+			const closestBase = getBestBase(gameState, ent, true);
 			if (closestBase.accessIndex == access)
 			{
 				const closestBasePos = closestBase.anchor.position();
@@ -584,7 +595,7 @@ PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
 	}
 };
 
-PETRA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
+TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 {
 	if (queues.economicBuilding.hasQueuedUnitsWithClass("Trade") || queues.dock.hasQueuedUnitsWithClass("Trade"))
 		return;
@@ -622,13 +633,13 @@ PETRA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 
 	if (!this.tradeRoute)
 		gameState.ai.queueManager.changePriority("economicBuilding", 2 * this.Config.priorities.economicBuilding);
-	const plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/market");
+	const plan = new ConstructionPlan(gameState, "structures/{civ}/market");
 	if (!this.tradeRoute)
 		plan.queueToReset = "economicBuilding";
 	queues.economicBuilding.addPlan(plan);
 };
 
-PETRA.TradeManager.prototype.isNewMarketWorth = function(expectedGain)
+TradeManager.prototype.isNewMarketWorth = function(expectedGain)
 {
 	if (!Resources.GetTradableCodes().length)
 		return false;
@@ -640,12 +651,12 @@ PETRA.TradeManager.prototype.isNewMarketWorth = function(expectedGain)
 	return true;
 };
 
-PETRA.TradeManager.prototype.update = function(gameState, events, queues)
+TradeManager.prototype.update = function(gameState, events, queues)
 {
 	if (gameState.ai.HQ.canBarter && Resources.GetBarterableCodes().length)
 		this.performBarter(gameState);
 
-	if (this.Config.difficulty <= PETRA.DIFFICULTY_VERY_EASY)
+	if (this.Config.difficulty <= DIFFICULTY_VERY_EASY)
 		return;
 
 	if (this.checkEvents(gameState, events))  // true if one market was built or destroyed
@@ -669,7 +680,7 @@ PETRA.TradeManager.prototype.update = function(gameState, events, queues)
 		this.prospectForNewMarket(gameState, queues);
 };
 
-PETRA.TradeManager.prototype.routeEntToId = function(route)
+TradeManager.prototype.routeEntToId = function(route)
 {
 	if (!route)
 		return undefined;
@@ -689,7 +700,7 @@ PETRA.TradeManager.prototype.routeEntToId = function(route)
 	return ret;
 };
 
-PETRA.TradeManager.prototype.routeIdToEnt = function(gameState, route)
+TradeManager.prototype.routeIdToEnt = function(gameState, route)
 {
 	if (!route)
 		return undefined;
@@ -709,7 +720,7 @@ PETRA.TradeManager.prototype.routeIdToEnt = function(gameState, route)
 	return ret;
 };
 
-PETRA.TradeManager.prototype.Serialize = function()
+TradeManager.prototype.Serialize = function()
 {
 	return {
 		"tradeRoute": this.routeEntToId(this.tradeRoute),
@@ -720,7 +731,7 @@ PETRA.TradeManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.TradeManager.prototype.Deserialize = function(gameState, data)
+TradeManager.prototype.Deserialize = function(gameState, data)
 {
 	for (const key in data)
 	{

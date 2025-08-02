@@ -1,3 +1,5 @@
+import * as chat from "simulation/ai/petra/chatHelper.js";
+
 /**
  * Manage the diplomacy:
  *     update our cooperative trait
@@ -20,7 +22,7 @@
  * sent through AIInterface. It is expected that the other player will change their diplomacy stance to the stance
  * that we suggested within a period of time, or else the request will be deleted from this.sentDiplomacyRequests.
  */
-PETRA.DiplomacyManager = function(Config)
+export function DiplomacyManager(Config)
 {
 	this.Config = Config;
 	this.nextTributeUpdate = 90;
@@ -32,13 +34,13 @@ PETRA.DiplomacyManager = function(Config)
 	this.receivedDiplomacyRequests = new Map();
 	this.sentDiplomacyRequests = new Map();
 	this.sentDiplomacyRequestLapseTime = 120 + randFloat(10, 100);
-};
+}
 
 /**
  * If there are any players that are allied/neutral with us but we are not allied/neutral with them,
  * treat this situation like an ally/neutral request.
  */
-PETRA.DiplomacyManager.prototype.init = function(gameState)
+DiplomacyManager.prototype.init = function(gameState)
 {
 	this.lastManStandingCheck(gameState);
 
@@ -60,7 +62,7 @@ PETRA.DiplomacyManager.prototype.init = function(gameState)
  * Check if any allied needs help (tribute) and sent it if we have enough resource
  * or ask for a tribute if we are in need and one ally can help
  */
-PETRA.DiplomacyManager.prototype.tributes = function(gameState)
+DiplomacyManager.prototype.tributes = function(gameState)
 {
 	this.nextTributeUpdate = gameState.ai.elapsedTime + 30;
 	const resTribCodes = Resources.GetTributableCodes();
@@ -104,7 +106,7 @@ PETRA.DiplomacyManager.prototype.tributes = function(gameState)
 					{
 						this.nextTributeRequest.set("all", gameState.ai.elapsedTime + 90);
 						this.nextTributeRequest.set(res, gameState.ai.elapsedTime + 240);
-						PETRA.chatRequestTribute(gameState, res);
+						chat.requestTribute(gameState, res);
 						if (this.Config.debug > 1)
 							API3.warn("Tribute on " + res + " requested to player " + i);
 						break;
@@ -117,12 +119,12 @@ PETRA.DiplomacyManager.prototype.tributes = function(gameState)
 		if (this.Config.debug > 1)
 			API3.warn("Tribute " + uneval(tribute) + " sent to player " + i);
 		if (this.Config.chat)
-			PETRA.chatSentTribute(gameState, i);
+			chat.sentTribute(gameState, i);
 		Engine.PostCommand(PlayerID, { "type": "tribute", "player": i, "amounts": tribute });
 	}
 };
 
-PETRA.DiplomacyManager.prototype.checkEvents = function(gameState, events)
+DiplomacyManager.prototype.checkEvents = function(gameState, events)
 {
 	// Increase slowly the cooperative personality trait either when we receive tribute from our allies
 	// or if our allies attack enemies inside our territory
@@ -220,7 +222,7 @@ PETRA.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 		{
 			const response = request !== undefined && (request.status === "declinedRequest" || request.status === "allianceBroken") ?
 				"decline" : "declineSuggestNeutral";
-			PETRA.chatAnswerRequestDiplomacy(gameState, evt.player, "ally", response);
+			chat.answerRequestDiplomacy(gameState, evt.player, "ally", response);
 		}
 		else if (gameState.sharedScript.playersData[evt.player].isAlly[PlayerID] && gameState.isPlayerNeutral(evt.player))
 			this.handleDiplomacyRequest(gameState, evt.player, "ally");
@@ -276,7 +278,7 @@ PETRA.DiplomacyManager.prototype.checkEvents = function(gameState, events)
  * If the "Last Man Standing" option is enabled, check if the only remaining players are allies or neutral.
  * If so, turn against the strongest first, but be more likely to first turn against neutral players, if there are any.
  */
-PETRA.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
+DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 {
 	if (gameState.sharedScript.playersData[PlayerID].teamsLocked || gameState.isCeasefireActive() ||
 	    gameState.getAlliedVictory() && gameState.hasAllies())
@@ -356,7 +358,7 @@ PETRA.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 		if (request && request.status !== "allianceBroken")
 		{
 			if (request.status === "waitingForTribute")
-				PETRA.chatAnswerRequestDiplomacy(gameState, playerToTurnAgainst, request.requestType, "decline");
+				chat.answerRequestDiplomacy(gameState, playerToTurnAgainst, request.requestType, "decline");
 			request.status = request.status === "accepted" ? "allianceBroken" : "declinedRequest";
 		}
 		// If we had sent this player a diplomacy request, just rescind it
@@ -370,7 +372,7 @@ PETRA.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
  * Do not become allies with a player if the game would be over.
  * Overall, be reluctant to become allies with any one player, but be more likely to accept neutral requests.
  */
-PETRA.DiplomacyManager.prototype.handleDiplomacyRequest = function(gameState, player, requestType)
+DiplomacyManager.prototype.handleDiplomacyRequest = function(gameState, player, requestType)
 {
 	if (gameState.sharedScript.playersData[PlayerID].teamsLocked)
 		return;
@@ -431,10 +433,10 @@ PETRA.DiplomacyManager.prototype.handleDiplomacyRequest = function(gameState, pl
 			response = "decline";
 		}
 	}
-	PETRA.chatAnswerRequestDiplomacy(gameState, player, requestType, response, requiredTribute);
+	chat.answerRequestDiplomacy(gameState, player, requestType, response, requiredTribute);
 };
 
-PETRA.DiplomacyManager.prototype.changePlayerDiplomacy = function(gameState, player, newDiplomaticStance)
+DiplomacyManager.prototype.changePlayerDiplomacy = function(gameState, player, newDiplomaticStance)
 {
 	if (gameState.isPlayerEnemy(player) && (newDiplomaticStance === "ally" || newDiplomaticStance === "neutral"))
 		gameState.ai.HQ.attackManager.cancelAttacksAgainstPlayer(gameState, player);
@@ -442,10 +444,10 @@ PETRA.DiplomacyManager.prototype.changePlayerDiplomacy = function(gameState, pla
 	if (this.Config.debug > 1)
 		API3.warn("diplomacy stance with player " + player + " is now " + newDiplomaticStance);
 	if (this.Config.chat)
-		PETRA.chatNewDiplomacy(gameState, player, newDiplomaticStance);
+		chat.newDiplomacy(gameState, player, newDiplomaticStance);
 };
 
-PETRA.DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
+DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
 {
 	for (const [player, data] of this.receivedDiplomacyRequests)
 		if (data.status === "waitingForTribute" && gameState.ai.elapsedTime > data.warnTime)
@@ -453,13 +455,13 @@ PETRA.DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
 			if (data.sentWarning)
 			{
 				this.receivedDiplomacyRequests.delete(player);
-				PETRA.chatAnswerRequestDiplomacy(gameState, player, data.requestType, "decline");
+				chat.answerRequestDiplomacy(gameState, player, data.requestType, "decline");
 			}
 			else
 			{
 				data.sentWarning = true;
 				data.warnTime = gameState.ai.elapsedTime + 60;
-				PETRA.chatAnswerRequestDiplomacy(gameState, player, data.requestType, "waitingForTribute", {
+				chat.answerRequestDiplomacy(gameState, player, data.requestType, "waitingForTribute", {
 					"wanted": data.wanted,
 					"type": data.type
 				});
@@ -471,7 +473,7 @@ PETRA.DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
  * Try to become allies with a player who has a lot of mutual enemies in common with us.
  * TODO: Possibly let human players demand tributes from AIs who send diplomacy requests.
  */
-PETRA.DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
+DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
 {
 	let player;
 	let max = 0;
@@ -510,21 +512,21 @@ PETRA.DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
 	if (this.Config.debug > 0)
 		API3.warn("Sending diplomacy request to player " + player + " with " + requestType);
 	Engine.PostCommand(PlayerID, { "type": "diplomacy-request", "source": PlayerID, "player": player, "to": requestType });
-	PETRA.chatNewRequestDiplomacy(gameState, player, requestType, "sendRequest");
+	chat.newRequestDiplomacy(gameState, player, requestType, "sendRequest");
 };
 
-PETRA.DiplomacyManager.prototype.checkSentDiplomacyRequests = function(gameState)
+DiplomacyManager.prototype.checkSentDiplomacyRequests = function(gameState)
 {
 	for (const [player, data] of this.sentDiplomacyRequests)
 		if (gameState.ai.elapsedTime > data.timeSent + 60 && !gameState.ai.HQ.saveResources &&
 		    gameState.getPopulation() > 70)
 		{
-			PETRA.chatNewRequestDiplomacy(gameState, player, data.requestType, "requestExpired");
+			chat.newRequestDiplomacy(gameState, player, data.requestType, "requestExpired");
 			this.sentDiplomacyRequests.delete(player);
 		}
 };
 
-PETRA.DiplomacyManager.prototype.update = function(gameState, events)
+DiplomacyManager.prototype.update = function(gameState, events)
 {
 	this.checkEvents(gameState, events);
 
@@ -552,7 +554,7 @@ PETRA.DiplomacyManager.prototype.update = function(gameState, events)
 	this.checkSentDiplomacyRequests(gameState);
 };
 
-PETRA.DiplomacyManager.prototype.Serialize = function()
+DiplomacyManager.prototype.Serialize = function()
 {
 	return {
 		"nextTributeUpdate": this.nextTributeUpdate,
@@ -566,7 +568,7 @@ PETRA.DiplomacyManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.DiplomacyManager.prototype.Deserialize = function(data)
+DiplomacyManager.prototype.Deserialize = function(data)
 {
 	for (const key in data)
 		this[key] = data[key];

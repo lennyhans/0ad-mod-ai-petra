@@ -1,8 +1,11 @@
+import { Config } from "simulation/ai/petra/config.js";
+import { Headquather } from "simulation/ai/petra/headquarters.js";
+import { Queue } from "simulation/ai/petra/queue.js";
+import { QueueManager } from "simulation/ai/petra/queueManager.js";
+
 Engine.IncludeModule("common-api");
 
-var PETRA = {};
-
-PETRA.PetraBot = function(settings)
+export function PetraBot(settings)
 {
 	API3.BaseAI.call(this, settings);
 
@@ -16,14 +19,14 @@ PETRA.PetraBot = function(settings)
 		"transports": 1	// transport plans start at 1 because 0 might be used as none
 	};
 
-	this.Config = new PETRA.Config(settings.difficulty, settings.behavior);
+	this.Config = new Config(settings.difficulty, settings.behavior);
 
 	this.savedEvents = {};
-};
+}
 
-PETRA.PetraBot.prototype = Object.create(API3.BaseAI.prototype);
+PetraBot.prototype = Object.create(API3.BaseAI.prototype);
 
-PETRA.PetraBot.prototype.CustomInit = function(gameState)
+PetraBot.prototype.CustomInit = function(gameState)
 {
 	if (this.isDeserialized)
 	{
@@ -51,11 +54,11 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 
 		this.Config.Deserialize(this.data.config);
 
-		this.queueManager = new PETRA.QueueManager(this.Config, {});
+		this.queueManager = new QueueManager(this.Config, {});
 		this.queueManager.Deserialize(gameState, this.data.queueManager);
 		this.queues = this.queueManager.queues;
 
-		this.HQ = new PETRA.HQ(this.Config);
+		this.HQ = new Headquarther(this.Config);
 		this.HQ.init(gameState, this.queues);
 		this.HQ.Deserialize(gameState, this.data.HQ);
 
@@ -73,11 +76,11 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 		// this.queues can only be modified by the queue manager or things will go awry.
 		this.queues = {};
 		for (const i in this.Config.priorities)
-			this.queues[i] = new PETRA.Queue();
+			this.queues[i] = new Queue();
 
-		this.queueManager = new PETRA.QueueManager(this.Config, this.queues);
+		this.queueManager = new QueueManager(this.Config, this.queues);
 
-		this.HQ = new PETRA.HQ(this.Config);
+		this.HQ = new Headquather(this.Config);
 
 		this.HQ.init(gameState, this.queues);
 
@@ -86,7 +89,7 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 	}
 };
 
-PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
+PetraBot.prototype.OnUpdate = function(sharedScript)
 {
 	if (this.gameFinished || this.gameState.playerData.state == "defeated")
 		return;
@@ -128,7 +131,7 @@ PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
 	this.turn++;
 };
 
-PETRA.PetraBot.prototype.Serialize = function()
+PetraBot.prototype.Serialize = function()
 {
 	const savedEvents = {};
 	for (const key in this.savedEvents)
@@ -159,7 +162,7 @@ PETRA.PetraBot.prototype.Serialize = function()
 	};
 };
 
-PETRA.PetraBot.prototype.Deserialize = function(data, sharedScript)
+PetraBot.prototype.Deserialize = function(data, sharedScript)
 {
 	this.isDeserialized = true;
 	this.data = data;

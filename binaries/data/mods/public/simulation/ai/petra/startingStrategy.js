@@ -1,9 +1,14 @@
+import { Config, DIFFICULTY_SANDBOX } from "simulation/ai/petra/config.js";
+import { gatherTreasure, getLandAccess, isFastMoving } from "simulation/ai/petra/entityExtend.js";
+import { Headquather } from "simulation/ai/petra/headquarters.js";
+import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
+
 /**
  * Determines the strategy to adopt when starting a new game,
  * depending on the initial conditions
  */
 
-PETRA.HQ.prototype.gameAnalysis = function(gameState)
+Headquather.prototype.gameAnalysis = function(gameState)
 {
 	// Analysis of the terrain and the different access regions
 	if (!this.regionAnalysis(gameState))
@@ -27,7 +32,7 @@ PETRA.HQ.prototype.gameAnalysis = function(gameState)
 
 
 	// Sandbox difficulty should not try to expand
-	this.canExpand = this.Config.difficulty != PETRA.DIFFICULTY_SANDBOX;
+	this.canExpand = this.Config.difficulty != DIFFICULTY_SANDBOX;
 	// If no base yet, check if we can construct one. If not, dispatch our units to possible tasks/attacks
 	this.canBuildUnits = true;
 	if (!gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).hasEntities())
@@ -52,7 +57,7 @@ PETRA.HQ.prototype.gameAnalysis = function(gameState)
 /**
  * Assign the starting entities to the different bases
  */
-PETRA.HQ.prototype.assignStartingEntities = function(gameState)
+Headquather.prototype.assignStartingEntities = function(gameState)
 {
 	for (const ent of gameState.getOwnEntities().values())
 	{
@@ -96,7 +101,7 @@ PETRA.HQ.prototype.assignStartingEntities = function(gameState)
  * determine the main land Index (or water index if none)
  * as well as the list of allowed (land andf water) regions
  */
-PETRA.HQ.prototype.regionAnalysis = function(gameState)
+Headquather.prototype.regionAnalysis = function(gameState)
 {
 	const accessibility = gameState.ai.accessibility;
 	let landIndex;
@@ -190,7 +195,7 @@ PETRA.HQ.prototype.regionAnalysis = function(gameState)
  * load units and buildings from the config files
  * TODO: change that to something dynamic
  */
-PETRA.HQ.prototype.structureAnalysis = function(gameState)
+Headquather.prototype.structureAnalysis = function(gameState)
 {
 	const civref = gameState.playerData.civ;
 	const civ = civref in this.Config.buildings ? civref : 'default';
@@ -204,7 +209,7 @@ PETRA.HQ.prototype.structureAnalysis = function(gameState)
  * build our first base
  * if not enough resource, try first to do a dock
  */
-PETRA.HQ.prototype.buildFirstBase = function(gameState)
+Headquather.prototype.buildFirstBase = function(gameState)
 {
 	if (gameState.ai.queues.civilCentre.hasQueuedUnits())
 		return;
@@ -226,7 +231,7 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
 				continue;
 			// If we can get a treasure around, just do it
 			if (ent.isIdle())
-				PETRA.gatherTreasure(gameState, ent);
+				gatherTreasure(gameState, ent);
 			// Then count the resources from the treasures being collected
 			const treasureId = ent.getMetadata(PlayerID, "treasure");
 			if (!treasureId)
@@ -266,12 +271,12 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
 	{
 		if (!ent.hasClass("Worker"))
 			continue;
-		if (PETRA.isFastMoving(ent))
+		if (isFastMoving(ent))
 			continue;
 		let pos = ent.position();
 		if (!pos)
 		{
-			const holder = PETRA.getHolder(gameState, ent);
+			const holder = getHolder(gameState, ent);
 			if (!holder || !holder.position())
 				continue;
 			pos = holder.position();
@@ -305,10 +310,15 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
 	if (goal == "dock")
 	{
 		const sea = startingPoint[imax].sea > 1 ? startingPoint[imax].sea : undefined;
-		gameState.ai.queues.dock.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/dock", { "sea": sea, "proximity": startingPoint[imax].pos }));
+		gameState.ai.queues.dock.addPlan(new ConstructionPlan(gameState, "structures/{civ}/dock",
+			{ "sea": sea, "proximity": startingPoint[imax].pos }));
 	}
 	else
-		gameState.ai.queues.civilCentre.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/civil_centre", { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
+	{
+		gameState.ai.queues.civilCentre.addPlan(new ConstructionPlan(gameState,
+			"structures/{civ}/civil_centre",
+			{ "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
+	}
 };
 
 /**
@@ -316,7 +326,7 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
  *   - if one of our allies has a cc, affect a small fraction of our army for his defense, the rest will attack
  *   - otherwise all units will attack
  */
-PETRA.HQ.prototype.dispatchUnits = function(gameState)
+Headquather.prototype.dispatchUnits = function(gameState)
 {
 	const allycc = gameState.getExclusiveAllyEntities().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
 	if (allycc.length)
@@ -333,10 +343,10 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			const access = PETRA.getLandAccess(gameState, ent);
+			const access = getLandAccess(gameState, ent);
 			for (const cc of allycc)
 			{
-				if (!cc.position() || PETRA.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || getLandAccess(gameState, cc) != access)
 					continue;
 				--num;
 				--num1;
@@ -352,10 +362,10 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			const access = PETRA.getLandAccess(gameState, ent);
+			const access = getLandAccess(gameState, ent);
 			for (const cc of allycc)
 			{
-				if (!cc.position() || PETRA.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || getLandAccess(gameState, cc) != access)
 					continue;
 				--num;
 				--num2;
@@ -371,10 +381,10 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			const access = PETRA.getLandAccess(gameState, ent);
+			const access = getLandAccess(gameState, ent);
 			for (const cc of allycc)
 			{
-				if (!cc.position() || PETRA.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || getLandAccess(gameState, cc) != access)
 					continue;
 				if (!ent.hasClass("Support"))
 					--num;
@@ -392,7 +402,7 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
  *   - if on a small island, favor fishing
  *   - count the available wood resource, and allow rushes only if enough (we should otherwise favor expansion)
  */
-PETRA.HQ.prototype.configFirstBase = function(gameState)
+Headquather.prototype.configFirstBase = function(gameState)
 {
 	if (!this.hasPotentialBase())
 		return;
@@ -495,14 +505,19 @@ PETRA.HQ.prototype.configFirstBase = function(gameState)
 				const cost = new API3.Resources(gameState.getTemplate(newDP.templateName).cost());
 				gameState.ai.queueManager.setAccounts(gameState, cost, "dropsites");
 			}
-			gameState.ai.queues.dropsites.addPlan(new PETRA.ConstructionPlan(gameState, newDP.templateName, { "base": this.baseManagers()[0].ID }, newDP.pos));
+			gameState.ai.queues.dropsites.addPlan(new ConstructionPlan(gameState, newDP.templateName,
+				{ "base": this.baseManagers()[0].ID }, newDP.pos));
 		}
 	}
 	// and build immediately a corral if needed
 	if (this.needCorral)
 	{
 		const template = gameState.applyCiv("structures/{civ}/corral");
-		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() && this.canBuild(gameState, template))
-			gameState.ai.queues.corral.addPlan(new PETRA.ConstructionPlan(gameState, template, { "base": this.baseManagers()[0].ID }));
+		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() &&
+			this.canBuild(gameState, template))
+		{
+			gameState.ai.queues.corral.addPlan(
+				new ConstructionPlan(gameState, template, { "base": this.baseManagers()[0].ID }));
+		}
 	}
 };

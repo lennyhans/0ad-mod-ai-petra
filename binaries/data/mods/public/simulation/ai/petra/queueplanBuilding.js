@@ -1,11 +1,16 @@
+import { getBuiltEntity, getLandAccess, getSeaAccess } from "simulation/ai/petra/entityExtend.js";
+import { border_Mask, createObstructionMap, fullBorder_Mask, outside_Mask } from
+	"simulation/ai/petra/mapModule.js";
+import { QueuePlan } from "simulation/ai/petra/queueplan.js";
+
 /**
  * Defines a construction plan, ie a building.
  * We'll try to fing a good position if non has been provided
  */
 
-PETRA.ConstructionPlan = function(gameState, type, metadata, position)
+export function ConstructionPlan(gameState, type, metadata, position)
 {
-	if (!PETRA.QueuePlan.call(this, gameState, type, metadata))
+	if (!QueuePlan.call(this, gameState, type, metadata))
 		return false;
 
 	this.position = position ? position : 0;
@@ -13,11 +18,11 @@ PETRA.ConstructionPlan = function(gameState, type, metadata, position)
 	this.category = "building";
 
 	return true;
-};
+}
 
-PETRA.ConstructionPlan.prototype = Object.create(PETRA.QueuePlan.prototype);
+ConstructionPlan.prototype = Object.create(QueuePlan.prototype);
 
-PETRA.ConstructionPlan.prototype.canStart = function(gameState)
+ConstructionPlan.prototype.canStart = function(gameState)
 {
 	if (gameState.ai.HQ.turnCache.buildingBuilt)   // do not start another building if already one this turn
 		return false;
@@ -31,7 +36,7 @@ PETRA.ConstructionPlan.prototype.canStart = function(gameState)
 	return gameState.ai.HQ.buildManager.hasBuilder(this.type);
 };
 
-PETRA.ConstructionPlan.prototype.start = function(gameState)
+ConstructionPlan.prototype.start = function(gameState)
 {
 	Engine.ProfileStart("Building construction start");
 
@@ -106,7 +111,7 @@ PETRA.ConstructionPlan.prototype.start = function(gameState)
 		gameState.ai.HQ.navalManager.createTransportIfNeeded(gameState, this.metadata.proximity, [pos.x, pos.z], this.metadata.access);
 };
 
-PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
+ConstructionPlan.prototype.findGoodPosition = function(gameState)
 {
 	let template = this.template;
 
@@ -214,7 +219,7 @@ PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				const x = Math.round(pos[0] / cellSize);
 				const z = Math.round(pos[1] / cellSize);
 
-				const struct = PETRA.getBuiltEntity(gameState, ent);
+				const struct = getBuiltEntity(gameState, ent);
 				if (struct.resourceDropsiteTypes() && struct.resourceDropsiteTypes().indexOf("food") != -1)
 				{
 					if (template.hasClasses(["Field", "Corral"]))
@@ -248,7 +253,7 @@ PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 			for (let j = 0; j < placement.map.length; ++j)
 			{
 				let value = placement.map[j] - gameState.sharedScript.resourceMaps.wood.map[j]/3;
-				if (HQ.borderMap.map[j] & PETRA.fullBorder_Mask)
+				if (HQ.borderMap.map[j] & fullBorder_Mask)
 					value /= 2;	// we need space around farmstead, so disfavor map border
 				placement.set(j, value);
 			}
@@ -270,9 +275,9 @@ PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				placement.map[j] = 0;
 			else if (placement.map[j] > 0)
 			{
-				if (favorBorder && HQ.borderMap.map[j] & PETRA.border_Mask)
+				if (favorBorder && HQ.borderMap.map[j] & border_Mask)
 					placement.set(j, placement.map[j] + 50);
-				else if (disfavorBorder && !(HQ.borderMap.map[j] & PETRA.fullBorder_Mask))
+				else if (disfavorBorder && !(HQ.borderMap.map[j] & fullBorder_Mask))
 					placement.set(j, placement.map[j] + 10);
 
 				const x = (j % placement.width + 0.5) * cellSize;
@@ -290,9 +295,9 @@ PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				placement.map[j] = 0;
 			else if (placement.map[j] > 0)
 			{
-				if (favorBorder && HQ.borderMap.map[j] & PETRA.border_Mask)
+				if (favorBorder && HQ.borderMap.map[j] & border_Mask)
 					placement.set(j, placement.map[j] + 50);
-				else if (disfavorBorder && !(HQ.borderMap.map[j] & PETRA.fullBorder_Mask))
+				else if (disfavorBorder && !(HQ.borderMap.map[j] & fullBorder_Mask))
 					placement.set(j, placement.map[j] + 10);
 
 				const x = (j % placement.width + 0.5) * cellSize;
@@ -311,7 +316,7 @@ PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	// note: not for houses and dropsites who ought to be closer to either each other or a resource.
 	// also not for fields who can be stacked quite a bit
 
-	const obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	const obstructions = createObstructionMap(gameState, 0, template);
 	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
 
 	let radius;
@@ -359,12 +364,12 @@ PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
  * => we try not to be too far from our territory
  * In all cases, we add a bonus for nearby resources, and when a large extend of water in front ot it.
  */
-PETRA.ConstructionPlan.prototype.findDockPosition = function(gameState)
+ConstructionPlan.prototype.findDockPosition = function(gameState)
 {
 	const template = this.template;
 	const territoryMap = gameState.ai.HQ.territoryMap;
 
-	const obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	const obstructions = createObstructionMap(gameState, 0, template);
 	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
 
 	let bestIdx;
@@ -467,7 +472,7 @@ PETRA.ConstructionPlan.prototype.findDockPosition = function(gameState)
 			let dockDist = 0;
 			for (const dock of docks.values())
 			{
-				if (PETRA.getSeaAccess(gameState, dock) != navalPassMap[i])
+				if (getSeaAccess(gameState, dock) != navalPassMap[i])
 					continue;
 				const dist = API3.SquareVectorDistance(pos, dock.position());
 				if (dist > dockDist)
@@ -483,7 +488,7 @@ PETRA.ConstructionPlan.prototype.findDockPosition = function(gameState)
 		}
 
 		// Add a penalty if on the map border as ship movement will be difficult
-		if (gameState.ai.HQ.borderMap.map[j] & PETRA.fullBorder_Mask)
+		if (gameState.ai.HQ.borderMap.map[j] & fullBorder_Mask)
 			score += 20;
 
 		// Do a pre-selection, supposing we will have the best possible water
@@ -534,7 +539,7 @@ PETRA.ConstructionPlan.prototype.findDockPosition = function(gameState)
 /**
  * Find a good island to build a dock.
  */
-PETRA.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
+ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 {
 	const docks = gameState.getOwnStructures().filter(API3.Filters.byClass("Dock"));
 	if (!docks.hasEntities())
@@ -554,7 +559,7 @@ PETRA.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template
 		let keep = true;
 		for (const dock of docks.values())
 		{
-			if (PETRA.getLandAccess(gameState, dock) != i)
+			if (getLandAccess(gameState, dock) != i)
 				continue;
 			keep = false;
 			break;
@@ -564,7 +569,7 @@ PETRA.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template
 		let sea;
 		for (const cc of ccEnts.values())
 		{
-			const ccAccess = PETRA.getLandAccess(gameState, cc);
+			const ccAccess = getLandAccess(gameState, cc);
 			if (ccAccess != i)
 			{
 				if (cc.owner() == PlayerID && !sea)
@@ -614,7 +619,7 @@ PETRA.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template
 };
 
 /** Algorithm taken from the function GetDockAngle in simulation/helpers/Commands.js */
-PETRA.ConstructionPlan.prototype.getDockAngle = function(gameState, x, z, size)
+ConstructionPlan.prototype.getDockAngle = function(gameState, x, z, size)
 {
 	let pos = gameState.ai.accessibility.gamePosToMapPos([x, z]);
 	const k = pos[0] + pos[1]*gameState.ai.accessibility.width;
@@ -676,7 +681,7 @@ PETRA.ConstructionPlan.prototype.getDockAngle = function(gameState, x, z, size)
  * to determine the special dock requirements
  * returns {"land": land index for this dock, "water": amount of water around this spot}
  */
-PETRA.ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, halfDepth, halfWidth, angle)
+ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, halfDepth, halfWidth, angle)
 {
 	const sz = halfDepth * Math.sin(angle);
 	const cz = halfDepth * Math.cos(angle);
@@ -738,10 +743,10 @@ PETRA.ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, 
  * if the (object) wantedLand is given, this nearest land should have one of these accessibility
  * if wantedSea is given, this tile should be inside this sea
  */
-PETRA.ConstructionPlan.prototype.around = [[ 1.0, 0.0], [ 0.87, 0.50], [ 0.50, 0.87], [ 0.0, 1.0], [-0.50, 0.87], [-0.87, 0.50],
+ConstructionPlan.prototype.around = [[ 1.0, 0.0], [ 0.87, 0.50], [ 0.50, 0.87], [ 0.0, 1.0], [-0.50, 0.87], [-0.87, 0.50],
 	[-1.0, 0.0], [-0.87, -0.50], [-0.50, -0.87], [ 0.0, -1.0], [ 0.50, -0.87], [ 0.87, -0.50]];
 
-PETRA.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimension, wantedLand, wantedSea)
+ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimension, wantedLand, wantedSea)
 {
 	const width = gameState.ai.HQ.territoryMap.width;
 	const cellSize = gameState.ai.HQ.territoryMap.cellSize;
@@ -788,7 +793,7 @@ PETRA.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimensi
  * return a measure of the proximity to our frontier (including our allies)
  * 0=inside, 1=less than 24m, 2= less than 48m, 3= less than 72m, 4=less than 96m, 5=above 96m
  */
-PETRA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
+ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
 {
 	const alliedVictory = gameState.getAlliedVictory();
 	const territoryMap = gameState.ai.HQ.territoryMap;
@@ -812,7 +817,7 @@ PETRA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
 			const jz = iz + Math.round(i*step*a[1]);
 			if (jz < 0 || jz >= width)
 				continue;
-			if (borderMap.map[jx+width*jz] & PETRA.outside_Mask)
+			if (borderMap.map[jx+width*jz] & outside_Mask)
 				continue;
 			territoryOwner = territoryMap.getOwnerIndex(jx+width*jz);
 			if (alliedVictory && gameState.isPlayerAlly(territoryOwner) || territoryOwner == PlayerID)
@@ -832,7 +837,7 @@ PETRA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
  * get the sum of the resources (except food) around, inside a given radius
  * resources have a weight (1 if dist=0 and 0 if dist=size) doubled for wood
  */
-PETRA.ConstructionPlan.prototype.getResourcesAround = function(gameState, types, i, radius)
+ConstructionPlan.prototype.getResourcesAround = function(gameState, types, i, radius)
 {
 	const resourceMaps = gameState.sharedScript.resourceMaps;
 	const w = resourceMaps.wood.width;
@@ -885,7 +890,7 @@ PETRA.ConstructionPlan.prototype.getResourcesAround = function(gameState, types,
 	return nbcell ? total / nbcell : 0;
 };
 
-PETRA.ConstructionPlan.prototype.isGo = function(gameState)
+ConstructionPlan.prototype.isGo = function(gameState)
 {
 	if (this.goRequirement && this.goRequirement == "houseNeeded")
 	{
@@ -913,13 +918,13 @@ PETRA.ConstructionPlan.prototype.isGo = function(gameState)
 	return true;
 };
 
-PETRA.ConstructionPlan.prototype.onStart = function(gameState)
+ConstructionPlan.prototype.onStart = function(gameState)
 {
 	if (this.queueToReset)
 		gameState.ai.queueManager.changePriority(this.queueToReset, gameState.ai.Config.priorities[this.queueToReset]);
 };
 
-PETRA.ConstructionPlan.prototype.Serialize = function()
+ConstructionPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -934,7 +939,7 @@ PETRA.ConstructionPlan.prototype.Serialize = function()
 	};
 };
 
-PETRA.ConstructionPlan.prototype.Deserialize = function(gameState, data)
+ConstructionPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (const key in data)
 		this[key] = data[key];

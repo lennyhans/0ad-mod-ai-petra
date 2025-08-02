@@ -1,9 +1,11 @@
 /** map functions */
 
-PETRA.TERRITORY_PLAYER_MASK = 0x1F;
-PETRA.TERRITORY_BLINKING_MASK = 0x40;
+/* eslint-disable prefer-const -- Mods should be able to change them */
+let TERRITORY_PLAYER_MASK = 0x1F;
+let TERRITORY_BLINKING_MASK = 0x40;
+/* eslint-enable prefer-const */
 
-PETRA.createObstructionMap = function(gameState, accessIndex, template)
+export function createObstructionMap(gameState, accessIndex, template)
 {
 	const passabilityMap = gameState.getPassabilityMap();
 	const territoryMap = gameState.ai.territoryMap;
@@ -41,8 +43,8 @@ PETRA.createObstructionMap = function(gameState, accessIndex, template)
 
 	for (let k = 0; k < territoryMap.data.length; ++k)
 	{
-		const tilePlayer = territoryMap.data[k] & PETRA.TERRITORY_PLAYER_MASK;
-		const isConnected = (territoryMap.data[k] & PETRA.TERRITORY_BLINKING_MASK) == 0;
+		const tilePlayer = territoryMap.data[k] & TERRITORY_PLAYER_MASK;
+		const isConnected = (territoryMap.data[k] & TERRITORY_BLINKING_MASK) == 0;
 		if (tilePlayer === PlayerID)
 		{
 			if (!buildOwn || !buildNeutral && !isConnected)
@@ -108,19 +110,19 @@ PETRA.createObstructionMap = function(gameState, accessIndex, template)
 	}
 
 	return map;
-};
+}
 
 
-PETRA.createTerritoryMap = function(gameState)
+export function createTerritoryMap(gameState)
 {
 	const map = gameState.ai.territoryMap;
 
 	const ret = new API3.Map(gameState.sharedScript, "territory", map.data);
-	ret.getOwner = function(p) { return this.point(p) & PETRA.TERRITORY_PLAYER_MASK; };
-	ret.getOwnerIndex = function(p) { return this.map[p] & PETRA.TERRITORY_PLAYER_MASK; };
-	ret.isBlinking = function(p) { return (this.point(p) & PETRA.TERRITORY_BLINKING_MASK) != 0; };
+	ret.getOwner = function(p) { return this.point(p) & TERRITORY_PLAYER_MASK; };
+	ret.getOwnerIndex = function(p) { return this.map[p] & TERRITORY_PLAYER_MASK; };
+	ret.isBlinking = function(p) { return (this.point(p) & TERRITORY_BLINKING_MASK) != 0; };
 	return ret;
-};
+}
 
 /**
  *  The borderMap contains some border and frontier information:
@@ -132,14 +134,16 @@ PETRA.createTerritoryMap = function(gameState)
  *     - large border (inside our territory, exclusive of narrow)   => bit 3
  */
 
-PETRA.outside_Mask = 1;
-PETRA.border_Mask = 2;
-PETRA.fullBorder_Mask = PETRA.outside_Mask | PETRA.border_Mask;
-PETRA.narrowFrontier_Mask = 4;
-PETRA.largeFrontier_Mask = 8;
-PETRA.fullFrontier_Mask = PETRA.narrowFrontier_Mask | PETRA.largeFrontier_Mask;
+/* eslint-disable prefer-const -- Mods should be able to change them */
+export let outside_Mask = 1;
+export let border_Mask = 2;
+export let fullBorder_Mask = outside_Mask | border_Mask;
+export let narrowFrontier_Mask = 4;
+export let largeFrontier_Mask = 8;
+export let fullFrontier_Mask = narrowFrontier_Mask | largeFrontier_Mask;
+/* eslint-enable prefer-const */
 
-PETRA.createBorderMap = function(gameState)
+export function createBorderMap(gameState)
 {
 	const map = new API3.Map(gameState.sharedScript, "territory");
 	const width = map.width;
@@ -157,13 +161,13 @@ PETRA.createBorderMap = function(gameState)
 			const radius = dx*dx + dy*dy;
 			if (radius < radcut)
 				continue;
-			map.map[j] = PETRA.outside_Mask;
+			map.map[j] = outside_Mask;
 			const ind = API3.getMapIndices(j, map, passabilityMap);
 			for (const k of ind)
 			{
 				if (passabilityMap.data[k] & obstructionMask)
 					continue;
-				map.map[j] = PETRA.border_Mask;
+				map.map[j] = border_Mask;
 				break;
 			}
 		}
@@ -177,13 +181,13 @@ PETRA.createBorderMap = function(gameState)
 			const iy = Math.floor(j/width);
 			if (ix < border || ix >= borderCut || iy < border || iy >= borderCut)
 			{
-				map.map[j] = PETRA.outside_Mask;
+				map.map[j] = outside_Mask;
 				const ind = API3.getMapIndices(j, map, passabilityMap);
 				for (const k of ind)
 				{
 					if (passabilityMap.data[k] & obstructionMask)
 						continue;
-					map.map[j] = PETRA.border_Mask;
+					map.map[j] = border_Mask;
 					break;
 				}
 			}
@@ -192,9 +196,9 @@ PETRA.createBorderMap = function(gameState)
 
 	// map.dumpIm("border.png", 5);
 	return map;
-};
+}
 
-PETRA.debugMap = function(gameState, map)
+function debugMap(gameState, map)
 {
 	const width = map.width;
 	const cell = map.cellSize;
@@ -212,4 +216,4 @@ PETRA.debugMap = function(gameState, map)
 		else if (map.map[id] == 3)
 			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [0, 0, 2] });
 	});
-};
+}

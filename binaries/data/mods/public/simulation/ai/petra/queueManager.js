@@ -1,3 +1,6 @@
+import { Queue } from "simulation/ai/petra/queue.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
 /**
  * This takes the input queues and picks which items to fund with resources until no more resources are left to distribute.
  *
@@ -19,7 +22,7 @@
  * This system should be improved. It's probably not flexible enough.
  */
 
-PETRA.QueueManager = function(Config, queues)
+export function QueueManager(Config, queues)
 {
 	this.Config = Config;
 	this.queues = queues;
@@ -37,9 +40,9 @@ PETRA.QueueManager = function(Config, queues)
 	}
 	const priorities = this.priorities;
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
-};
+}
 
-PETRA.QueueManager.prototype.getAvailableResources = function(gameState)
+QueueManager.prototype.getAvailableResources = function(gameState)
 {
 	const resources = gameState.getResources();
 	for (const key in this.queues)
@@ -47,7 +50,7 @@ PETRA.QueueManager.prototype.getAvailableResources = function(gameState)
 	return resources;
 };
 
-PETRA.QueueManager.prototype.getTotalAccountedResources = function()
+QueueManager.prototype.getTotalAccountedResources = function()
 {
 	const resources = new API3.Resources();
 	for (const key in this.queues)
@@ -55,7 +58,7 @@ PETRA.QueueManager.prototype.getTotalAccountedResources = function()
 	return resources;
 };
 
-PETRA.QueueManager.prototype.currentNeeds = function(gameState)
+QueueManager.prototype.currentNeeds = function(gameState)
 {
 	const needed = new API3.Resources();
 	// queueArrays because it's faster.
@@ -77,7 +80,7 @@ PETRA.QueueManager.prototype.currentNeeds = function(gameState)
 
 // calculate the gather rates we'd want to be able to start all elements in our queues
 // TODO: many things.
-PETRA.QueueManager.prototype.wantedGatherRates = function(gameState)
+QueueManager.prototype.wantedGatherRates = function(gameState)
 {
 	// default values for first turn when we have not yet set our queues.
 	if (gameState.ai.playedTurn === 0)
@@ -154,12 +157,15 @@ PETRA.QueueManager.prototype.wantedGatherRates = function(gameState)
 	return rates;
 };
 
-PETRA.QueueManager.prototype.printQueues = function(gameState)
+QueueManager.prototype.printQueues = function(gameState)
 {
 	let numWorkers = 0;
 	gameState.getOwnUnits().forEach(ent => {
-		if (ent.getMetadata(PlayerID, "role") === PETRA.Worker.ROLE_WORKER && ent.getMetadata(PlayerID, "plan") === undefined)
+		if (ent.getMetadata(PlayerID, "role") === Worker.ROLE_WORKER &&
+			ent.getMetadata(PlayerID, "plan") === undefined)
+		{
 			numWorkers++;
+		}
 	});
 	API3.warn("---------- QUEUES ------------ with pop " + gameState.getPopulation() + " and workers " + numWorkers);
 	for (const i in this.queues)
@@ -190,7 +196,7 @@ PETRA.QueueManager.prototype.printQueues = function(gameState)
 	API3.warn("------------------------------------");
 };
 
-PETRA.QueueManager.prototype.clear = function()
+QueueManager.prototype.clear = function()
 {
 	for (const i in this.queues)
 		this.queues[i].empty();
@@ -199,7 +205,7 @@ PETRA.QueueManager.prototype.clear = function()
 /**
  * set accounts of queue i from the unaccounted resources
  */
-PETRA.QueueManager.prototype.setAccounts = function(gameState, cost, i)
+QueueManager.prototype.setAccounts = function(gameState, cost, i)
 {
 	const available = this.getAvailableResources(gameState);
 	for (const res of Resources.GetCodes())
@@ -213,7 +219,7 @@ PETRA.QueueManager.prototype.setAccounts = function(gameState, cost, i)
 /**
  * transfer accounts from queue i to queue j
  */
-PETRA.QueueManager.prototype.transferAccounts = function(cost, i, j)
+QueueManager.prototype.transferAccounts = function(cost, i, j)
 {
 	for (const res of Resources.GetCodes())
 	{
@@ -228,7 +234,7 @@ PETRA.QueueManager.prototype.transferAccounts = function(cost, i, j)
 /**
  * distribute the resources between the different queues according to their priorities
  */
-PETRA.QueueManager.prototype.distributeResources = function(gameState)
+QueueManager.prototype.distributeResources = function(gameState)
 {
 	const availableRes = this.getAvailableResources(gameState);
 	for (const res of Resources.GetCodes())
@@ -317,7 +323,7 @@ PETRA.QueueManager.prototype.distributeResources = function(gameState)
 	}
 };
 
-PETRA.QueueManager.prototype.switchResource = function(gameState, res)
+QueueManager.prototype.switchResource = function(gameState, res)
 {
 	// We have no available resources, see if we can't "compact" them in one queue.
 	// compare queues 2 by 2, and if one with a higher priority could be completed by our amount, give it.
@@ -354,7 +360,7 @@ PETRA.QueueManager.prototype.switchResource = function(gameState, res)
 };
 
 // Start the next item in the queue if we can afford it.
-PETRA.QueueManager.prototype.startNextItems = function(gameState)
+QueueManager.prototype.startNextItems = function(gameState)
 {
 	for (const q of this.queueArrays)
 	{
@@ -383,7 +389,7 @@ PETRA.QueueManager.prototype.startNextItems = function(gameState)
 	}
 };
 
-PETRA.QueueManager.prototype.update = function(gameState)
+QueueManager.prototype.update = function(gameState)
 {
 	Engine.ProfileStart("Queue Manager");
 
@@ -412,9 +418,9 @@ PETRA.QueueManager.prototype.update = function(gameState)
 };
 
 // Recovery system: if short of workers after an attack, pause (and reset) some queues to favor worker training
-PETRA.QueueManager.prototype.checkPausedQueues = function(gameState)
+QueueManager.prototype.checkPausedQueues = function(gameState)
 {
-	const numWorkers = gameState.countOwnEntitiesAndQueuedWithRole(PETRA.Worker.ROLE_WORKER);
+	const numWorkers = gameState.countOwnEntitiesAndQueuedWithRole(Worker.ROLE_WORKER);
 	const workersMin = Math.min(Math.max(12, 24 * this.Config.popScaling), this.Config.Economy.popPhase2);
 	for (const q in this.queues)
 	{
@@ -466,14 +472,14 @@ PETRA.QueueManager.prototype.checkPausedQueues = function(gameState)
 	}
 };
 
-PETRA.QueueManager.prototype.canAfford = function(queue, cost)
+QueueManager.prototype.canAfford = function(queue, cost)
 {
 	if (!this.accounts[queue])
 		return false;
 	return this.accounts[queue].canAfford(cost);
 };
 
-PETRA.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
+QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
 {
 	if (!this.queues[queue])
 		return;
@@ -482,13 +488,13 @@ PETRA.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
 		this.accounts[queue].reset();
 };
 
-PETRA.QueueManager.prototype.unpauseQueue = function(queue)
+QueueManager.prototype.unpauseQueue = function(queue)
 {
 	if (this.queues[queue])
 		this.queues[queue].paused = false;
 };
 
-PETRA.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
+QueueManager.prototype.pauseAll = function(scrapAccounts, but)
 {
 	for (const q in this.queues)
 	{
@@ -500,7 +506,7 @@ PETRA.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
 	}
 };
 
-PETRA.QueueManager.prototype.unpauseAll = function(but)
+QueueManager.prototype.unpauseAll = function(but)
 {
 	for (const q in this.queues)
 		if (q != but)
@@ -508,12 +514,12 @@ PETRA.QueueManager.prototype.unpauseAll = function(but)
 };
 
 
-PETRA.QueueManager.prototype.addQueue = function(queueName, priority)
+QueueManager.prototype.addQueue = function(queueName, priority)
 {
 	if (this.queues[queueName] !== undefined)
 		return;
 
-	this.queues[queueName] = new PETRA.Queue();
+	this.queues[queueName] = new Queue();
 	this.priorities[queueName] = priority;
 	this.accounts[queueName] = new API3.Resources();
 
@@ -524,7 +530,7 @@ PETRA.QueueManager.prototype.addQueue = function(queueName, priority)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-PETRA.QueueManager.prototype.removeQueue = function(queueName)
+QueueManager.prototype.removeQueue = function(queueName)
 {
 	if (this.queues[queueName] === undefined)
 		return;
@@ -540,12 +546,12 @@ PETRA.QueueManager.prototype.removeQueue = function(queueName)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-PETRA.QueueManager.prototype.getPriority = function(queueName)
+QueueManager.prototype.getPriority = function(queueName)
 {
 	return this.priorities[queueName];
 };
 
-PETRA.QueueManager.prototype.changePriority = function(queueName, newPriority)
+QueueManager.prototype.changePriority = function(queueName, newPriority)
 {
 	if (this.Config.debug > 1)
 		API3.warn(">>> Priority of queue " + queueName + " changed from " + this.priorities[queueName] + " to " + newPriority);
@@ -555,7 +561,7 @@ PETRA.QueueManager.prototype.changePriority = function(queueName, newPriority)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-PETRA.QueueManager.prototype.Serialize = function()
+QueueManager.prototype.Serialize = function()
 {
 	const accounts = {};
 	const queues = {};
@@ -575,7 +581,7 @@ PETRA.QueueManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.QueueManager.prototype.Deserialize = function(gameState, data)
+QueueManager.prototype.Deserialize = function(gameState, data)
 {
 	this.priorities = data.priorities;
 	this.queues = {};
@@ -585,7 +591,7 @@ PETRA.QueueManager.prototype.Deserialize = function(gameState, data)
 	this.queueArrays = [];
 	for (const q in data.queues)
 	{
-		this.queues[q] = new PETRA.Queue();
+		this.queues[q] = new Queue();
 		this.queues[q].Deserialize(gameState, data.queues[q]);
 		this.accounts[q] = new API3.Resources();
 		this.accounts[q].Deserialize(data.accounts[q]);

@@ -1,12 +1,14 @@
 // These integers must be sequential
-PETRA.DIFFICULTY_SANDBOX = 0;
-PETRA.DIFFICULTY_VERY_EASY = 1;
-PETRA.DIFFICULTY_EASY = 2;
-PETRA.DIFFICULTY_MEDIUM = 3;
-PETRA.DIFFICULTY_HARD = 4;
-PETRA.DIFFICULTY_VERY_HARD = 5;
+/* eslint-disable prefer-const -- Mods should be able to change them */
+export let DIFFICULTY_SANDBOX = 0;
+export let DIFFICULTY_VERY_EASY = 1;
+export let DIFFICULTY_EASY = 2;
+export let DIFFICULTY_MEDIUM = 3;
+export let DIFFICULTY_HARD = 4;
+export let DIFFICULTY_VERY_HARD = 5;
+/* eslint-enable prefer-const */
 
-PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
+export function Config(difficulty = DIFFICULTY_MEDIUM, behavior)
 {
 	this.difficulty = difficulty;
 
@@ -147,7 +149,7 @@ PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
 		"defensive": 0.5
 	};
 
-	// See PETRA.QueueManager.prototype.wantedGatherRates()
+	// See QueueManager.prototype.wantedGatherRates()
 	this.queues =
 	{
 		"firstTurn": {
@@ -202,11 +204,11 @@ PETRA.Config = function(difficulty = PETRA.DIFFICULTY_MEDIUM, behavior)
 		0.35,
 		0.2
 	];
-};
+}
 
-PETRA.Config.prototype.setConfig = function(gameState)
+Config.prototype.setConfig = function(gameState)
 {
-	if (this.difficulty > PETRA.DIFFICULTY_SANDBOX)
+	if (this.difficulty > DIFFICULTY_SANDBOX)
 	{
 		// Setup personality traits according to the user choice:
 		// The parameter used to define the personality is basically the aggressivity or (1-defensiveness)
@@ -249,14 +251,14 @@ PETRA.Config.prototype.setConfig = function(gameState)
 	this.Military.fortressLapseTime = Math.round(this.Military.fortressLapseTime * (1.1 - 0.2 * this.personality.defensive));
 	this.priorities.defenseBuilding = Math.round(this.priorities.defenseBuilding * (0.9 + 0.2 * this.personality.defensive));
 
-	if (this.difficulty < PETRA.DIFFICULTY_EASY)
+	if (this.difficulty < DIFFICULTY_EASY)
 	{
 		this.popScaling = 0.5;
 		this.Economy.supportRatio = 0.5;
 		this.Economy.provisionFields = 1;
 		this.Military.numSentryTowers = this.personality.defensive > this.personalityCut.strong ? 1 : 0;
 	}
-	else if (this.difficulty < PETRA.DIFFICULTY_MEDIUM)
+	else if (this.difficulty < DIFFICULTY_MEDIUM)
 	{
 		this.popScaling = 0.7;
 		this.Economy.supportRatio = 0.4;
@@ -265,7 +267,7 @@ PETRA.Config.prototype.setConfig = function(gameState)
 	}
 	else
 	{
-		if (this.difficulty == PETRA.DIFFICULTY_MEDIUM)
+		if (this.difficulty == DIFFICULTY_MEDIUM)
 			this.Military.numSentryTowers = 1;
 		else
 			this.Military.numSentryTowers = 2;
@@ -283,9 +285,9 @@ PETRA.Config.prototype.setConfig = function(gameState)
 	}
 
 	const maxPop = gameState.getPopulationMax();
-	if (this.difficulty < PETRA.DIFFICULTY_EASY)
+	if (this.difficulty < DIFFICULTY_EASY)
 		this.Economy.targetNumWorkers = Math.max(1, Math.min(40, maxPop));
-	else if (this.difficulty < PETRA.DIFFICULTY_MEDIUM)
+	else if (this.difficulty < DIFFICULTY_MEDIUM)
 		this.Economy.targetNumWorkers = Math.max(1, Math.min(60, Math.floor(maxPop/2)));
 	else
 		this.Economy.targetNumWorkers = Math.max(1, Math.min(120, Math.floor(maxPop/3)));
@@ -311,7 +313,7 @@ PETRA.Config.prototype.setConfig = function(gameState)
 	this.Economy.targetNumWorkers = Math.max(this.Economy.targetNumWorkers, this.Economy.popPhase2);
 	this.Economy.workPhase3 = Math.min(this.Economy.workPhase3, this.Economy.targetNumWorkers);
 	this.Economy.workPhase4 = Math.min(this.Economy.workPhase4, this.Economy.targetNumWorkers);
-	if (this.difficulty < PETRA.DIFFICULTY_EASY)
+	if (this.difficulty < DIFFICULTY_EASY)
 		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
 	this.emergencyValues = {
@@ -327,7 +329,7 @@ PETRA.Config.prototype.setConfig = function(gameState)
 	API3.warn(" >>>  Petra bot: personality = " + uneval(this.personality));
 };
 
-PETRA.Config.prototype.Cheat = function(gameState)
+Config.prototype.Cheat = function(gameState)
 {
 	// Sandbox, Very Easy, Easy, Medium, Hard, Very Hard
 	// rate apply on resource stockpiling as gathering and trading
@@ -342,7 +344,7 @@ PETRA.Config.prototype.Cheat = function(gameState)
 	}, gameState.playerData.entity);
 };
 
-PETRA.Config.prototype.Serialize = function()
+Config.prototype.Serialize = function()
 {
 	var data = {};
 	for (const key in this)
@@ -351,7 +353,7 @@ PETRA.Config.prototype.Serialize = function()
 	return data;
 };
 
-PETRA.Config.prototype.Deserialize = function(data)
+Config.prototype.Deserialize = function(data)
 {
 	for (const key in data)
 		this[key] = data[key];

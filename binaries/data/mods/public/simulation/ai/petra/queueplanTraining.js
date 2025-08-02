@@ -1,6 +1,9 @@
-PETRA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5)
+import { QueuePlan } from "simulation/ai/petra/queueplan.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
+export function TrainingPlan(gameState, type, metadata, number = 1, maxMerge = 5)
 {
-	if (!PETRA.QueuePlan.call(this, gameState, type, metadata))
+	if (!QueuePlan.call(this, gameState, type, metadata))
 	{
 		API3.warn(" Plan training " + type + " canceled");
 		return false;
@@ -16,11 +19,11 @@ PETRA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 
 	this.maxMerge = maxMerge;
 
 	return true;
-};
+}
 
-PETRA.TrainingPlan.prototype = Object.create(PETRA.QueuePlan.prototype);
+TrainingPlan.prototype = Object.create(QueuePlan.prototype);
 
-PETRA.TrainingPlan.prototype.canStart = function(gameState)
+TrainingPlan.prototype.canStart = function(gameState)
 {
 	this.trainers = this.getBestTrainers(gameState);
 	if (!this.trainers)
@@ -29,7 +32,7 @@ PETRA.TrainingPlan.prototype.canStart = function(gameState)
 	return true;
 };
 
-PETRA.TrainingPlan.prototype.getBestTrainers = function(gameState)
+TrainingPlan.prototype.getBestTrainers = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
@@ -63,7 +66,7 @@ PETRA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 	return trainers;
 };
 
-PETRA.TrainingPlan.prototype.start = function(gameState)
+TrainingPlan.prototype.start = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
@@ -79,7 +82,8 @@ PETRA.TrainingPlan.prototype.start = function(gameState)
 		let wantedIndex;
 		if (this.metadata && this.metadata.index)
 			wantedIndex = this.metadata.index;
-		const workerUnit = this.metadata && this.metadata.role && this.metadata.role === PETRA.Worker.ROLE_WORKER;
+		const workerUnit = this.metadata && this.metadata.role &&
+			this.metadata.role === Worker.ROLE_WORKER;
 		const supportUnit = this.template.hasClass("Support");
 		this.trainers.sort(function(a, b) {
 			// Prefer training buildings with short queues
@@ -129,12 +133,12 @@ PETRA.TrainingPlan.prototype.start = function(gameState)
 	this.onStart(gameState);
 };
 
-PETRA.TrainingPlan.prototype.addItem = function(amount = 1)
+TrainingPlan.prototype.addItem = function(amount = 1)
 {
 	this.number += amount;
 };
 
-PETRA.TrainingPlan.prototype.Serialize = function()
+TrainingPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -147,7 +151,7 @@ PETRA.TrainingPlan.prototype.Serialize = function()
 	};
 };
 
-PETRA.TrainingPlan.prototype.Deserialize = function(gameState, data)
+TrainingPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (const key in data)
 		this[key] = data[key];

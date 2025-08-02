@@ -1,3 +1,10 @@
+import { Config, DIFFICULTY_EASY, DIFFICULTY_MEDIUM } from "simulation/ai/petra/config.js";
+import { getBestBase, getBuiltEntity, getLandAccess, isFastMoving, isNotWorthBuilding } from
+	"simulation/ai/petra/entityExtend.js";
+import { createObstructionMap } from "simulation/ai/petra/mapModule.js";
+import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
 /**
  * Base Manager
  * Handles lower level economic stuffs.
@@ -10,7 +17,7 @@
  *  -updating whatever needs updating, keeping track of stuffs (rebuilding needs…)
  */
 
-PETRA.BaseManager = function(gameState, basesManager)
+export function BaseManager(gameState, basesManager)
 {
 	this.Config = basesManager.Config;
 	this.ID = gameState.ai.uniqueIDs.bases++;
@@ -27,42 +34,42 @@ PETRA.BaseManager = function(gameState, basesManager)
 
 	this.constructing = false;
 	// Defenders to train in this cc when its construction is finished
-	this.neededDefenders = this.Config.difficulty > PETRA.DIFFICULTY_EASY ? 3 + 2*(this.Config.difficulty - 3) : 0;
+	this.neededDefenders = this.Config.difficulty > DIFFICULTY_EASY ? 3 + 2*(this.Config.difficulty - 3) : 0;
 
 	// vector for iterating, to check one use the HQ map.
 	this.territoryIndices = [];
 
 	this.timeNextIdleCheck = 0;
-};
+}
 
 
-PETRA.BaseManager.STATE_WITH_ANCHOR = "anchored";
+BaseManager.STATE_WITH_ANCHOR = "anchored";
 
 /**
  * New base with a foundation anchor.
  */
-PETRA.BaseManager.STATE_UNCONSTRUCTED = "unconstructed";
+BaseManager.STATE_UNCONSTRUCTED = "unconstructed";
 
 /**
  * Captured base with an anchor.
  */
-PETRA.BaseManager.STATE_CAPTURED = "captured";
+BaseManager.STATE_CAPTURED = "captured";
 
 /**
  * Anchorless base, currently with dock.
  */
-PETRA.BaseManager.STATE_ANCHORLESS = "anchorless";
+BaseManager.STATE_ANCHORLESS = "anchorless";
 
-PETRA.BaseManager.prototype.init = function(gameState, state)
+BaseManager.prototype.init = function(gameState, state)
 {
-	if (state === PETRA.BaseManager.STATE_UNCONSTRUCTED)
+	if (state === BaseManager.STATE_UNCONSTRUCTED)
 		this.constructing = true;
-	else if (state !== PETRA.BaseManager.STATE_CAPTURED)
+	else if (state !== BaseManager.STATE_CAPTURED)
 		this.neededDefenders = 0;
-	this.workerObject = new PETRA.Worker(this);
+	this.workerObject = new Worker(this);
 	// entitycollections
 	this.units = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "base", this.ID));
-	this.workers = this.units.filter(API3.Filters.byMetadata(PlayerID, "role", PETRA.Worker.ROLE_WORKER));
+	this.workers = this.units.filter(API3.Filters.byMetadata(PlayerID, "role", Worker.ROLE_WORKER));
 	this.buildings = gameState.getOwnStructures().filter(API3.Filters.byMetadata(PlayerID, "base", this.ID));
 	this.mobileDropsites = this.units.filter(API3.Filters.isDropsite());
 
@@ -82,19 +89,19 @@ PETRA.BaseManager.prototype.init = function(gameState, state)
 	}
 };
 
-PETRA.BaseManager.prototype.reset = function(gameState, state)
+BaseManager.prototype.reset = function(gameState, state)
 {
-	if (state === PETRA.BaseManager.STATE_UNCONSTRUCTED)
+	if (state === BaseManager.STATE_UNCONSTRUCTED)
 		this.constructing = true;
 	else
 		this.constructing = false;
-	if (state !== PETRA.BaseManager.STATE_CAPTURED || this.Config.difficulty < PETRA.DIFFICULTY_MEDIUM)
+	if (state !== BaseManager.STATE_CAPTURED || this.Config.difficulty < DIFFICULTY_MEDIUM)
 		this.neededDefenders = 0;
 	else
 		this.neededDefenders = 3 + 2 * (this.Config.difficulty - 3);
 };
 
-PETRA.BaseManager.prototype.assignEntity = function(gameState, ent)
+BaseManager.prototype.assignEntity = function(gameState, ent)
 {
 	ent.setMetadata(PlayerID, "base", this.ID);
 	this.units.updateEnt(ent);
@@ -104,7 +111,7 @@ PETRA.BaseManager.prototype.assignEntity = function(gameState, ent)
 		this.assignResourceToDropsite(gameState, ent);
 };
 
-PETRA.BaseManager.prototype.setAnchor = function(gameState, anchorEntity)
+BaseManager.prototype.setAnchor = function(gameState, anchorEntity)
 {
 	if (!anchorEntity.hasClass("CivCentre"))
 		API3.warn("Error: Petra base " + this.ID + " has been assigned " + ent.templateName() + " as anchor.");
@@ -117,12 +124,12 @@ PETRA.BaseManager.prototype.setAnchor = function(gameState, anchorEntity)
 	}
 	anchorEntity.setMetadata(PlayerID, "base", this.ID);
 	this.buildings.updateEnt(anchorEntity);
-	this.accessIndex = PETRA.getLandAccess(gameState, anchorEntity);
+	this.accessIndex = getLandAccess(gameState, anchorEntity);
 	return true;
 };
 
 /* we lost our anchor. Let's reassign our units and buildings */
-PETRA.BaseManager.prototype.anchorLost = function(gameState, ent)
+BaseManager.prototype.anchorLost = function(gameState, ent)
 {
 	this.anchor = undefined;
 	this.anchorId = undefined;
@@ -131,17 +138,18 @@ PETRA.BaseManager.prototype.anchorLost = function(gameState, ent)
 };
 
 /** Set a building of an anchorless base */
-PETRA.BaseManager.prototype.setAnchorlessEntity = function(gameState, ent)
+BaseManager.prototype.setAnchorlessEntity = function(gameState, ent)
 {
 	if (!this.buildings.hasEntities())
 	{
-		if (!PETRA.getBuiltEntity(gameState, ent).resourceDropsiteTypes())
+		if (!getBuiltEntity(gameState, ent).resourceDropsiteTypes())
 			API3.warn("Error: Petra base " + this.ID + " has been assigned " + ent.templateName() + " as origin.");
-		this.accessIndex = PETRA.getLandAccess(gameState, ent);
+		this.accessIndex = getLandAccess(gameState, ent);
 	}
-	else if (this.accessIndex !== PETRA.getLandAccess(gameState, ent))
+	else if (this.accessIndex !== getLandAccess(gameState, ent))
 		API3.warn(" Error: Petra base " + this.ID + " with access " + this.accessIndex +
-		          " has been assigned " + ent.templateName() + " with access" + PETRA.getLandAccess(gameState, ent));
+			" has been assigned " + ent.templateName() + " with access" +
+			getLandAccess(gameState, ent));
 
 	ent.setMetadata(PlayerID, "base", this.ID);
 	this.buildings.updateEnt(ent);
@@ -152,7 +160,7 @@ PETRA.BaseManager.prototype.setAnchorlessEntity = function(gameState, ent)
  * Assign the resources around the dropsites of this basis in three areas according to distance, and sort them in each area.
  * Moving resources (animals) and buildable resources (fields) are treated elsewhere.
  */
-PETRA.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
+BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 {
 	if (this.dropsites[dropsite.id()])
 	{
@@ -167,7 +175,7 @@ PETRA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 	this.dropsites[dropsiteId] = true;
 
 	if (this.ID == this.basesManager.baselessBase().ID)
-		accessIndex = PETRA.getLandAccess(gameState, dropsite);
+		accessIndex = getLandAccess(gameState, dropsite);
 
 	const maxDistResourceSquare = this.maxDistResourceSquare;
 	for (const type of dropsite.resourceDropsiteTypes())
@@ -188,7 +196,7 @@ PETRA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 			if (supply.hasClasses(["Animal", "Field"]))
 				return;
 			// quick accessibility check
-			if (PETRA.getLandAccess(gameState, supply) != accessIndex)
+			if (getLandAccess(gameState, supply) != accessIndex)
 				return;
 
 			const dist = API3.SquareVectorDistance(supply.position(), dropsitePos);
@@ -233,7 +241,7 @@ PETRA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 	});
 };
 
-PETRA.BaseManager.prototype.removeFromAssignedDropsite = function(ent)
+BaseManager.prototype.removeFromAssignedDropsite = function(ent)
 {
 	for (const type in this.dropsiteSupplies)
 		for (const proxim in this.dropsiteSupplies[type])
@@ -246,7 +254,7 @@ PETRA.BaseManager.prototype.removeFromAssignedDropsite = function(ent)
 };
 
 // completely remove the dropsite resources from our list.
-PETRA.BaseManager.prototype.removeDropsite = function(gameState, ent)
+BaseManager.prototype.removeDropsite = function(gameState, ent)
 {
 	if (!ent.id())
 		return;
@@ -277,7 +285,7 @@ PETRA.BaseManager.prototype.removeDropsite = function(gameState, ent)
  * @return {Object} - The position of the best place to build a new dropsite for the specified resource,
  *			its quality and its template name.
  */
-PETRA.BaseManager.prototype.findBestDropsiteAndLocation = function(gameState, resource)
+BaseManager.prototype.findBestDropsiteAndLocation = function(gameState, resource)
 {
 	let bestResult = {
 		"quality": 0,
@@ -297,7 +305,7 @@ PETRA.BaseManager.prototype.findBestDropsiteAndLocation = function(gameState, re
 /**
  * Returns the position of the best place to build a new dropsite for the specified resource and dropsite template.
  */
-PETRA.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource, templateName)
+BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource, templateName)
 {
 	const template = gameState.getTemplate(gameState.applyCiv(templateName));
 
@@ -316,13 +324,13 @@ PETRA.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resou
 	// Then checks for a good spot in the territory. If none, and town/city phase, checks outside
 	// The AI will currently not build a CC if it wouldn't connect with an existing CC.
 
-	const obstructions = PETRA.createObstructionMap(gameState, this.accessIndex, template);
+	const obstructions = createObstructionMap(gameState, this.accessIndex, template);
 
 	const dpEnts = gameState.getOwnStructures().filter(API3.Filters.isDropsite(resource)).toEntityArray();
 
 	// Foundations don't have the dropsite properties yet, so treat them separately.
 	for (const foundation of gameState.getOwnFoundations().toEntityArray())
-		if (PETRA.getBuiltEntity(gameState, foundation).isResourceDropsite(resource))
+		if (getBuiltEntity(gameState, foundation).isResourceDropsite(resource))
 			dpEnts.push(foundation);
 
 	let bestIdx;
@@ -387,7 +395,7 @@ PETRA.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resou
 	return { "quality": bestVal, "pos": [x, z] };
 };
 
-PETRA.BaseManager.prototype.getResourceLevel = function(gameState, type, distances = ["nearby", "medium", "faraway"])
+BaseManager.prototype.getResourceLevel = function(gameState, type, distances = ["nearby", "medium", "faraway"])
 {
 	let count = 0;
 	const check = {};
@@ -403,7 +411,7 @@ PETRA.BaseManager.prototype.getResourceLevel = function(gameState, type, distanc
 };
 
 /** check our resource levels and react accordingly */
-PETRA.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
+BaseManager.prototype.checkResourceLevels = function(gameState, queues)
 {
 	for (const type of Resources.GetCodes())
 	{
@@ -423,7 +431,8 @@ PETRA.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
 				{
 					if (count < 600)
 					{
-						queues.field.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/field", { "favoredBase": this.ID }));
+						queues.field.addPlan(new ConstructionPlan(gameState,
+							"structures/{civ}/field", { "favoredBase": this.ID }));
 						gameState.ai.HQ.needFarm = true;
 					}
 				}
@@ -434,11 +443,19 @@ PETRA.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
 					if (gameState.ai.HQ.saveResources || gameState.ai.HQ.saveSpace || count > 300 || numFarms > 5)
 						goal = Math.max(goal-1, 1);
 					if (numFound + numQueue < goal)
-						queues.field.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/field", { "favoredBase": this.ID }));
+					{
+						queues.field.addPlan(new ConstructionPlan(gameState,
+							"structures/{civ}/field", { "favoredBase": this.ID }));
+					}
 				}
-				else if (gameState.ai.HQ.needCorral && !gameState.getOwnEntitiesByClass("Corral", true).hasEntities() &&
-				         !queues.corral.hasQueuedUnits() && gameState.ai.HQ.canBuild(gameState, "structures/{civ}/corral"))
-					queues.corral.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/corral", { "favoredBase": this.ID }));
+				else if (gameState.ai.HQ.needCorral &&
+					!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() &&
+					!queues.corral.hasQueuedUnits() &&
+					gameState.ai.HQ.canBuild(gameState, "structures/{civ}/corral"))
+				{
+					queues.corral.addPlan(new ConstructionPlan(gameState,
+						"structures/{civ}/corral", { "favoredBase": this.ID }));
+				}
 				continue;
 			}
 			if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() &&
@@ -447,7 +464,8 @@ PETRA.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
 				const count = this.getResourceLevel(gameState, type, prox);  // animals are not accounted
 				if (count < 900)
 				{
-					queues.corral.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/corral", { "favoredBase": this.ID }));
+					queues.corral.addPlan(new ConstructionPlan(gameState,
+						"structures/{civ}/corral", { "favoredBase": this.ID }));
 					gameState.ai.HQ.needCorral = true;
 				}
 			}
@@ -480,15 +498,22 @@ PETRA.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
 			{
 				const newDP = this.findBestDropsiteAndLocation(gameState, type);
 				if (newDP.quality > 50 && gameState.ai.HQ.canBuild(gameState, newDP.templateName))
-					queues.dropsites.addPlan(new PETRA.ConstructionPlan(gameState, newDP.templateName, { "base": this.ID, "type": type }, newDP.pos));
+				{
+					queues.dropsites.addPlan(new ConstructionPlan(gameState, newDP.templateName,
+						{ "base": this.ID, "type": type }, newDP.pos));
+				}
 				else if (!gameState.getOwnFoundations().filter(API3.Filters.byClass("CivCentre")).hasEntities() && !queues.civilCentre.hasQueuedUnits())
 				{
 					// No good dropsite, try to build a new base if no base already planned,
 					// and if not possible, be less strict on dropsite quality.
 					if ((!gameState.ai.HQ.canExpand || !gameState.ai.HQ.buildNewBase(gameState, queues, type)) &&
-					    newDP.quality > Math.min(25, 50*0.15/ratio) &&
-					    gameState.ai.HQ.canBuild(gameState, newDP.templateName))
-						queues.dropsites.addPlan(new PETRA.ConstructionPlan(gameState, newDP.templateName, { "base": this.ID, "type": type }, newDP.pos));
+						newDP.quality > Math.min(25, 50*0.15/ratio) &&
+						gameState.ai.HQ.canBuild(gameState, newDP.templateName))
+					{
+						queues.dropsites.addPlan(new ConstructionPlan(gameState,
+							newDP.templateName, { "base": this.ID, "type": type },
+							newDP.pos));
+					}
 				}
 			}
 			this.gatherers[type].nextCheck = gameState.ai.playedTurn + 20;
@@ -502,7 +527,7 @@ PETRA.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
 };
 
 /** Adds the estimated gather rates from this base to the currentRates */
-PETRA.BaseManager.prototype.addGatherRates = function(gameState, currentRates)
+BaseManager.prototype.addGatherRates = function(gameState, currentRates)
 {
 	for (const res in currentRates)
 	{
@@ -521,14 +546,14 @@ PETRA.BaseManager.prototype.addGatherRates = function(gameState, currentRates)
 		});
 		if (res == "food")
 		{
-			this.workersBySubrole(gameState, PETRA.Worker.SUBROLE_HUNTER).forEach(ent => {
+			this.workersBySubrole(gameState, Worker.SUBROLE_HUNTER).forEach(ent => {
 				if (ent.isIdle() || !ent.position())
 					return;
 				const gRate = ent.currentGatherRate();
 				if (gRate)
 					currentRates[res] += Math.log(1+gRate)/1.1;
 			});
-			this.workersBySubrole(gameState, PETRA.Worker.SUBROLE_FISHER).forEach(ent => {
+			this.workersBySubrole(gameState, Worker.SUBROLE_FISHER).forEach(ent => {
 				if (ent.isIdle() || !ent.position())
 					return;
 				const gRate = ent.currentGatherRate();
@@ -539,7 +564,7 @@ PETRA.BaseManager.prototype.addGatherRates = function(gameState, currentRates)
 	}
 };
 
-PETRA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
+BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 {
 	if (!roleless)
 		roleless = this.units.filter(API3.Filters.not(API3.Filters.byHasMetadata(PlayerID, "role"))).values();
@@ -547,9 +572,9 @@ PETRA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 	for (const ent of roleless)
 	{
 		if (ent.hasClasses(["Worker", "CitizenSoldier", "FishingBoat"]))
-			ent.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_WORKER);
+			ent.setMetadata(PlayerID, "role", Worker.ROLE_WORKER);
 		else if (ent.hasClass("Support") && ent.hasClass("Elephant"))
-			ent.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_WORKER);
+			ent.setMetadata(PlayerID, "role", Worker.ROLE_WORKER);
 	}
 };
 
@@ -558,7 +583,7 @@ PETRA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
  * they can be reassigned by reassignIdleWorkers.
  * TODO: actually this probably should be in the HQ.
  */
-PETRA.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
+BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
 {
 	this.timeNextIdleCheck = gameState.ai.elapsedTime + 8;
 	// change resource only towards one which is more needed, and if changing will not change this order
@@ -614,7 +639,7 @@ PETRA.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
  * and return remaining number of possible switches.
  * Prefer FemaleCitizen for food and CitizenSoldier for other resources.
  */
-PETRA.BaseManager.prototype.switchGatherer = function(gameState, from, to, number)
+BaseManager.prototype.switchGatherer = function(gameState, from, to, number)
 {
 	let num = number;
 	let only;
@@ -640,12 +665,12 @@ PETRA.BaseManager.prototype.switchGatherer = function(gameState, from, to, numbe
 	return num;
 };
 
-PETRA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorkers)
+BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorkers)
 {
 	// Search for idle workers, and tell them to gather resources based on demand
 	if (!idleWorkers)
 	{
-		const filter = API3.Filters.byMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_IDLE);
+		const filter = API3.Filters.byMetadata(PlayerID, "subrole", Worker.SUBROLE_IDLE);
 		idleWorkers = gameState.updatingCollection("idle-workers-base-" + this.ID, filter, this.workers).values();
 	}
 
@@ -657,7 +682,7 @@ PETRA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorker
 		// Support elephant can only be builders
 		if (ent.hasClass("Support") && ent.hasClass("Elephant"))
 		{
-			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_IDLE);
+			ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_IDLE);
 			continue;
 		}
 
@@ -679,35 +704,37 @@ PETRA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorker
 						continue;
 					if (needed.type != "food" && this.basesManager.isResourceExhausted(needed.type))
 						continue;
-					ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_GATHERER);
+					ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_GATHERER);
 					ent.setMetadata(PlayerID, "gather-type", needed.type);
 					this.basesManager.AddTCResGatherer(needed.type);
 					break;
 				}
 			}
 		}
-		else if (PETRA.isFastMoving(ent) && ent.canGather("food") && ent.canAttackClass("Animal"))
-			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_HUNTER);
+		else if (isFastMoving(ent) && ent.canGather("food") && ent.canAttackClass("Animal"))
+			ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_HUNTER);
 		else if (ent.hasClass("FishingBoat"))
-			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_FISHER);
+			ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_FISHER);
 	}
 };
 
-PETRA.BaseManager.prototype.workersBySubrole = function(gameState, subrole)
+BaseManager.prototype.workersBySubrole = function(gameState, subrole)
 {
 	return gameState.updatingCollection("subrole-" + subrole +"-base-" + this.ID, API3.Filters.byMetadata(PlayerID, "subrole", subrole), this.workers);
 };
 
-PETRA.BaseManager.prototype.gatherersByType = function(gameState, type)
+BaseManager.prototype.gatherersByType = function(gameState, type)
 {
-	return gameState.updatingCollection("workers-gathering-" + type +"-base-" + this.ID, API3.Filters.byMetadata(PlayerID, "gather-type", type), this.workersBySubrole(gameState, PETRA.Worker.SUBROLE_GATHERER));
+	return gameState.updatingCollection("workers-gathering-" + type +"-base-" +
+		this.ID, API3.Filters.byMetadata(PlayerID, "gather-type", type),
+	this.workersBySubrole(gameState, Worker.SUBROLE_GATHERER));
 };
 
 /**
  * returns an entity collection of workers.
  * They are idled immediatly and their subrole set to idle.
  */
-PETRA.BaseManager.prototype.pickBuilders = function(gameState, workers, number)
+BaseManager.prototype.pickBuilders = function(gameState, workers, number)
 {
 	const availableWorkers = this.workers.filter(ent => {
 		if (!ent.position() || !ent.isBuilder())
@@ -721,13 +748,13 @@ PETRA.BaseManager.prototype.pickBuilders = function(gameState, workers, number)
 	availableWorkers.sort((a, b) => {
 		let vala = 0;
 		let valb = 0;
-		if (a.getMetadata(PlayerID, "subrole") === PETRA.Worker.SUBROLE_BUILDER)
+		if (a.getMetadata(PlayerID, "subrole") === Worker.SUBROLE_BUILDER)
 			vala = 100;
-		if (b.getMetadata(PlayerID, "subrole") === PETRA.Worker.SUBROLE_BUILDER)
+		if (b.getMetadata(PlayerID, "subrole") === Worker.SUBROLE_BUILDER)
 			valb = 100;
-		if (a.getMetadata(PlayerID, "subrole") === PETRA.Worker.SUBROLE_IDLE)
+		if (a.getMetadata(PlayerID, "subrole") === Worker.SUBROLE_IDLE)
 			vala = -50;
-		if (b.getMetadata(PlayerID, "subrole") === PETRA.Worker.SUBROLE_IDLE)
+		if (b.getMetadata(PlayerID, "subrole") === Worker.SUBROLE_IDLE)
 			valb = -50;
 		if (a.getMetadata(PlayerID, "plan") === undefined)
 			vala = -20;
@@ -739,7 +766,7 @@ PETRA.BaseManager.prototype.pickBuilders = function(gameState, workers, number)
 	for (let i = 0; i < needed; ++i)
 	{
 		availableWorkers[i].stopMoving();
-		availableWorkers[i].setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_IDLE);
+		availableWorkers[i].setMetadata(PlayerID, "subrole", Worker.SUBROLE_IDLE);
 		workers.addEnt(availableWorkers[i]);
 	}
 	return;
@@ -750,7 +777,7 @@ PETRA.BaseManager.prototype.pickBuilders = function(gameState, workers, number)
  * try reassigning some other workers who are nearby
  * AI tries to use builders sensibly, not completely stopping its econ.
  */
-PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
+BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 {
 	let foundations = this.buildings.filter(API3.Filters.and(API3.Filters.isFoundation(), API3.Filters.not(API3.Filters.byClass("Field"))));
 
@@ -761,7 +788,7 @@ PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 		return;
 
 	const workers = this.workers.filter(ent => ent.isBuilder());
-	const builderWorkers = this.workersBySubrole(gameState, PETRA.Worker.SUBROLE_BUILDER);
+	const builderWorkers = this.workersBySubrole(gameState, Worker.SUBROLE_BUILDER);
 	const idleBuilderWorkers = builderWorkers.filter(API3.Filters.isIdle());
 
 	// if we're constructing and we have the foundations to our base anchor, only try building that.
@@ -787,7 +814,7 @@ PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 			const baseID = this.ID;
 			fromOtherBase.forEach(worker => {
 				worker.setMetadata(PlayerID, "base", baseID);
-				worker.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_BUILDER);
+				worker.setMetadata(PlayerID, "subrole", Worker.SUBROLE_BUILDER);
 				workers.updateEnt(worker);
 				builderWorkers.updateEnt(worker);
 				idleBuilderWorkers.updateEnt(worker);
@@ -822,7 +849,7 @@ PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 				continue;
 
 		// if our territory has shrinked since this foundation was positioned, do not build it
-		if (PETRA.isNotWorthBuilding(gameState, target))
+		if (isNotWorthBuilding(gameState, target))
 			continue;
 
 		let assigned = gameState.getOwnEntitiesByMetadata("target-foundation", target.id()).length;
@@ -869,7 +896,7 @@ PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 		if (assigned >= targetNB || builderTot >= maxTotalBuilders)
 			continue;
 		const nonBuilderWorkers = workers.filter(function(ent) {
-			if (ent.getMetadata(PlayerID, "subrole") === PETRA.Worker.SUBROLE_BUILDER)
+			if (ent.getMetadata(PlayerID, "subrole") === Worker.SUBROLE_BUILDER)
 				return false;
 			if (!ent.position())
 				return false;
@@ -902,7 +929,7 @@ PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 			++builderTot;
 			const ent = nonBuilderWorkers[current++];
 			ent.stopMoving();
-			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_BUILDER);
+			ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_BUILDER);
 			ent.setMetadata(PlayerID, "target-foundation", target.id());
 		}
 	}
@@ -957,7 +984,7 @@ PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 		if (assigned >= targetNB || builderTot >= maxTotalBuilders)
 			continue;
 		const nonBuilderWorkers = workers.filter(function(ent) {
-			if (ent.getMetadata(PlayerID, "subrole") === PETRA.Worker.SUBROLE_BUILDER)
+			if (ent.getMetadata(PlayerID, "subrole") === Worker.SUBROLE_BUILDER)
 				return false;
 			if (!ent.position())
 				return false;
@@ -974,14 +1001,14 @@ PETRA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 			++assigned;
 			++builderTot;
 			ent.stopMoving();
-			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_BUILDER);
+			ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_BUILDER);
 			ent.setMetadata(PlayerID, "target-foundation", target.id());
 		});
 	}
 };
 
 /** Return false when the base is not active (no workers on it) */
-PETRA.BaseManager.prototype.update = function(gameState, queues, events)
+BaseManager.prototype.update = function(gameState, queues, events)
 {
 	if (this.ID == this.basesManager.baselessBase().ID)
 	{
@@ -991,13 +1018,13 @@ PETRA.BaseManager.prototype.update = function(gameState, queues, events)
 		{
 			for (const ent of this.units.values())
 			{
-				const bestBase = PETRA.getBestBase(gameState, ent);
+				const bestBase = getBestBase(gameState, ent);
 				if (bestBase.ID != this.ID)
 					bestBase.assignEntity(gameState, ent);
 			}
 			for (const ent of this.buildings.values())
 			{
-				const bestBase = PETRA.getBestBase(gameState, ent);
+				const bestBase = getBestBase(gameState, ent);
 				if (!bestBase)
 				{
 					if (ent.hasClass("Dock"))
@@ -1031,7 +1058,7 @@ PETRA.BaseManager.prototype.update = function(gameState, queues, events)
 			// Reassign all remaining entities to its nearest base
 			for (const ent of this.units.values())
 			{
-				const base = PETRA.getBestBase(gameState, ent, false, this.ID);
+				const base = getBestBase(gameState, ent, false, this.ID);
 				base.assignEntity(gameState, ent);
 			}
 			return false;
@@ -1042,7 +1069,7 @@ PETRA.BaseManager.prototype.update = function(gameState, queues, events)
 		{
 			if (!ent.position())
 				continue;
-			const base = PETRA.getBestBase(gameState, ent);
+			const base = getBestBase(gameState, ent);
 			if (base.anchor)
 				reassignedBase = base;
 			break;
@@ -1116,22 +1143,22 @@ PETRA.BaseManager.prototype.update = function(gameState, queues, events)
 	return true;
 };
 
-PETRA.BaseManager.prototype.AddTCGatherer = function(supplyID)
+BaseManager.prototype.AddTCGatherer = function(supplyID)
 {
 	return this.basesManager.AddTCGatherer(supplyID);
 };
 
-PETRA.BaseManager.prototype.RemoveTCGatherer = function(supplyID)
+BaseManager.prototype.RemoveTCGatherer = function(supplyID)
 {
 	this.basesManager.RemoveTCGatherer(supplyID);
 };
 
-PETRA.BaseManager.prototype.GetTCGatherer = function(supplyID)
+BaseManager.prototype.GetTCGatherer = function(supplyID)
 {
 	return this.basesManager.GetTCGatherer(supplyID);
 };
 
-PETRA.BaseManager.prototype.Serialize = function()
+BaseManager.prototype.Serialize = function()
 {
 	return {
 		"ID": this.ID,
@@ -1146,7 +1173,7 @@ PETRA.BaseManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.BaseManager.prototype.Deserialize = function(gameState, data)
+BaseManager.prototype.Deserialize = function(gameState, data)
 {
 	for (const key in data)
 		this[key] = data[key];

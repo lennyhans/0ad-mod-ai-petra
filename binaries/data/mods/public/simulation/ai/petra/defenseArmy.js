@@ -1,3 +1,8 @@
+import { allowCapture, getLandAccess, getMaxStrength, isSiegeUnit, returnResources } from
+	"simulation/ai/petra/entityExtend.js";
+import { TransportPlan } from "simulation/ai/petra/transportPlan.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
 /**
  * Armies used by the defense manager.
  * An army is a collection of own entities and enemy entities.
@@ -7,7 +12,7 @@
  * "capturing": army set to capture a gaia building or recover capture points to one of its own structures
  *            It must contain only one foe (the building to capture) and never be merged
  */
-PETRA.DefenseArmy = function(gameState, foeEntities, type)
+export function DefenseArmy(gameState, foeEntities, type)
 {
 	this.ID = gameState.ai.uniqueIDs.armies++;
 	this.type = type || "default";
@@ -40,7 +45,7 @@ PETRA.DefenseArmy = function(gameState, foeEntities, type)
 	this.recalculatePosition(gameState, true);
 
 	return true;
-};
+}
 
 /**
  * add an entity to the enemy army
@@ -48,7 +53,7 @@ PETRA.DefenseArmy = function(gameState, foeEntities, type)
  * won't recalculate our position but will dirty it.
  * force is true at army creation or when merging armies, so in this case we should add it even if far
  */
-PETRA.DefenseArmy.prototype.addFoe = function(gameState, enemyId, force)
+DefenseArmy.prototype.addFoe = function(gameState, enemyId, force)
 {
 	if (this.foeEntities.indexOf(enemyId) !== -1)
 		return false;
@@ -73,7 +78,7 @@ PETRA.DefenseArmy.prototype.addFoe = function(gameState, enemyId, force)
  * returns true if the entity was removed and false otherwise.
  * TODO: when there is a technology update, we should probably recompute the strengths, or weird stuffs will happen.
  */
-PETRA.DefenseArmy.prototype.removeFoe = function(gameState, enemyId, enemyEntity)
+DefenseArmy.prototype.removeFoe = function(gameState, enemyId, enemyEntity)
 {
 	const idx = this.foeEntities.indexOf(enemyId);
 	if (idx === -1)
@@ -100,7 +105,7 @@ PETRA.DefenseArmy.prototype.removeFoe = function(gameState, enemyId, enemyEntity
  * adds a defender but doesn't assign him yet.
  * force is true when merging armies, so in this case we should add it even if no position as it can be in a ship
  */
-PETRA.DefenseArmy.prototype.addOwn = function(gameState, id, force)
+DefenseArmy.prototype.addOwn = function(gameState, id, force)
 {
 	if (this.ownEntities.indexOf(id) !== -1)
 		return false;
@@ -119,13 +124,13 @@ PETRA.DefenseArmy.prototype.addOwn = function(gameState, id, force)
 	else
 		ent.setMetadata(PlayerID, "plan", -3);
 	const subrole = ent.getMetadata(PlayerID, "subrole");
-	if (subrole === undefined || subrole !== PETRA.Worker.SUBROLE_DEFENDER)
+	if (subrole === undefined || subrole !== Worker.SUBROLE_DEFENDER)
 		ent.setMetadata(PlayerID, "formerSubrole", subrole);
-	ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_DEFENDER);
+	ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_DEFENDER);
 	return true;
 };
 
-PETRA.DefenseArmy.prototype.removeOwn = function(gameState, id, Entity)
+DefenseArmy.prototype.removeOwn = function(gameState, id, Entity)
 {
 	const idx = this.ownEntities.indexOf(id);
 	if (idx === -1)
@@ -163,7 +168,7 @@ PETRA.DefenseArmy.prototype.removeOwn = function(gameState, id, Entity)
 	if (ent.getMetadata(PlayerID, "transport") !== undefined)
 	{
 		const plan = gameState.ai.HQ.navalManager.getPlan(ent.getMetadata(PlayerID, "transport"));
-		if (plan && plan.state === PETRA.TransportPlan.BOARDING && ent.position())
+		if (plan && plan.state === TransportPlan.BOARDING && ent.position())
 			plan.removeUnit(gameState, ent);
 	}
 
@@ -191,7 +196,7 @@ PETRA.DefenseArmy.prototype.removeOwn = function(gameState, id, Entity)
  * resets the army properly.
  * assumes we already cleared dead units.
  */
-PETRA.DefenseArmy.prototype.clear = function(gameState)
+DefenseArmy.prototype.clear = function(gameState)
 {
 	while (this.foeEntities.length > 0)
 		this.removeFoe(gameState, this.foeEntities[0]);
@@ -247,7 +252,7 @@ PETRA.DefenseArmy.prototype.clear = function(gameState)
 			const pos = struct.position();
 			if (!pos || !gameState.isPlayerMutualAlly(gameState.ai.HQ.territoryMap.getOwner(pos)))
 				continue;
-			if (PETRA.getLandAccess(gameState, struct) !== armyAccess)
+			if (getLandAccess(gameState, struct) !== armyAccess)
 				continue;
 			const defensiveStruct = struct.hasDefensiveFire();
 			if (defensiveFound && !defensiveStruct)
@@ -290,7 +295,7 @@ PETRA.DefenseArmy.prototype.clear = function(gameState)
 	this.recalculatePosition(gameState);
 };
 
-PETRA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
+DefenseArmy.prototype.assignUnit = function(gameState, entID)
 {
 	// we'll assume this defender is ours already.
 	// we'll also override any previous assignment
@@ -300,7 +305,7 @@ PETRA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 		return false;
 
 	// try to return its resources, and if any, the attack order will be queued
-	const queued = PETRA.returnResources(gameState, ent);
+	const queued = returnResources(gameState, ent);
 
 	let idMin;
 	let distMin;
@@ -312,7 +317,7 @@ PETRA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 		if (!eEnt || !eEnt.position())	// probably can't happen.
 			continue;
 
-		if (!ent.canAttackTarget(eEnt, PETRA.allowCapture(gameState, ent, eEnt)))
+		if (!ent.canAttackTarget(eEnt, allowCapture(gameState, ent, eEnt)))
 			continue;
 
 		if (eEnt.hasClass("Unit") && eEnt.unitAIOrderData() && eEnt.unitAIOrderData().length &&
@@ -324,7 +329,7 @@ PETRA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 
 		// already enough units against it
 		if (this.assignedAgainst[id].length > 8 ||
-			this.assignedAgainst[id].length > 5 && !eEnt.hasClass("Hero") && !PETRA.isSiegeUnit(eEnt))
+			this.assignedAgainst[id].length > 5 && !eEnt.hasClass("Hero") && !isSiegeUnit(eEnt))
 			continue;
 
 		const dist = API3.SquareVectorDistance(ent.position(), eEnt.position());
@@ -350,7 +355,7 @@ PETRA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 	else
 		return false;
 
-	const ownIndex = PETRA.getLandAccess(gameState, ent);
+	const ownIndex = getLandAccess(gameState, ent);
 	const foeEnt = gameState.getEntityById(idFoe);
 	const foePosition = foeEnt.position();
 	const foeIndex = gameState.ai.accessibility.getAccessValue(foePosition);
@@ -358,19 +363,19 @@ PETRA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 	{
 		this.assignedTo[entID] = idFoe;
 		this.assignedAgainst[idFoe].push(entID);
-		ent.attack(idFoe, PETRA.allowCapture(gameState, ent, foeEnt), queued);
+		ent.attack(idFoe, allowCapture(gameState, ent, foeEnt), queued);
 	}
 	else
 		gameState.ai.HQ.navalManager.requireTransport(gameState, ent, ownIndex, foeIndex, foePosition);
 	return true;
 };
 
-PETRA.DefenseArmy.prototype.getType = function()
+DefenseArmy.prototype.getType = function()
 {
 	return this.type;
 };
 
-PETRA.DefenseArmy.prototype.getState = function()
+DefenseArmy.prototype.getState = function()
 {
 	if (!this.foeEntities.length)
 		return 0;
@@ -382,7 +387,7 @@ PETRA.DefenseArmy.prototype.getState = function()
  * assumes units are in only one army.
  * also assumes that all have been properly cleaned up (no dead units).
  */
-PETRA.DefenseArmy.prototype.merge = function(gameState, otherArmy)
+DefenseArmy.prototype.merge = function(gameState, otherArmy)
 {
 	// copy over all parameters.
 	for (const i in otherArmy.assignedAgainst)
@@ -407,7 +412,7 @@ PETRA.DefenseArmy.prototype.merge = function(gameState, otherArmy)
 	return true;
 };
 
-PETRA.DefenseArmy.prototype.needsDefenders = function(gameState)
+DefenseArmy.prototype.needsDefenders = function(gameState)
 {
 	let defenseRatio;
 	const territoryOwner = gameState.ai.HQ.territoryMap.getOwner(this.foePosition);
@@ -436,7 +441,7 @@ PETRA.DefenseArmy.prototype.needsDefenders = function(gameState)
 
 
 /** if not forced, will only recalculate if on a different turn. */
-PETRA.DefenseArmy.prototype.recalculatePosition = function(gameState, force)
+DefenseArmy.prototype.recalculatePosition = function(gameState, force)
 {
 	if (!force && this.positionLastUpdate === gameState.ai.elapsedTime)
 		return;
@@ -463,7 +468,7 @@ PETRA.DefenseArmy.prototype.recalculatePosition = function(gameState, force)
 	this.positionLastUpdate = gameState.ai.elapsedTime;
 };
 
-PETRA.DefenseArmy.prototype.recalculateStrengths = function(gameState)
+DefenseArmy.prototype.recalculateStrengths = function(gameState)
 {
 	this.ownStrength = 0;
 	this.foeStrength = 0;
@@ -475,7 +480,7 @@ PETRA.DefenseArmy.prototype.recalculateStrengths = function(gameState)
 };
 
 /** adds or remove the strength of the entity either to the enemy or to our units. */
-PETRA.DefenseArmy.prototype.evaluateStrength = function(ent, isOwn, remove)
+DefenseArmy.prototype.evaluateStrength = function(ent, isOwn, remove)
 {
 	if (!ent)
 		return;
@@ -489,7 +494,7 @@ PETRA.DefenseArmy.prototype.evaluateStrength = function(ent, isOwn, remove)
 			entStrength = 2;
 	}
 	else
-		entStrength = PETRA.getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
+		entStrength = getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
 
 	// TODO adapt the getMaxStrength function for animals.
 	// For the time being, just increase it for elephants as the returned value is too small.
@@ -505,7 +510,7 @@ PETRA.DefenseArmy.prototype.evaluateStrength = function(ent, isOwn, remove)
 		this.foeStrength += entStrength;
 };
 
-PETRA.DefenseArmy.prototype.checkEvents = function(gameState, events)
+DefenseArmy.prototype.checkEvents = function(gameState, events)
 {
 	// Warning the metadata is already cloned in shared.js. Futhermore, changes should be done before destroyEvents
 	// otherwise it would remove the old entity from this army list
@@ -564,7 +569,7 @@ PETRA.DefenseArmy.prototype.checkEvents = function(gameState, events)
 	}
 };
 
-PETRA.DefenseArmy.prototype.update = function(gameState)
+DefenseArmy.prototype.update = function(gameState)
 {
 	for (const entId of this.ownEntities)
 	{
@@ -577,7 +582,7 @@ PETRA.DefenseArmy.prototype.update = function(gameState)
 		else if (orderData.length && orderData[0].target && orderData[0].attackType && orderData[0].attackType === "Capture")
 		{
 			const target = gameState.getEntityById(orderData[0].target);
-			if (target && !PETRA.allowCapture(gameState, ent, target))
+			if (target && !allowCapture(gameState, ent, target))
 				ent.attack(orderData[0].target, false);
 		}
 	}
@@ -629,7 +634,7 @@ PETRA.DefenseArmy.prototype.update = function(gameState)
 	return breakaways;
 };
 
-PETRA.DefenseArmy.prototype.Serialize = function()
+DefenseArmy.prototype.Serialize = function()
 {
 	return {
 		"ID": this.ID,
@@ -645,7 +650,7 @@ PETRA.DefenseArmy.prototype.Serialize = function()
 	};
 };
 
-PETRA.DefenseArmy.prototype.Deserialize = function(data)
+DefenseArmy.prototype.Deserialize = function(data)
 {
 	for (const key in data)
 		this[key] = data[key];

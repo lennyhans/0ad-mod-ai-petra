@@ -1,15 +1,21 @@
+import { Config, DIFFICULTY_EASY, DIFFICULTY_MEDIUM } from "simulation/ai/petra/config.js";
+import { allowCapture, dumpEntity, getHolder, getLandAccess, isSiegeUnit, returnResources } from
+	"simulation/ai/petra/entityExtend.js";
+import { TrainingPlan } from "simulation/ai/petra/queueplanTraining.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
 /**
  * This is an attack plan:
  * It deals with everything in an attack, from picking a target to picking a path to it
  * To making sure units are built, and pushing elements to the queue manager otherwise
  * It also handles the actual attack, though much work is needed on that.
  */
-PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan.TYPE_DEFAULT, data)
+export function AttackPlan(gameState, config, uniqueID, type = AttackPlan.TYPE_DEFAULT, data)
 {
-	this.Config = Config;
+	this.Config = config;
 	this.name = uniqueID;
 	this.type = type;
-	this.state = PETRA.AttackPlan.STATE_UNEXECUTED;
+	this.state = AttackPlan.STATE_UNEXECUTED;
 	this.forced = false;  // true when this attacked has been forced to help an ally
 
 	if (data && data.target)
@@ -35,7 +41,7 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 	{
 		if (!base.anchor || !base.anchor.position())
 			continue;
-		const access = PETRA.getLandAccess(gameState, base.anchor);
+		const access = getLandAccess(gameState, base.anchor);
 		if (!rallyPoint)
 		{
 			rallyPoint = base.anchor.position();
@@ -50,7 +56,7 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 		{
 			if (!ent.position())
 				continue;
-			const access = PETRA.getLandAccess(gameState, ent);
+			const access = getLandAccess(gameState, ent);
 			rallyPoint = ent.position();
 			rallyAccess = access;
 			allAccesses[access] = rallyPoint;
@@ -72,7 +78,7 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 				continue;
 			if (!structure.position())
 				continue;
-			const access = PETRA.getLandAccess(gameState, structure);
+			const access = getLandAccess(gameState, structure);
 			if (access in allAccesses)
 			{
 				this.overseas = 0;
@@ -113,7 +119,7 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 	this.unitStat = {};
 
 	// neededShips is the minimal number of ships which should be available for transport
-	if (type === PETRA.AttackPlan.TYPE_RUSH)
+	if (type === AttackPlan.TYPE_RUSH)
 	{
 		priority = 250;
 		this.unitStat.Infantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 2, "classes": ["Infantry"],
@@ -124,14 +130,14 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 			this.unitStat.Infantry.targetSize = data.targetSize;
 		this.neededShips = 1;
 	}
-	else if (type === PETRA.AttackPlan.TYPE_RAID)
+	else if (type === AttackPlan.TYPE_RAID)
 	{
 		priority = 150;
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 3, "targetSize": 4, "batchSize": 2, "classes": ["FastMoving+CitizenSoldier"],
 			"interests": [ ["strength", 1] ] };
 		this.neededShips = 1;
 	}
-	else if (type === PETRA.AttackPlan.TYPE_HUGE_ATTACK)
+	else if (type === AttackPlan.TYPE_HUGE_ATTACK)
 	{
 		priority = 90;
 		// basically we want a mix of citizen soldiers so our barracks have a purpose, and champion units.
@@ -170,18 +176,18 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 	// Put some randomness on the attack size
 	let variation = randFloat(0.8, 1.2);
 	// and lower priority and smaller sizes for easier difficulty levels
-	if (this.Config.difficulty < PETRA.DIFFICULTY_EASY)
+	if (this.Config.difficulty < DIFFICULTY_EASY)
 	{
 		priority *= 0.4;
 		variation *= 0.2;
 	}
-	else if (this.Config.difficulty < PETRA.DIFFICULTY_MEDIUM)
+	else if (this.Config.difficulty < DIFFICULTY_MEDIUM)
 	{
 		priority *= 0.8;
 		variation *= 0.6;
 	}
 
-	if (this.Config.difficulty < PETRA.DIFFICULTY_EASY)
+	if (this.Config.difficulty < DIFFICULTY_EASY)
 	{
 		for (const cat in this.unitStat)
 		{
@@ -215,7 +221,7 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 	// each array is [ratio, [associated classes], associated EntityColl, associated unitStat, name ]
 	this.buildOrders = [];
 	this.canBuildUnits = gameState.ai.HQ.canBuildUnits;
-	this.siegeState = PETRA.AttackPlan.SIEGE_NOT_TESTED;
+	this.siegeState = AttackPlan.SIEGE_NOT_TESTED;
 
 	// some variables used during the attack
 	this.position5TurnsAgo = [0, 0];
@@ -224,30 +230,30 @@ PETRA.AttackPlan = function(gameState, Config, uniqueID, type = PETRA.AttackPlan
 	this.isBlocked = false;	     // true when this attack faces walls
 
 	return true;
-};
+}
 
-PETRA.AttackPlan.PREPARATION_FAILED = 0;
-PETRA.AttackPlan.PREPARATION_KEEP_GOING = 1;
-PETRA.AttackPlan.PREPARATION_START = 2;
+AttackPlan.PREPARATION_FAILED = 0;
+AttackPlan.PREPARATION_KEEP_GOING = 1;
+AttackPlan.PREPARATION_START = 2;
 
-PETRA.AttackPlan.SIEGE_NOT_TESTED = 0;
-PETRA.AttackPlan.SIEGE_NO_TRAINER = 1;
+AttackPlan.SIEGE_NOT_TESTED = 0;
+AttackPlan.SIEGE_NO_TRAINER = 1;
 
 /**
  * Siege added in build orders
  */
-PETRA.AttackPlan.SIEGE_ADDED = 2;
+AttackPlan.SIEGE_ADDED = 2;
 
-PETRA.AttackPlan.STATE_UNEXECUTED = "unexecuted";
-PETRA.AttackPlan.STATE_COMPLETING = "completing";
-PETRA.AttackPlan.STATE_ARRIVED = "arrived";
+AttackPlan.STATE_UNEXECUTED = "unexecuted";
+AttackPlan.STATE_COMPLETING = "completing";
+AttackPlan.STATE_ARRIVED = "arrived";
 
-PETRA.AttackPlan.TYPE_DEFAULT = "Attack";
-PETRA.AttackPlan.TYPE_HUGE_ATTACK = "HugeAttack";
-PETRA.AttackPlan.TYPE_RAID = "Raid";
-PETRA.AttackPlan.TYPE_RUSH = "Rush";
+AttackPlan.TYPE_DEFAULT = "Attack";
+AttackPlan.TYPE_HUGE_ATTACK = "HugeAttack";
+AttackPlan.TYPE_RAID = "Raid";
+AttackPlan.TYPE_RUSH = "Rush";
 
-PETRA.AttackPlan.prototype.init = function(gameState)
+AttackPlan.prototype.init = function(gameState)
 {
 	this.queue = gameState.ai.queues["plan_" + this.name];
 	this.queueChamp = gameState.ai.queues["plan_" + this.name +"_champ"];
@@ -270,27 +276,27 @@ PETRA.AttackPlan.prototype.init = function(gameState)
 	}
 };
 
-PETRA.AttackPlan.prototype.getName = function()
+AttackPlan.prototype.getName = function()
 {
 	return this.name;
 };
 
-PETRA.AttackPlan.prototype.getType = function()
+AttackPlan.prototype.getType = function()
 {
 	return this.type;
 };
 
-PETRA.AttackPlan.prototype.isStarted = function()
+AttackPlan.prototype.isStarted = function()
 {
-	return this.state !== PETRA.AttackPlan.STATE_UNEXECUTED && this.state !== PETRA.AttackPlan.STATE_COMPLETING;
+	return this.state !== AttackPlan.STATE_UNEXECUTED && this.state !== AttackPlan.STATE_COMPLETING;
 };
 
-PETRA.AttackPlan.prototype.isPaused = function()
+AttackPlan.prototype.isPaused = function()
 {
 	return this.paused;
 };
 
-PETRA.AttackPlan.prototype.setPaused = function(boolValue)
+AttackPlan.prototype.setPaused = function(boolValue)
 {
 	this.paused = boolValue;
 };
@@ -299,7 +305,7 @@ PETRA.AttackPlan.prototype.setPaused = function(boolValue)
  * Returns true if the attack can be executed at the current time
  * Basically it checks we have enough units.
  */
-PETRA.AttackPlan.prototype.canStart = function()
+AttackPlan.prototype.canStart = function()
 {
 	if (!this.canBuildUnits)
 		return true;
@@ -311,7 +317,7 @@ PETRA.AttackPlan.prototype.canStart = function()
 	return true;
 };
 
-PETRA.AttackPlan.prototype.mustStart = function()
+AttackPlan.prototype.mustStart = function()
 {
 	if (this.isPaused())
 		return false;
@@ -336,12 +342,12 @@ PETRA.AttackPlan.prototype.mustStart = function()
 	if (MaxReachedEverywhere)
 		return true;
 	if (MinReachedEverywhere)
-		return this.type === PETRA.AttackPlan.TYPE_RAID && this.target && this.target.foundationProgress() &&
+		return this.type === AttackPlan.TYPE_RAID && this.target && this.target.foundationProgress() &&
 		                                             this.target.foundationProgress() > 50;
 	return false;
 };
 
-PETRA.AttackPlan.prototype.forceStart = function()
+AttackPlan.prototype.forceStart = function()
 {
 	for (const unitCat in this.unitStat)
 	{
@@ -352,14 +358,14 @@ PETRA.AttackPlan.prototype.forceStart = function()
 	this.forced = true;
 };
 
-PETRA.AttackPlan.prototype.emptyQueues = function()
+AttackPlan.prototype.emptyQueues = function()
 {
 	this.queue.empty();
 	this.queueChamp.empty();
 	this.queueSiege.empty();
 };
 
-PETRA.AttackPlan.prototype.removeQueues = function(gameState)
+AttackPlan.prototype.removeQueues = function(gameState)
 {
 	gameState.ai.queueManager.removeQueue("plan_" + this.name);
 	gameState.ai.queueManager.removeQueue("plan_" + this.name + "_champ");
@@ -367,7 +373,7 @@ PETRA.AttackPlan.prototype.removeQueues = function(gameState)
 };
 
 /** Adds a build order. If resetQueue is true, this will reset the queue. */
-PETRA.AttackPlan.prototype.addBuildOrder = function(gameState, name, unitStats, resetQueue)
+AttackPlan.prototype.addBuildOrder = function(gameState, name, unitStats, resetQueue)
 {
 	if (!this.isStarted())
 	{
@@ -382,9 +388,9 @@ PETRA.AttackPlan.prototype.addBuildOrder = function(gameState, name, unitStats, 
 	}
 };
 
-PETRA.AttackPlan.prototype.addSiegeUnits = function(gameState)
+AttackPlan.prototype.addSiegeUnits = function(gameState)
 {
-	if (this.siegeState === PETRA.AttackPlan.SIEGE_ADDED || this.state !== PETRA.AttackPlan.STATE_UNEXECUTED)
+	if (this.siegeState === AttackPlan.SIEGE_ADDED || this.state !== AttackPlan.STATE_UNEXECUTED)
 		return false;
 
 	const civ = gameState.getPlayerCiv();
@@ -409,7 +415,7 @@ PETRA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 	}
 	if (hasTrainer.every(e => !e))
 	{
-		this.siegeState = PETRA.AttackPlan.SIEGE_NO_TRAINER;
+		this.siegeState = AttackPlan.SIEGE_NO_TRAINER;
 		return false;
 	}
 	let i = this.name % classes.length;
@@ -420,13 +426,13 @@ PETRA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 		i = (i + 1) % classes.length;
 	}
 
-	this.siegeState = PETRA.AttackPlan.SIEGE_ADDED;
+	this.siegeState = AttackPlan.SIEGE_ADDED;
 	let targetSize;
-	if (this.Config.difficulty < PETRA.DIFFICULTY_MEDIUM)
-		targetSize = this.type === PETRA.AttackPlan.TYPE_HUGE_ATTACK ? Math.max(this.Config.difficulty, 1) : Math.max(this.Config.difficulty - 1, 0);
+	if (this.Config.difficulty < DIFFICULTY_MEDIUM)
+		targetSize = this.type === AttackPlan.TYPE_HUGE_ATTACK ? Math.max(this.Config.difficulty, 1) : Math.max(this.Config.difficulty - 1, 0);
 	else
-		targetSize = this.type === PETRA.AttackPlan.TYPE_HUGE_ATTACK ? this.Config.difficulty + 1 : this.Config.difficulty - 1;
-	targetSize = Math.max(Math.round(this.Config.popScaling * targetSize), this.type === PETRA.AttackPlan.TYPE_HUGE_ATTACK ? 1 : 0);
+		targetSize = this.type === AttackPlan.TYPE_HUGE_ATTACK ? this.Config.difficulty + 1 : this.Config.difficulty - 1;
+	targetSize = Math.max(Math.round(this.Config.popScaling * targetSize), this.type === AttackPlan.TYPE_HUGE_ATTACK ? 1 : 0);
 	if (!targetSize)
 		return true;
 	// no minsize as we don't want the plan to fail at the last minute though.
@@ -437,27 +443,27 @@ PETRA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 };
 
 /** Three returns possible: 1 is "keep going", 0 is "failed plan", 2 is "start". */
-PETRA.AttackPlan.prototype.updatePreparation = function(gameState)
+AttackPlan.prototype.updatePreparation = function(gameState)
 {
 	// the completing step is used to return resources and regroup the units
 	// so we check that we have no more forced order before starting the attack
-	if (this.state === PETRA.AttackPlan.STATE_COMPLETING)
+	if (this.state === AttackPlan.STATE_COMPLETING)
 	{
 		// if our target was destroyed, go back to "unexecuted" state
 		if (this.targetPlayer === undefined || !this.target || !gameState.getEntityById(this.target.id()))
 		{
-			this.state = PETRA.AttackPlan.STATE_UNEXECUTED;
+			this.state = AttackPlan.STATE_UNEXECUTED;
 			this.target = undefined;
 		}
 		else
 		{
 			// check that all units have finished with their transport if needed
 			if (this.waitingForTransport())
-				return PETRA.AttackPlan.PREPARATION_KEEP_GOING;
+				return AttackPlan.PREPARATION_KEEP_GOING;
 			// bloqued units which cannot finish their order should not stop the attack
 			if (gameState.ai.elapsedTime < this.maxCompletingTime && this.hasForceOrder())
-				return PETRA.AttackPlan.PREPARATION_KEEP_GOING;
-			return PETRA.AttackPlan.PREPARATION_START;
+				return AttackPlan.PREPARATION_KEEP_GOING;
+			return AttackPlan.PREPARATION_START;
 		}
 	}
 
@@ -466,11 +472,11 @@ PETRA.AttackPlan.prototype.updatePreparation = function(gameState)
 
 	// if we need a transport, wait for some transport ships
 	if (this.overseas && !gameState.ai.HQ.navalManager.seaTransportShips[this.overseas].length)
-		return PETRA.AttackPlan.PREPARATION_KEEP_GOING;
+		return AttackPlan.PREPARATION_KEEP_GOING;
 
-	if (this.type !== PETRA.AttackPlan.TYPE_RAID || !this.forced)    // Forced Raids have special purposes (as relic capture)
+	if (this.type !== AttackPlan.TYPE_RAID || !this.forced)    // Forced Raids have special purposes (as relic capture)
 		this.assignUnits(gameState);
-	if (this.type !== PETRA.AttackPlan.TYPE_RAID && gameState.ai.HQ.attackManager.getAttackInPreparation(PETRA.AttackPlan.TYPE_RAID) !== undefined)
+	if (this.type !== AttackPlan.TYPE_RAID && gameState.ai.HQ.attackManager.getAttackInPreparation(AttackPlan.TYPE_RAID) !== undefined)
 		this.reassignFastUnit(gameState);    // reassign some fast units (if any) to fasten raid preparations
 
 	// Fasten the end game.
@@ -504,16 +510,16 @@ PETRA.AttackPlan.prototype.updatePreparation = function(gameState)
 			if (this.Config.debug > 1)
 			{
 				const am = gameState.ai.HQ.attackManager;
-				API3.warn(" attacks upcoming: raid " + am.upcomingAttacks[PETRA.AttackPlan.TYPE_RAID].length +
-					  " rush " + am.upcomingAttacks[PETRA.AttackPlan.TYPE_RUSH].length +
-					  " attack " + am.upcomingAttacks[PETRA.AttackPlan.TYPE_DEFAULT].length +
-					  " huge " + am.upcomingAttacks[PETRA.AttackPlan.TYPE_HUGE_ATTACK].length);
-				API3.warn(" attacks started: raid " + am.startedAttacks[PETRA.AttackPlan.TYPE_RAID].length +
-					  " rush " + am.startedAttacks[PETRA.AttackPlan.TYPE_RUSH].length +
-					  " attack " + am.startedAttacks[PETRA.AttackPlan.TYPE_DEFAULT].length +
-					  " huge " + am.startedAttacks[PETRA.AttackPlan.TYPE_HUGE_ATTACK].length);
+				API3.warn(" attacks upcoming: raid " + am.upcomingAttacks[AttackPlan.TYPE_RAID].length +
+					  " rush " + am.upcomingAttacks[AttackPlan.TYPE_RUSH].length +
+					  " attack " + am.upcomingAttacks[AttackPlan.TYPE_DEFAULT].length +
+					  " huge " + am.upcomingAttacks[AttackPlan.TYPE_HUGE_ATTACK].length);
+				API3.warn(" attacks started: raid " + am.startedAttacks[AttackPlan.TYPE_RAID].length +
+					  " rush " + am.startedAttacks[AttackPlan.TYPE_RUSH].length +
+					  " attack " + am.startedAttacks[AttackPlan.TYPE_DEFAULT].length +
+					  " huge " + am.startedAttacks[AttackPlan.TYPE_HUGE_ATTACK].length);
 			}
-			return PETRA.AttackPlan.PREPARATION_FAILED;
+			return AttackPlan.PREPARATION_FAILED;
 		}
 	}
 	else if (this.mustStart())
@@ -522,7 +528,7 @@ PETRA.AttackPlan.prototype.updatePreparation = function(gameState)
 		{
 			// keep on while the units finish being trained, then we'll start
 			this.emptyQueues();
-			return PETRA.AttackPlan.PREPARATION_KEEP_GOING;
+			return AttackPlan.PREPARATION_KEEP_GOING;
 		}
 	}
 	else
@@ -530,31 +536,31 @@ PETRA.AttackPlan.prototype.updatePreparation = function(gameState)
 		if (this.canBuildUnits)
 		{
 			// We still have time left to recruit units and do stuffs.
-			if (this.siegeState === PETRA.AttackPlan.SIEGE_NOT_TESTED ||
-				this.siegeState === PETRA.AttackPlan.SIEGE_NO_TRAINER && gameState.ai.playedTurn % 5 == 0)
+			if (this.siegeState === AttackPlan.SIEGE_NOT_TESTED ||
+				this.siegeState === AttackPlan.SIEGE_NO_TRAINER && gameState.ai.playedTurn % 5 == 0)
 				this.addSiegeUnits(gameState);
 			this.trainMoreUnits(gameState);
 			// may happen if we have no more training facilities and build orders are canceled
 			if (!this.buildOrders.length)
-				return PETRA.AttackPlan.PREPARATION_FAILED;	// will abort the plan
+				return AttackPlan.PREPARATION_FAILED;	// will abort the plan
 		}
-		return PETRA.AttackPlan.PREPARATION_KEEP_GOING;
+		return AttackPlan.PREPARATION_KEEP_GOING;
 	}
 
 	// if we're here, it means we must start
-	this.state = PETRA.AttackPlan.STATE_COMPLETING;
+	this.state = AttackPlan.STATE_COMPLETING;
 
 	// Raids have their predefined target
 	if (!this.target && !this.chooseTarget(gameState))
-		return PETRA.AttackPlan.PREPARATION_FAILED;
+		return AttackPlan.PREPARATION_FAILED;
 	if (!this.overseas)
 		this.getPathToTarget(gameState);
 
-	if (this.type === PETRA.AttackPlan.TYPE_RAID)
+	if (this.type === AttackPlan.TYPE_RAID)
 		this.maxCompletingTime = this.forced ? 0 : gameState.ai.elapsedTime + 20;
 	else
 	{
-		if (this.type === PETRA.AttackPlan.TYPE_RUSH || this.forced)
+		if (this.type === AttackPlan.TYPE_RUSH || this.forced)
 			this.maxCompletingTime = gameState.ai.elapsedTime + 40;
 		else
 			this.maxCompletingTime = gameState.ai.elapsedTime + 60;
@@ -586,12 +592,12 @@ PETRA.AttackPlan.prototype.updatePreparation = function(gameState)
 			ent.setMetadata(PlayerID, "plan", -1);
 			continue;
 		}
-		ent.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_ATTACK);
-		ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_COMPLETING);
+		ent.setMetadata(PlayerID, "role", Worker.ROLE_ATTACK);
+		ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_COMPLETING);
 		let queued = false;
 		if (ent.resourceCarrying() && ent.resourceCarrying().length)
-			queued = PETRA.returnResources(gameState, ent);
-		const index = PETRA.getLandAccess(gameState, ent);
+			queued = returnResources(gameState, ent);
+		const index = getLandAccess(gameState, ent);
 		if (index == rallyIndex)
 			ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 15, queued);
 		else
@@ -600,10 +606,10 @@ PETRA.AttackPlan.prototype.updatePreparation = function(gameState)
 
 	// reset all queued units
 	this.removeQueues(gameState);
-	return PETRA.AttackPlan.PREPARATION_KEEP_GOING;
+	return AttackPlan.PREPARATION_KEEP_GOING;
 };
 
-PETRA.AttackPlan.prototype.trainMoreUnits = function(gameState)
+AttackPlan.prototype.trainMoreUnits = function(gameState)
 {
 	// let's sort by training advancement, ie 'current size / target size'
 	// count the number of queued units too.
@@ -675,8 +681,9 @@ PETRA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 				const max = firstOrder[3].batchSize;
 				const specialData = "Plan_" + this.name + "_" + firstOrder[4];
 				const data = { "plan": this.name, "special": specialData, "base": 0 };
-				data.role = gameState.getTemplate(template).hasClass("CitizenSoldier") ? PETRA.Worker.ROLE_WORKER : PETRA.Worker.ROLE_ATTACK;
-				const trainingPlan = new PETRA.TrainingPlan(gameState, template, data, max, max);
+				data.role = gameState.getTemplate(template).hasClass("CitizenSoldier") ?
+					Worker.ROLE_WORKER : Worker.ROLE_ATTACK;
+				const trainingPlan = new TrainingPlan(gameState, template, data, max, max);
 				if (trainingPlan.template)
 					queue.addPlan(trainingPlan);
 				else if (this.Config.debug > 1)
@@ -687,7 +694,7 @@ PETRA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	}
 };
 
-PETRA.AttackPlan.prototype.assignUnits = function(gameState)
+AttackPlan.prototype.assignUnits = function(gameState)
 {
 	const plan = this.name;
 	let added = false;
@@ -705,7 +712,7 @@ PETRA.AttackPlan.prototype.assignUnits = function(gameState)
 		return added;
 	}
 
-	if (this.type === PETRA.AttackPlan.TYPE_RAID)
+	if (this.type === AttackPlan.TYPE_RAID)
 	{
 		// Raids are quick attacks: assign all FastMoving soldiers except some for hunting.
 		let num = 0;
@@ -746,15 +753,15 @@ PETRA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Finally add also some workers for the higher difficulties,
 	// If Rush, assign all kind of workers, keeping only a minimum number of defenders
 	// Otherwise, assign only some idle workers if too much of them
-	if (this.Config.difficulty <= PETRA.DIFFICULTY_EASY)
+	if (this.Config.difficulty <= DIFFICULTY_EASY)
 		return added;
 
 	let num = 0;
 	const numbase = {};
-	let keep = this.type !== PETRA.AttackPlan.TYPE_RUSH ?
+	let keep = this.type !== AttackPlan.TYPE_RUSH ?
 		6 + 4 * gameState.getNumPlayerEnemies() + 8 * this.Config.personality.defensive : 8;
 	keep = Math.round(this.Config.popScaling * keep);
-	for (const ent of gameState.getOwnEntitiesByRole(PETRA.Worker.ROLE_WORKER, true).values())
+	for (const ent of gameState.getOwnEntitiesByRole(Worker.ROLE_WORKER, true).values())
 	{
 		if (!ent.hasClass("CitizenSoldier") || !this.isAvailableUnit(gameState, ent))
 			continue;
@@ -764,12 +771,12 @@ PETRA.AttackPlan.prototype.assignUnits = function(gameState)
 		else
 		{
 			API3.warn("Petra problem ent without base ");
-			PETRA.dumpEntity(ent);
+			dumpEntity(ent);
 			continue;
 		}
 		if (num++ < keep || numbase[baseID] < 5)
 			continue;
-		if (this.type !== PETRA.AttackPlan.TYPE_RUSH && ent.getMetadata(PlayerID, "subrole") !== PETRA.Worker.SUBROLE_IDLE)
+		if (this.type !== AttackPlan.TYPE_RUSH && ent.getMetadata(PlayerID, "subrole") !== Worker.SUBROLE_IDLE)
 			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
@@ -778,7 +785,7 @@ PETRA.AttackPlan.prototype.assignUnits = function(gameState)
 	return added;
 };
 
-PETRA.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
+AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
 {
 	if (!ent.position())
 		return false;
@@ -791,7 +798,7 @@ PETRA.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
 };
 
 /** Reassign one (at each turn) FastMoving unit to fasten raid preparation. */
-PETRA.AttackPlan.prototype.reassignFastUnit = function(gameState)
+AttackPlan.prototype.reassignFastUnit = function(gameState)
 {
 	for (const ent of this.unitCollection.values())
 	{
@@ -799,7 +806,7 @@ PETRA.AttackPlan.prototype.reassignFastUnit = function(gameState)
 			continue;
 		if (!ent.hasClasses(["FastMoving", "CitizenSoldier"]))
 			continue;
-		const raid = gameState.ai.HQ.attackManager.getAttackInPreparation(PETRA.AttackPlan.TYPE_RAID);
+		const raid = gameState.ai.HQ.attackManager.getAttackInPreparation(AttackPlan.TYPE_RAID);
 		ent.setMetadata(PlayerID, "plan", raid.name);
 		this.unitCollection.updateEnt(ent);
 		raid.unitCollection.updateEnt(ent);
@@ -807,7 +814,7 @@ PETRA.AttackPlan.prototype.reassignFastUnit = function(gameState)
 	}
 };
 
-PETRA.AttackPlan.prototype.chooseTarget = function(gameState)
+AttackPlan.prototype.chooseTarget = function(gameState)
 {
 	if (this.targetPlayer === undefined)
 	{
@@ -832,7 +839,7 @@ PETRA.AttackPlan.prototype.chooseTarget = function(gameState)
 	this.targetPos = this.target.position();
 	// redefine a new rally point for this target if we have a base on the same land
 	// find a new one on the pseudo-nearest base (dist weighted by the size of the island)
-	const targetIndex = PETRA.getLandAccess(gameState, this.target);
+	const targetIndex = getLandAccess(gameState, this.target);
 	let rallyIndex = gameState.ai.accessibility.getAccessValue(this.rallyPoint);
 	if (targetIndex != rallyIndex)
 	{
@@ -894,7 +901,7 @@ PETRA.AttackPlan.prototype.chooseTarget = function(gameState)
 /**
  * sameLand true means that we look for a target for which we do not need to take a transport
  */
-PETRA.AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand)
+AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand)
 {
 	this.isBlocked = false;
 	// Temporary variables needed by isValidTarget
@@ -911,9 +918,9 @@ PETRA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 	}
 	else
 	{
-		if (this.type === PETRA.AttackPlan.TYPE_RAID)
+		if (this.type === AttackPlan.TYPE_RAID)
 			targets = this.raidTargetFinder(gameState);
-		else if (this.type === PETRA.AttackPlan.TYPE_RUSH || this.type === PETRA.AttackPlan.TYPE_DEFAULT)
+		else if (this.type === AttackPlan.TYPE_RUSH || this.type === AttackPlan.TYPE_DEFAULT)
 		{
 			targets = this.rushTargetFinder(gameState, this.targetPlayer);
 			if (!targets.hasEntities() && (this.hasSiegeUnits() || this.forced))
@@ -938,7 +945,7 @@ PETRA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), position);
 		// In normal attacks, disfavor fields
-		if (this.type !== PETRA.AttackPlan.TYPE_RUSH && this.type !== PETRA.AttackPlan.TYPE_RAID && ent.hasClass("Field"))
+		if (this.type !== AttackPlan.TYPE_RUSH && this.type !== AttackPlan.TYPE_RAID && ent.hasClass("Field"))
 			dist += 100000;
 		if (dist < minDist)
 		{
@@ -966,7 +973,7 @@ PETRA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
  * Default target finder aims for conquest critical targets
  * We must apply the *same* selection (isValidTarget) as done in getNearestTarget
  */
-PETRA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
+AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	if (gameState.getVictoryConditions().has("wonder"))
@@ -999,17 +1006,17 @@ PETRA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 	return targets;
 };
 
-PETRA.AttackPlan.prototype.isValidTarget = function(ent)
+AttackPlan.prototype.isValidTarget = function(ent)
 {
 	if (!ent.position())
 		return false;
-	if (this.sameLand && PETRA.getLandAccess(this.gameState, ent) != this.sameLand)
+	if (this.sameLand && getLandAccess(this.gameState, ent) != this.sameLand)
 		return false;
 	return !ent.decaying() || ent.getDefaultArrow() || ent.isGarrisonHolder() && ent.garrisoned().length;
 };
 
 /** Rush target finder aims at isolated non-defended buildings */
-PETRA.AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
+AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	let buildings;
@@ -1058,14 +1065,14 @@ PETRA.AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
 	if (target)
 		targets.addEnt(target);
 
-	if (!targets.hasEntities() && this.type === PETRA.AttackPlan.TYPE_RUSH && playerEnemy)
+	if (!targets.hasEntities() && this.type === AttackPlan.TYPE_RUSH && playerEnemy)
 		targets = this.rushTargetFinder(gameState);
 
 	return targets;
 };
 
 /** Raid target finder aims at destructing foundations from which our defenseManager has attacked the builders */
-PETRA.AttackPlan.prototype.raidTargetFinder = function(gameState)
+AttackPlan.prototype.raidTargetFinder = function(gameState)
 {
 	const targets = new API3.EntityCollection(gameState.sharedScript);
 	for (const targetId of gameState.ai.HQ.defenseManager.targetList)
@@ -1082,9 +1089,9 @@ PETRA.AttackPlan.prototype.raidTargetFinder = function(gameState)
  * otherwise we may be blocked by walls and try to react accordingly
  * This is done only when attacker and target are on the same land
  */
-PETRA.AttackPlan.prototype.checkTargetObstruction = function(gameState, target, position)
+AttackPlan.prototype.checkTargetObstruction = function(gameState, target, position)
 {
-	if (PETRA.getLandAccess(gameState, target) != gameState.ai.accessibility.getAccessValue(position))
+	if (getLandAccess(gameState, target) != gameState.ai.accessibility.getAccessValue(position))
 		return target;
 
 	const targetPos = target.position();
@@ -1188,10 +1195,10 @@ PETRA.AttackPlan.prototype.checkTargetObstruction = function(gameState, target, 
 	return target;
 };
 
-PETRA.AttackPlan.prototype.getPathToTarget = function(gameState, fixedRallyPoint = false)
+AttackPlan.prototype.getPathToTarget = function(gameState, fixedRallyPoint = false)
 {
 	const startAccess = gameState.ai.accessibility.getAccessValue(this.rallyPoint);
-	const endAccess = PETRA.getLandAccess(gameState, this.target);
+	const endAccess = getLandAccess(gameState, this.target);
 	if (startAccess != endAccess)
 		return false;
 
@@ -1214,7 +1221,7 @@ PETRA.AttackPlan.prototype.getPathToTarget = function(gameState, fixedRallyPoint
 };
 
 /** Set rally point at the border of our territory */
-PETRA.AttackPlan.prototype.setRallyPoint = function(gameState)
+AttackPlan.prototype.setRallyPoint = function(gameState)
 {
 	for (let i = 0; i < this.path.length; ++i)
 	{
@@ -1241,7 +1248,7 @@ PETRA.AttackPlan.prototype.setRallyPoint = function(gameState)
  * Executes the attack plan, after this is executed the update function will be run every turn
  * If we're here, it's because we have enough units.
  */
-PETRA.AttackPlan.prototype.StartAttack = function(gameState)
+AttackPlan.prototype.StartAttack = function(gameState)
 {
 	if (this.Config.debug > 1)
 		API3.warn("start attack " + this.name + " with type " + this.type);
@@ -1256,14 +1263,14 @@ PETRA.AttackPlan.prototype.StartAttack = function(gameState)
 
 	for (const ent of this.unitCollection.values())
 	{
-		ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_WALKING);
+		ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_WALKING);
 		const stance = ent.isPackable() ? "standground" : "aggressive";
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
 	}
 
 	const rallyAccess = gameState.ai.accessibility.getAccessValue(this.rallyPoint);
-	const targetAccess = PETRA.getLandAccess(gameState, this.target);
+	const targetAccess = getLandAccess(gameState, this.target);
 	if (rallyAccess == targetAccess)
 	{
 		if (!this.path)
@@ -1289,7 +1296,7 @@ PETRA.AttackPlan.prototype.StartAttack = function(gameState)
 };
 
 /** Runs every turn after the attack is executed */
-PETRA.AttackPlan.prototype.update = function(gameState, events)
+AttackPlan.prototype.update = function(gameState, events)
 {
 	if (!this.unitCollection.hasEntities())
 		return 0;
@@ -1315,16 +1322,16 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 		return 0;
 	}
 
-	if (this.state === PETRA.AttackPlan.STATE_ARRIVED)
+	if (this.state === AttackPlan.STATE_ARRIVED)
 	{
 		// let's proceed on with whatever happens now.
 		this.state = "";
 		this.startingAttack = true;
 		this.unitCollection.forEach(ent => {
 			ent.stopMoving();
-			ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_ATTACKING);
+			ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_ATTACKING);
 		});
-		if (this.type === PETRA.AttackPlan.TYPE_RUSH)   // try to find a better target for rush
+		if (this.type === AttackPlan.TYPE_RUSH)   // try to find a better target for rush
 		{
 			const newtarget = this.getNearestTarget(gameState, this.position);
 			if (newtarget)
@@ -1360,24 +1367,26 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 				attackedByStructure[evt.target] = true;
 				continue;
 			}
-			if (PETRA.isSiegeUnit(ourUnit))
+			if (isSiegeUnit(ourUnit))
 			{	// if our siege units are attacked, we'll send some units to deal with enemies.
 				const collec = this.unitCollection.filter(API3.Filters.not(API3.Filters.byClass("Siege"))).filterNearest(ourUnit.position(), 5);
 				for (const ent of collec.values())
 				{
-					if (PETRA.isSiegeUnit(ent))	// needed as mauryan elephants are not filtered out
+					if (isSiegeUnit(ent))	// needed as mauryan elephants are not filtered out
 						continue;
 
-					const allowCapture = PETRA.allowCapture(gameState, ent, attacker);
-					if (!ent.canAttackTarget(attacker, allowCapture))
+					const shouldCapture = allowCapture(gameState, ent, attacker);
+					if (!ent.canAttackTarget(attacker, shouldCapture))
 						continue;
-					ent.attack(attacker.id(), allowCapture);
+					ent.attack(attacker.id(), shouldCapture);
 					ent.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 				}
 				// And if this attacker is a non-ranged siege unit and our unit also, attack it
-				if (PETRA.isSiegeUnit(attacker) && attacker.hasClass("Melee") && ourUnit.hasClass("Melee") && ourUnit.canAttackTarget(attacker, PETRA.allowCapture(gameState, ourUnit, attacker)))
+				if (isSiegeUnit(attacker) && attacker.hasClass("Melee") &&
+					ourUnit.hasClass("Melee") && ourUnit.canAttackTarget(attacker,
+					allowCapture(gameState, ourUnit, attacker)))
 				{
-					ourUnit.attack(attacker.id(), PETRA.allowCapture(gameState, ourUnit, attacker));
+					ourUnit.attack(attacker.id(), allowCapture(gameState, ourUnit, attacker));
 					ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 				}
 			}
@@ -1389,15 +1398,15 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 					// TODO check that the attacker is from behind the wall
 					continue;
 				}
-				else if (PETRA.isSiegeUnit(attacker))
+				else if (isSiegeUnit(attacker))
 				{	// if our unit is attacked by a siege unit, we'll send some melee units to help it.
 					const collec = this.unitCollection.filter(API3.Filters.byClass("Melee")).filterNearest(ourUnit.position(), 5);
 					for (const ent of collec.values())
 					{
-						const allowCapture = PETRA.allowCapture(gameState, ent, attacker);
-						if (!ent.canAttackTarget(attacker, allowCapture))
+						const shouldCapture = allowCapture(gameState, ent, attacker);
+						if (!ent.canAttackTarget(attacker, shouldCapture))
 							continue;
-						ent.attack(attacker.id(), allowCapture);
+						ent.attack(attacker.id(), shouldCapture);
 						ent.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 					}
 				}
@@ -1407,8 +1416,8 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 					const collec = this.unitCollection.filterNearest(ourUnit.position(), 2);
 					for (const ent of collec.values())
 					{
-						const allowCapture = PETRA.allowCapture(gameState, ent, attacker);
-						if (PETRA.isSiegeUnit(ent) || !ent.canAttackTarget(attacker, allowCapture))
+						const shouldCapture = allowCapture(gameState, ent, attacker);
+						if (isSiegeUnit(ent) || !ent.canAttackTarget(attacker, shouldCapture))
 							continue;
 						const orderData = ent.unitAIOrderData();
 						if (orderData && orderData.length && orderData[0].target)
@@ -1419,7 +1428,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 							if (target && !target.hasClasses(["Structure", "Support"]))
 								continue;
 						}
-						ent.attack(attacker.id(), allowCapture);
+						ent.attack(attacker.id(), shouldCapture);
 						ent.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 					}
 					// Then the unit under attack: abandon its target (if it was a structure or a support) and retaliate
@@ -1436,10 +1445,10 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 								continue;
 						}
 					}
-					const allowCapture = PETRA.allowCapture(gameState, ourUnit, attacker);
-					if (ourUnit.canAttackTarget(attacker, allowCapture))
+					const shouldCapture = allowCapture(gameState, ourUnit, attacker);
+					if (ourUnit.canAttackTarget(attacker, shouldCapture))
 					{
-						ourUnit.attack(attacker.id(), allowCapture);
+						ourUnit.attack(attacker.id(), shouldCapture);
 						ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 					}
 				}
@@ -1464,7 +1473,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 				continue;
 			if (!(targetId in unitTargets))
 			{
-				if (PETRA.isSiegeUnit(target) || target.hasClass("Hero"))
+				if (isSiegeUnit(target) || target.hasClass("Hero"))
 					unitTargets[targetId] = -8;
 				else if (target.hasClasses(["Champion", "Ship"]))
 					unitTargets[targetId] = -5;
@@ -1480,7 +1489,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 
 		let targetClassesUnit;
 		let targetClassesSiege;
-		if (this.type === PETRA.AttackPlan.TYPE_RUSH)
+		if (this.type === AttackPlan.TYPE_RUSH)
 			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "Wall", "Tower", "Fortress"], "vetoEntities": veto };
 		else
 		{
@@ -1525,7 +1534,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 			// update the order if needed
 			let needsUpdate = false;
 			let maybeUpdate = false;
-			const siegeUnit = PETRA.isSiegeUnit(ent);
+			const siegeUnit = isSiegeUnit(ent);
 			if (ent.isIdle())
 				needsUpdate = true;
 			else if (siegeUnit && targetId)
@@ -1587,18 +1596,18 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 			else if (ent.hasClass("FastMoving"))
 				range += 30;
 			range *= range;
-			const entAccess = PETRA.getLandAccess(gameState, ent);
+			const entAccess = getLandAccess(gameState, ent);
 			// Checking for gates if we're a siege unit.
 			if (siegeUnit)
 			{
 				const mStruct = enemyStructures.filter(enemy => {
-					if (!enemy.position() || !ent.canAttackTarget(enemy, PETRA.allowCapture(gameState, ent, enemy)))
+					if (!enemy.position() || !ent.canAttackTarget(enemy, allowCapture(gameState, ent, enemy)))
 						return false;
 					if (API3.SquareVectorDistance(enemy.position(), ent.position()) > range)
 						return false;
 					if (enemy.foundationProgress() == 0)
 						return false;
-					if (PETRA.getLandAccess(gameState, enemy) != entAccess)
+					if (getLandAccess(gameState, enemy) != entAccess)
 						return false;
 					return true;
 				}).toEntityArray();
@@ -1622,11 +1631,11 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 						return valb - vala;
 					});
 					if (mStruct[0].hasClass("Gate"))
-						ent.attack(mStruct[0].id(), PETRA.allowCapture(gameState, ent, mStruct[0]));
+						ent.attack(mStruct[0].id(), allowCapture(gameState, ent, mStruct[0]));
 					else
 					{
 						const rand = randIntExclusive(0, mStruct.length * 0.2);
-						ent.attack(mStruct[rand].id(), PETRA.allowCapture(gameState, ent, mStruct[rand]));
+						ent.attack(mStruct[rand].id(), allowCapture(gameState, ent, mStruct[rand]));
 					}
 				}
 				else
@@ -1644,7 +1653,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 			{
 				const nearby = !ent.hasClasses(["FastMoving", "Ranged"]);
 				const mUnit = enemyUnits.filter(enemy => {
-					if (!enemy.position() || !ent.canAttackTarget(enemy, PETRA.allowCapture(gameState, ent, enemy)))
+					if (!enemy.position() || !ent.canAttackTarget(enemy, allowCapture(gameState, ent, enemy)))
 						return false;
 					if (enemy.hasClass("Animal"))
 						return false;
@@ -1653,7 +1662,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 					const dist = API3.SquareVectorDistance(enemy.position(), ent.position());
 					if (dist > range)
 						return false;
-					if (PETRA.getLandAccess(gameState, enemy) != entAccess)
+					if (getLandAccess(gameState, enemy) != entAccess)
 						return false;
 					// if already too much units targeting this enemy, let's continue towards our main target
 					if (veto[enemy.id()] && API3.SquareVectorDistance(this.targetPos, ent.position()) > 2500)
@@ -1684,7 +1693,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 						return valb - vala;
 					});
 					const rand = randIntExclusive(0, mUnit.length * 0.1);
-					ent.attack(mUnit[rand].id(), PETRA.allowCapture(gameState, ent, mUnit[rand]));
+					ent.attack(mUnit[rand].id(), allowCapture(gameState, ent, mUnit[rand]));
 				}
 				// This may prove dangerous as we may be blocked by something we
 				// cannot attack. See similar behaviour at #5741.
@@ -1709,11 +1718,11 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 					const mStruct = enemyStructures.filter(enemy => {
 						if (this.isBlocked && enemy.id() != this.target.id())
 							return false;
-						if (!enemy.position() || !ent.canAttackTarget(enemy, PETRA.allowCapture(gameState, ent, enemy)))
+						if (!enemy.position() || !ent.canAttackTarget(enemy, allowCapture(gameState, ent, enemy)))
 							return false;
 						if (API3.SquareVectorDistance(enemy.position(), ent.position()) > range)
 							return false;
-						if (PETRA.getLandAccess(gameState, enemy) != entAccess)
+						if (getLandAccess(gameState, enemy) != entAccess)
 							return false;
 						return true;
 					}, this).toEntityArray();
@@ -1737,7 +1746,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 						else
 						{
 							const rand = randIntExclusive(0, mStruct.length * 0.2);
-							ent.attack(mStruct[rand].id(), PETRA.allowCapture(gameState, ent, mStruct[rand]));
+							ent.attack(mStruct[rand].id(), allowCapture(gameState, ent, mStruct[rand]));
 						}
 					}
 					else if (needsUpdate)  // really nothing   let's try to help our nearest unit
@@ -1757,12 +1766,12 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 							if (dist > distmin)
 								return;
 							distmin = dist;
-							if (!ent.canAttackTarget(target, PETRA.allowCapture(gameState, ent, target)))
+							if (!ent.canAttackTarget(target, allowCapture(gameState, ent, target)))
 								return;
 							attacker = target;
 						});
 						if (attacker)
-							ent.attack(attacker.id(), PETRA.allowCapture(gameState, ent, attacker));
+							ent.attack(attacker.id(), allowCapture(gameState, ent, attacker));
 					}
 				}
 			}
@@ -1780,7 +1789,7 @@ PETRA.AttackPlan.prototype.update = function(gameState, events)
 	return this.unitCollection.length;
 };
 
-PETRA.AttackPlan.prototype.UpdateTransporting = function(gameState, events)
+AttackPlan.prototype.UpdateTransporting = function(gameState, events)
 {
 	let done = true;
 	for (const ent of this.unitCollection.values())
@@ -1797,7 +1806,7 @@ PETRA.AttackPlan.prototype.UpdateTransporting = function(gameState, events)
 
 	if (done)
 	{
-		this.state = PETRA.AttackPlan.STATE_ARRIVED;
+		this.state = AttackPlan.STATE_ARRIVED;
 		return;
 	}
 
@@ -1814,16 +1823,16 @@ PETRA.AttackPlan.prototype.UpdateTransporting = function(gameState, events)
 			if (ent.getMetadata(PlayerID, "transport") !== undefined)
 				continue;
 
-			const allowCapture = PETRA.allowCapture(gameState, ent, attacker);
-			if (!ent.isIdle() || !ent.canAttackTarget(attacker, allowCapture))
+			const shouldCapture = allowCapture(gameState, ent, attacker);
+			if (!ent.isIdle() || !ent.canAttackTarget(attacker, shouldCapture))
 				continue;
-			ent.attack(attacker.id(), allowCapture);
+			ent.attack(attacker.id(), shouldCapture);
 		}
 		break;
 	}
 };
 
-PETRA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
+AttackPlan.prototype.UpdateWalking = function(gameState, events)
 {
 	// we're marching towards the target
 	// Let's check if any of our unit has been attacked.
@@ -1848,7 +1857,7 @@ PETRA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 	{
 		if (gameState.ai.HQ.territoryMap.getOwner(this.position) === this.targetPlayer || attackedNB > 3)
 		{
-			this.state = PETRA.AttackPlan.STATE_ARRIVED;
+			this.state = AttackPlan.STATE_ARRIVED;
 			return true;
 		}
 	}
@@ -1888,7 +1897,7 @@ PETRA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 			{
 				if (this.Config.debug > 1)
 					API3.warn("Attack Plan " + this.type + " " + this.name + " has met walls and is not happy.");
-				this.state = PETRA.AttackPlan.STATE_ARRIVED;
+				this.state = AttackPlan.STATE_ARRIVED;
 				return true;
 			}
 			// abort plan
@@ -1906,7 +1915,7 @@ PETRA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 	{
 		if (this.Config.debug > 1)
 			API3.warn("Attack Plan " + this.type + " " + this.name + " has arrived to destination.");
-		this.state = PETRA.AttackPlan.STATE_ARRIVED;
+		this.state = AttackPlan.STATE_ARRIVED;
 		return true;
 	}
 	else if (this.path.length && API3.SquareVectorDistance(this.position, this.path[0]) < 1600)
@@ -1918,7 +1927,7 @@ PETRA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 		{
 			if (this.Config.debug > 1)
 				API3.warn("Attack Plan " + this.type + " " + this.name + " has arrived to destination.");
-			this.state = PETRA.AttackPlan.STATE_ARRIVED;
+			this.state = AttackPlan.STATE_ARRIVED;
 			return true;
 		}
 	}
@@ -1926,7 +1935,7 @@ PETRA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 	return true;
 };
 
-PETRA.AttackPlan.prototype.UpdateTarget = function(gameState)
+AttackPlan.prototype.UpdateTarget = function(gameState)
 {
 	// First update the target position in case it's a unit (and check if it has garrisoned)
 	if (this.target && this.target.hasClass("Unit"))
@@ -1934,7 +1943,7 @@ PETRA.AttackPlan.prototype.UpdateTarget = function(gameState)
 		this.targetPos = this.target.position();
 		if (!this.targetPos)
 		{
-			const holder = PETRA.getHolder(gameState, this.target);
+			const holder = getHolder(gameState, this.target);
 			if (holder && gameState.isPlayerEnemy(holder.owner()))
 			{
 				this.target = holder;
@@ -1979,7 +1988,7 @@ PETRA.AttackPlan.prototype.UpdateTarget = function(gameState)
 					if (!attack.target || !gameState.getEntityById(attack.target.id()) ||
 					    !gameState.isPlayerEnemy(attack.target.owner()))
 						continue;
-					if (accessIndex != PETRA.getLandAccess(gameState, attack.target))
+					if (accessIndex != getLandAccess(gameState, attack.target))
 						continue;
 					if (attack.target.owner() == 0 && attack.targetPlayer != 0)	// looks like it has resigned
 						continue;
@@ -2014,7 +2023,7 @@ PETRA.AttackPlan.prototype.UpdateTarget = function(gameState)
 };
 
 /** reset any units */
-PETRA.AttackPlan.prototype.Abort = function(gameState)
+AttackPlan.prototype.Abort = function(gameState)
 {
 	this.unitCollection.unregister();
 	if (this.unitCollection.hasEntities())
@@ -2035,7 +2044,7 @@ PETRA.AttackPlan.prototype.Abort = function(gameState)
 			{
 				if (!base.anchor || !base.anchor.position())
 					continue;
-				if (PETRA.getLandAccess(gameState, base.anchor) != access)
+				if (getLandAccess(gameState, base.anchor) != access)
 					continue;
 				const newdist = API3.SquareVectorDistance(this.position, base.anchor.position());
 				if (newdist > dist)
@@ -2047,7 +2056,7 @@ PETRA.AttackPlan.prototype.Abort = function(gameState)
 
 		for (const ent of this.unitCollection.values())
 		{
-			if (ent.getMetadata(PlayerID, "role") === PETRA.Worker.ROLE_ATTACK)
+			if (ent.getMetadata(PlayerID, "role") === Worker.ROLE_ATTACK)
 				ent.stopMoving();
 			if (rallyPoint)
 				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 15);
@@ -2061,12 +2070,12 @@ PETRA.AttackPlan.prototype.Abort = function(gameState)
 	this.removeQueues(gameState);
 };
 
-PETRA.AttackPlan.prototype.removeUnit = function(ent, update)
+AttackPlan.prototype.removeUnit = function(ent, update)
 {
-	if (ent.getMetadata(PlayerID, "role") === PETRA.Worker.ROLE_ATTACK)
+	if (ent.getMetadata(PlayerID, "role") === Worker.ROLE_ATTACK)
 	{
 		if (ent.hasClass("CitizenSoldier"))
-			ent.setMetadata(PlayerID, "role", PETRA.Worker.ROLE_WORKER);
+			ent.setMetadata(PlayerID, "role", Worker.ROLE_WORKER);
 		else
 			ent.setMetadata(PlayerID, "role", undefined);
 		ent.setMetadata(PlayerID, "subrole", undefined);
@@ -2076,13 +2085,13 @@ PETRA.AttackPlan.prototype.removeUnit = function(ent, update)
 		this.unitCollection.updateEnt(ent);
 };
 
-PETRA.AttackPlan.prototype.checkEvents = function(gameState, events)
+AttackPlan.prototype.checkEvents = function(gameState, events)
 {
 	for (const evt of events.EntityRenamed)
 	{
 		if (!this.target || this.target.id() != evt.entity)
 			continue;
-		if (this.type === PETRA.AttackPlan.TYPE_RAID && !this.isStarted())
+		if (this.type === AttackPlan.TYPE_RAID && !this.isStarted())
 			this.target = undefined;
 		else
 			this.target = gameState.getEntityById(evt.newentity);
@@ -2102,7 +2111,7 @@ PETRA.AttackPlan.prototype.checkEvents = function(gameState, events)
 		this.target = undefined;
 	}
 
-	if (!this.overseas || this.state !== PETRA.AttackPlan.STATE_UNEXECUTED)
+	if (!this.overseas || this.state !== AttackPlan.STATE_UNEXECUTED)
 		return;
 	// let's check if an enemy has built a structure at our access
 	for (const evt of events.Create)
@@ -2112,7 +2121,7 @@ PETRA.AttackPlan.prototype.checkEvents = function(gameState, events)
 			continue;
 		if (!gameState.isPlayerEnemy(ent.owner()))
 			continue;
-		const access = PETRA.getLandAccess(gameState, ent);
+		const access = getLandAccess(gameState, ent);
 		for (const base of gameState.ai.HQ.baseManagers())
 		{
 			if (!base.anchor || !base.anchor.position())
@@ -2125,7 +2134,7 @@ PETRA.AttackPlan.prototype.checkEvents = function(gameState, events)
 	}
 };
 
-PETRA.AttackPlan.prototype.waitingForTransport = function()
+AttackPlan.prototype.waitingForTransport = function()
 {
 	for (const ent of this.unitCollection.values())
 		if (ent.getMetadata(PlayerID, "transport") !== undefined)
@@ -2133,15 +2142,15 @@ PETRA.AttackPlan.prototype.waitingForTransport = function()
 	return false;
 };
 
-PETRA.AttackPlan.prototype.hasSiegeUnits = function()
+AttackPlan.prototype.hasSiegeUnits = function()
 {
 	for (const ent of this.unitCollection.values())
-		if (PETRA.isSiegeUnit(ent))
+		if (isSiegeUnit(ent))
 			return true;
 	return false;
 };
 
-PETRA.AttackPlan.prototype.hasForceOrder = function(data, value)
+AttackPlan.prototype.hasForceOrder = function(data, value)
 {
 	for (const ent of this.unitCollection.values())
 	{
@@ -2159,15 +2168,15 @@ PETRA.AttackPlan.prototype.hasForceOrder = function(data, value)
  * The center position of this attack may be in an inaccessible area. So we use the access
  * of the unit nearest to this center position.
  */
-PETRA.AttackPlan.prototype.getAttackAccess = function(gameState)
+AttackPlan.prototype.getAttackAccess = function(gameState)
 {
 	for (const ent of this.unitCollection.filterNearest(this.position, 1).values())
-		return PETRA.getLandAccess(gameState, ent);
+		return getLandAccess(gameState, ent);
 
 	return 0;
 };
 
-PETRA.AttackPlan.prototype.debugAttack = function()
+AttackPlan.prototype.debugAttack = function()
 {
 	API3.warn("---------- attack " + this.name);
 	for (const unitCat in this.unitStat)
@@ -2178,7 +2187,7 @@ PETRA.AttackPlan.prototype.debugAttack = function()
 	API3.warn("------------------------------");
 };
 
-PETRA.AttackPlan.prototype.Serialize = function()
+AttackPlan.prototype.Serialize = function()
 {
 	const properties = {
 		"name": this.name,
@@ -2206,7 +2215,7 @@ PETRA.AttackPlan.prototype.Serialize = function()
 	return { "properties": properties };
 };
 
-PETRA.AttackPlan.prototype.Deserialize = function(gameState, data)
+AttackPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (const key in data.properties)
 		this[key] = data.properties[key];

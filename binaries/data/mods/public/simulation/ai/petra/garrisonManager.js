@@ -1,3 +1,6 @@
+import { dumpEntity, isSiegeUnit } from "simulation/ai/petra/entityExtend.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
 /**
  * Manage the garrisonHolders
  * When a unit is ordered to garrison, it must be done through this.garrison() function so that
@@ -6,20 +9,20 @@
  * Futhermore garrison units have a metadata garrisonType describing its reason (protection, transport, ...)
  */
 
-PETRA.GarrisonManager = function(Config)
+export function GarrisonManager(Config)
 {
 	this.Config = Config;
 	this.holders = new Map();
 	this.decayingStructures = new Map();
-};
+}
 
-PETRA.GarrisonManager.TYPE_FORCE = "force";
-PETRA.GarrisonManager.TYPE_TRADE = "trade";
-PETRA.GarrisonManager.TYPE_PROTECTION = "protection";
-PETRA.GarrisonManager.TYPE_DECAY = "decay";
-PETRA.GarrisonManager.TYPE_EMERGENCY = "emergency";
+GarrisonManager.TYPE_FORCE = "force";
+GarrisonManager.TYPE_TRADE = "trade";
+GarrisonManager.TYPE_PROTECTION = "protection";
+GarrisonManager.TYPE_DECAY = "decay";
+GarrisonManager.TYPE_EMERGENCY = "emergency";
 
-PETRA.GarrisonManager.prototype.update = function(gameState, events)
+GarrisonManager.prototype.update = function(gameState, events)
 {
 	// First check for possible upgrade of a structure
 	for (const evt of events.EntityRenamed)
@@ -115,7 +118,7 @@ PETRA.GarrisonManager.prototype.update = function(gameState, events)
 						API3.warn("Petra garrison error: unit " + ent.id() + " (" + ent.genericName() +
 							  ") is expected to garrison in " + id + " (" + holder.genericName() +
 							  "), but has no such garrison order " + uneval(ent.unitAIOrderData()));
-						PETRA.dumpEntity(ent);
+						dumpEntity(ent);
 					}
 					list.splice(j--, 1);
 				}
@@ -151,7 +154,7 @@ PETRA.GarrisonManager.prototype.update = function(gameState, events)
 					continue;
 				if (ent.hasClass("Structure"))
 					around.defenseStructure = true;
-				else if (PETRA.isSiegeUnit(ent))
+				else if (isSiegeUnit(ent))
 				{
 					if (ent.attackTypes().indexOf("Melee") !== -1)
 						around.meleeSiege = true;
@@ -200,12 +203,12 @@ PETRA.GarrisonManager.prototype.update = function(gameState, events)
 		if (!ent || ent.owner() !== PlayerID)
 			this.decayingStructures.delete(id);
 		else if (this.numberOfGarrisonedSlots(ent) < gmin)
-			gameState.ai.HQ.defenseManager.garrisonUnitsInside(gameState, ent, { "min": gmin, "type": PETRA.GarrisonManager.TYPE_DECAY });
+			gameState.ai.HQ.defenseManager.garrisonUnitsInside(gameState, ent, { "min": gmin, "type": GarrisonManager.TYPE_DECAY });
 	}
 };
 
 /** TODO should add the units garrisoned inside garrisoned units */
-PETRA.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
+GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
 {
 	if (!this.holders.has(holder.id()))
 		return holder.garrisoned().length;
@@ -214,7 +217,7 @@ PETRA.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
 };
 
 /** TODO should add the units garrisoned inside garrisoned units */
-PETRA.GarrisonManager.prototype.numberOfGarrisonedSlots = function(holder)
+GarrisonManager.prototype.numberOfGarrisonedSlots = function(holder)
 {
 	if (!this.holders.has(holder.id()))
 		return holder.garrisonedSlots();
@@ -222,7 +225,7 @@ PETRA.GarrisonManager.prototype.numberOfGarrisonedSlots = function(holder)
 	return holder.garrisonedSlots() + this.holders.get(holder.id()).list.length;
 };
 
-PETRA.GarrisonManager.prototype.allowMelee = function(holder)
+GarrisonManager.prototype.allowMelee = function(holder)
 {
 	if (!this.holders.has(holder.id()))
 		return undefined;
@@ -231,7 +234,7 @@ PETRA.GarrisonManager.prototype.allowMelee = function(holder)
 };
 
 /** This is just a pre-garrison state, while the entity walk to the garrison holder */
-PETRA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
+GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
 {
 	if (this.numberOfGarrisonedSlots(holder) >= holder.garrisonMax() || !ent.canGarrison())
 		return;
@@ -250,7 +253,7 @@ PETRA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type
 		ent.setMetadata(PlayerID, "plan", -2);
 	else
 		ent.setMetadata(PlayerID, "plan", -3);
-	ent.setMetadata(PlayerID, "subrole", PETRA.Worker.SUBROLE_GARRISONING);
+	ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_GARRISONING);
 	ent.setMetadata(PlayerID, "garrisonHolder", holder.id());
 	ent.setMetadata(PlayerID, "garrisonType", type);
 	ent.garrison(holder);
@@ -262,7 +265,7 @@ PETRA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type
  This function is for internal use inside garrisonManager. From outside, you should also update
  the holder and then using cancelGarrison should be the preferred solution
  */
-PETRA.GarrisonManager.prototype.leaveGarrison = function(ent)
+GarrisonManager.prototype.leaveGarrison = function(ent)
 {
 	ent.setMetadata(PlayerID, "subrole", undefined);
 	if (ent.getMetadata(PlayerID, "plan") === -2)
@@ -273,7 +276,7 @@ PETRA.GarrisonManager.prototype.leaveGarrison = function(ent)
 };
 
 /** Cancel a pre-garrison state */
-PETRA.GarrisonManager.prototype.cancelGarrison = function(ent)
+GarrisonManager.prototype.cancelGarrison = function(ent)
 {
 	ent.stopMoving();
 	this.leaveGarrison(ent);
@@ -286,15 +289,15 @@ PETRA.GarrisonManager.prototype.cancelGarrison = function(ent)
 		list.splice(index, 1);
 };
 
-PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
+GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 {
 	switch (ent.getMetadata(PlayerID, "garrisonType"))
 	{
-	case PETRA.GarrisonManager.TYPE_FORCE:           // force the ungarrisoning
+	case GarrisonManager.TYPE_FORCE:           // force the ungarrisoning
 		return false;
-	case PETRA.GarrisonManager.TYPE_TRADE:		// trader garrisoned in ship
+	case GarrisonManager.TYPE_TRADE:		// trader garrisoned in ship
 		return true;
-	case PETRA.GarrisonManager.TYPE_PROTECTION:	// hurt unit for healing or infantry for defense
+	case GarrisonManager.TYPE_PROTECTION:	// hurt unit for healing or infantry for defense
 	{
 		if (holder.buffHeal() && ent.isHealable() && ent.healthLevel() < this.Config.garrisonHealthLevel.high)
 			return true;
@@ -312,14 +315,14 @@ PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 		if (ent.attackTypes() && ent.attackTypes().indexOf("Melee") !== -1)
 			return false;
 		if (around.unit)
-			return ent.hasClass("Support") || PETRA.isSiegeUnit(ent);	// only ranged siege here and below as melee siege already released above
-		if (PETRA.isSiegeUnit(ent))
+			return ent.hasClass("Support") || isSiegeUnit(ent);	// only ranged siege here and below as melee siege already released above
+		if (isSiegeUnit(ent))
 			return around.meleeSiege;
 		return holder.buffHeal() && ent.needsHeal();
 	}
-	case PETRA.GarrisonManager.TYPE_DECAY:
+	case GarrisonManager.TYPE_DECAY:
 		return ent.captureStrength() && this.decayingStructures.has(holder.id());
-	case PETRA.GarrisonManager.TYPE_EMERGENCY: // f.e. hero in regicide mode
+	case GarrisonManager.TYPE_EMERGENCY: // f.e. hero in regicide mode
 		if (holder.buffHeal() && ent.isHealable() && ent.healthLevel() < this.Config.garrisonHealthLevel.high)
 			return true;
 		if (around.unit || around.defenseStructure || around.meleeSiege ||
@@ -332,13 +335,13 @@ PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 		API3.warn("unknown type in garrisonManager " + ent.getMetadata(PlayerID, "garrisonType") +
 		          " for " + ent.genericName() + " id " + ent.id() +
 		          " inside " + holder.genericName() + " id " + holder.id());
-		ent.setMetadata(PlayerID, "garrisonType", PETRA.GarrisonManager.TYPE_PROTECTION);
+		ent.setMetadata(PlayerID, "garrisonType", GarrisonManager.TYPE_PROTECTION);
 		return true;
 	}
 };
 
 /** Add this holder in the list managed by the garrisonManager */
-PETRA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
+GarrisonManager.prototype.registerHolder = function(gameState, holder)
 {
 	if (this.holders.has(holder.id()))    // already registered
 		return;
@@ -351,7 +354,7 @@ PETRA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
  * do it only for structures useful for defense, except if we are expanding (justCaptured=true)
  * in which case we also do it for structures useful for unit trainings (TODO only Barracks are done)
  */
-PETRA.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId, justCaptured)
+GarrisonManager.prototype.addDecayingStructure = function(gameState, entId, justCaptured)
 {
 	if (this.decayingStructures.has(entId))
 		return true;
@@ -365,19 +368,19 @@ PETRA.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId
 	return true;
 };
 
-PETRA.GarrisonManager.prototype.removeDecayingStructure = function(entId)
+GarrisonManager.prototype.removeDecayingStructure = function(entId)
 {
 	if (!this.decayingStructures.has(entId))
 		return;
 	this.decayingStructures.delete(entId);
 };
 
-PETRA.GarrisonManager.prototype.Serialize = function()
+GarrisonManager.prototype.Serialize = function()
 {
 	return { "holders": this.holders, "decayingStructures": this.decayingStructures };
 };
 
-PETRA.GarrisonManager.prototype.Deserialize = function(data)
+GarrisonManager.prototype.Deserialize = function(data)
 {
 	for (const key in data)
 		this[key] = data[key];

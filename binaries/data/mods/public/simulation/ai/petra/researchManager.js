@@ -1,15 +1,18 @@
+import { ResearchPlan } from "simulation/ai/petra/queueplanResearch.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
 /**
  * Manage the research
  */
-PETRA.ResearchManager = function(Config)
+export function ResearchManager(Config)
 {
 	this.Config = Config;
-};
+}
 
 /**
  * Check if we can go to the next phase
  */
-PETRA.ResearchManager.prototype.checkPhase = function(gameState, queues)
+ResearchManager.prototype.checkPhase = function(gameState, queues)
 {
 	if (queues.majorTech.hasQueuedUnits())
 		return;
@@ -31,11 +34,11 @@ PETRA.ResearchManager.prototype.checkPhase = function(gameState, queues)
 		gameState.ai.HQ.phasing = currentPhaseIndex + 1;
 		// Reset the queue priority in case it was changed during a previous phase update
 		gameState.ai.queueManager.changePriority("majorTech", gameState.ai.Config.priorities.majorTech);
-		queues.majorTech.addPlan(new PETRA.ResearchPlan(gameState, nextPhaseName, true));
+		queues.majorTech.addPlan(new ResearchPlan(gameState, nextPhaseName, true));
 	}
 };
 
-PETRA.ResearchManager.prototype.researchPopulationBonus = function(gameState, queues)
+ResearchManager.prototype.researchPopulationBonus = function(gameState, queues)
 {
 	if (queues.minorTech.hasQueuedUnits())
 		return;
@@ -48,12 +51,12 @@ PETRA.ResearchManager.prototype.researchPopulationBonus = function(gameState, qu
 		// TODO may-be loop on all modifs and check if the effect if positive ?
 		if (tech[1]._template.modifications[0].value !== "Population/Bonus")
 			continue;
-		queues.minorTech.addPlan(new PETRA.ResearchPlan(gameState, tech[0]));
+		queues.minorTech.addPlan(new ResearchPlan(gameState, tech[0]));
 		break;
 	}
 };
 
-PETRA.ResearchManager.prototype.researchTradeBonus = function(gameState, queues)
+ResearchManager.prototype.researchTradeBonus = function(gameState, queues)
 {
 	if (queues.minorTech.hasQueuedUnits())
 		return;
@@ -69,17 +72,17 @@ PETRA.ResearchManager.prototype.researchTradeBonus = function(gameState, queues)
 		if (tech[1]._template.modifications[0].value !== "UnitMotion/WalkSpeed" &&
                     tech[1]._template.modifications[0].value !== "Trader/GainMultiplier")
 			continue;
-		queues.minorTech.addPlan(new PETRA.ResearchPlan(gameState, tech[0]));
+		queues.minorTech.addPlan(new ResearchPlan(gameState, tech[0]));
 		break;
 	}
 };
 
 /** Techs to be searched for as soon as they are available */
-PETRA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
+ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 {
 	const phase1 = gameState.currentPhase() === 1;
 	const available = phase1 ? gameState.ai.queueManager.getAvailableResources(gameState) : null;
-	const numWorkers = phase1 ? gameState.getOwnEntitiesByRole(PETRA.Worker.ROLE_WORKER, true).length : 0;
+	const numWorkers = phase1 ? gameState.getOwnEntitiesByRole(Worker.ROLE_WORKER, true).length : 0;
 	for (const tech of techs)
 	{
 		if (tech[0].indexOf("unlock_champion") == 0)
@@ -119,11 +122,11 @@ PETRA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 };
 
 /** Techs to be searched for as soon as they are available, but only after phase 2 */
-PETRA.ResearchManager.prototype.researchPreferredTechs = function(gameState, techs)
+ResearchManager.prototype.researchPreferredTechs = function(gameState, techs)
 {
 	const phase2 = gameState.currentPhase() === 2;
 	const available = phase2 ? gameState.ai.queueManager.getAvailableResources(gameState) : null;
-	const numWorkers = phase2 ? gameState.getOwnEntitiesByRole(PETRA.Worker.ROLE_WORKER, true).length : 0;
+	const numWorkers = phase2 ? gameState.getOwnEntitiesByRole(Worker.ROLE_WORKER, true).length : 0;
 	for (const tech of techs)
 	{
 		if (!tech[1]._template.modifications)
@@ -155,7 +158,7 @@ PETRA.ResearchManager.prototype.researchPreferredTechs = function(gameState, tec
 	return null;
 };
 
-PETRA.ResearchManager.prototype.update = function(gameState, queues)
+ResearchManager.prototype.update = function(gameState, queues)
 {
 	if (queues.minorTech.hasQueuedUnits() || queues.majorTech.hasQueuedUnits())
 		return;
@@ -168,12 +171,12 @@ PETRA.ResearchManager.prototype.update = function(gameState, queues)
 		if (techName.increasePriority)
 		{
 			gameState.ai.queueManager.changePriority("minorTech", 2*this.Config.priorities.minorTech);
-			const plan = new PETRA.ResearchPlan(gameState, techName.name);
+			const plan = new ResearchPlan(gameState, techName.name);
 			plan.queueToReset = "minorTech";
 			queues.minorTech.addPlan(plan);
 		}
 		else
-			queues.minorTech.addPlan(new PETRA.ResearchPlan(gameState, techName.name));
+			queues.minorTech.addPlan(new ResearchPlan(gameState, techName.name));
 		return;
 	}
 
@@ -186,12 +189,12 @@ PETRA.ResearchManager.prototype.update = function(gameState, queues)
 		if (techName.increasePriority)
 		{
 			gameState.ai.queueManager.changePriority("minorTech", 2*this.Config.priorities.minorTech);
-			const plan = new PETRA.ResearchPlan(gameState, techName.name);
+			const plan = new ResearchPlan(gameState, techName.name);
 			plan.queueToReset = "minorTech";
 			queues.minorTech.addPlan(plan);
 		}
 		else
-			queues.minorTech.addPlan(new PETRA.ResearchPlan(gameState, techName.name));
+			queues.minorTech.addPlan(new ResearchPlan(gameState, techName.name));
 		return;
 	}
 
@@ -221,10 +224,10 @@ PETRA.ResearchManager.prototype.update = function(gameState, queues)
 		return;
 
 	// randomly pick one. No worries about pairs in that case.
-	queues.minorTech.addPlan(new PETRA.ResearchPlan(gameState, pickRandom(techs)[0]));
+	queues.minorTech.addPlan(new ResearchPlan(gameState, pickRandom(techs)[0]));
 };
 
-PETRA.ResearchManager.prototype.CostSum = function(cost)
+ResearchManager.prototype.CostSum = function(cost)
 {
 	let costSum = 0;
 	for (const res in cost)
@@ -232,11 +235,11 @@ PETRA.ResearchManager.prototype.CostSum = function(cost)
 	return costSum;
 };
 
-PETRA.ResearchManager.prototype.Serialize = function()
+ResearchManager.prototype.Serialize = function()
 {
 	return {};
 };
 
-PETRA.ResearchManager.prototype.Deserialize = function(data)
+ResearchManager.prototype.Deserialize = function(data)
 {
 };

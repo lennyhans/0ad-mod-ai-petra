@@ -1,6 +1,8 @@
-PETRA.ResearchPlan = function(gameState, type, rush = false)
+import { QueuePlan } from "simulation/ai/petra/queueplan.js";
+
+export function ResearchPlan(gameState, type, rush = false)
 {
-	if (!PETRA.QueuePlan.call(this, gameState, type, {}))
+	if (!QueuePlan.call(this, gameState, type, {}))
 		return false;
 
 	if (this.template.researchTime === undefined)
@@ -15,11 +17,11 @@ PETRA.ResearchPlan = function(gameState, type, rush = false)
 	this.rush = rush;
 
 	return true;
-};
+}
 
-PETRA.ResearchPlan.prototype = Object.create(PETRA.QueuePlan.prototype);
+ResearchPlan.prototype = Object.create(QueuePlan.prototype);
 
-PETRA.ResearchPlan.prototype.canStart = function(gameState)
+ResearchPlan.prototype.canStart = function(gameState)
 {
 	this.researchers = this.getBestResearchers(gameState);
 	if (!this.researchers)
@@ -28,7 +30,7 @@ PETRA.ResearchPlan.prototype.canStart = function(gameState)
 	return true;
 };
 
-PETRA.ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirementCheck = false)
+ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirementCheck = false)
 {
 	const allResearchers = gameState.findResearchers(this.type, noRequirementCheck);
 	if (!allResearchers || !allResearchers.hasEntities())
@@ -51,12 +53,12 @@ PETRA.ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirem
 	return researchers;
 };
 
-PETRA.ResearchPlan.prototype.isInvalid = function(gameState)
+ResearchPlan.prototype.isInvalid = function(gameState)
 {
 	return gameState.isResearched(this.type) || gameState.isResearching(this.type);
 };
 
-PETRA.ResearchPlan.prototype.start = function(gameState)
+ResearchPlan.prototype.start = function(gameState)
 {
 	// Prefer researcher with shortest queues (no need to serialize this.researchers
 	// as the functions canStart and start are always called on the same turn)
@@ -68,7 +70,7 @@ PETRA.ResearchPlan.prototype.start = function(gameState)
 	this.onStart(gameState);
 };
 
-PETRA.ResearchPlan.prototype.onStart = function(gameState)
+ResearchPlan.prototype.onStart = function(gameState)
 {
 	if (this.queueToReset)
 		gameState.ai.queueManager.changePriority(this.queueToReset, gameState.ai.Config.priorities[this.queueToReset]);
@@ -83,7 +85,7 @@ PETRA.ResearchPlan.prototype.onStart = function(gameState)
 	}
 };
 
-PETRA.ResearchPlan.prototype.Serialize = function()
+ResearchPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -97,7 +99,7 @@ PETRA.ResearchPlan.prototype.Serialize = function()
 	};
 };
 
-PETRA.ResearchPlan.prototype.Deserialize = function(gameState, data)
+ResearchPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (const key in data)
 		this[key] = data[key];

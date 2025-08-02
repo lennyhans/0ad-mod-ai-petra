@@ -1,4 +1,11 @@
-PETRA.DefenseManager = function(Config)
+import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
+import { DefenseArmy } from "simulation/ai/petra/defenseArmy.js";
+import { allowCapture, getLandAccess, getMaxStrength, isSiegeUnit } from
+	"simulation/ai/petra/entityExtend.js";
+import { GarrisonManager } from "simulation/ai/petra/garrisonManager.js";
+import { Worker } from "simulation/ai/petra/worker.js";
+
+export function DefenseManager(Config)
 {
 	// Array of "army" Objects.
 	this.armies = [];
@@ -12,9 +19,9 @@ PETRA.DefenseManager = function(Config)
 	this.attackingArmies = {};
 	this.attackingUnits = {};
 	this.attackedAllies = {};
-};
+}
 
-PETRA.DefenseManager.prototype.update = function(gameState, events)
+DefenseManager.prototype.update = function(gameState, events)
 {
 	Engine.ProfileStart("Defense Manager");
 
@@ -65,7 +72,7 @@ PETRA.DefenseManager.prototype.update = function(gameState, events)
 	Engine.ProfileStop();
 };
 
-PETRA.DefenseManager.prototype.makeIntoArmy = function(gameState, entityID, type = "default")
+DefenseManager.prototype.makeIntoArmy = function(gameState, entityID, type = "default")
 {
 	if (type == "default")
 	{
@@ -74,15 +81,15 @@ PETRA.DefenseManager.prototype.makeIntoArmy = function(gameState, entityID, type
 				return;
 	}
 
-	this.armies.push(new PETRA.DefenseArmy(gameState, [entityID], type));
+	this.armies.push(new DefenseArmy(gameState, [entityID], type));
 };
 
-PETRA.DefenseManager.prototype.getArmy = function(partOfArmy)
+DefenseManager.prototype.getArmy = function(partOfArmy)
 {
 	return this.armies.find(army => army.ID == partOfArmy);
 };
 
-PETRA.DefenseManager.prototype.isDangerous = function(gameState, entity)
+DefenseManager.prototype.isDangerous = function(gameState, entity)
 {
 	if (!entity.position())
 		return false;
@@ -190,7 +197,7 @@ PETRA.DefenseManager.prototype.isDangerous = function(gameState, entity)
 	return false;
 };
 
-PETRA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
+DefenseManager.prototype.checkEnemyUnits = function(gameState)
 {
 	const nbPlayers = gameState.sharedScript.playersData.length;
 	const i = gameState.ai.playedTurn % nbPlayers;
@@ -266,7 +273,7 @@ PETRA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
 	}
 };
 
-PETRA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
+DefenseManager.prototype.checkEnemyArmies = function(gameState)
 {
 	for (let i = 0; i < this.armies.length; ++i)
 	{
@@ -379,7 +386,7 @@ PETRA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 	}
 };
 
-PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
+DefenseManager.prototype.assignDefenders = function(gameState)
 {
 	if (!this.armies.length)
 		return;
@@ -398,7 +405,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 			const ent = gameState.getEntityById(entId);
 			if (!ent || !ent.position())
 				continue;
-			armyAccess = PETRA.getLandAccess(gameState, ent);
+			armyAccess = getLandAccess(gameState, ent);
 			break;
 		}
 		if (!armyAccess)
@@ -430,8 +437,11 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 		{
 			const subrole = ent.getMetadata(PlayerID, "subrole");
 			if (subrole &&
-				(subrole === PETRA.Worker.SUBROLE_COMPLETING || subrole === PETRA.Worker.SUBROLE_WALKING || subrole === PETRA.Worker.SUBROLE_ATTACKING))
+				(subrole === Worker.SUBROLE_COMPLETING || subrole === Worker.SUBROLE_WALKING ||
+				subrole === Worker.SUBROLE_ATTACKING))
+			{
 				return;
+			}
 		}
 		potentialDefenders.push(ent.id());
 	});
@@ -449,7 +459,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 				continue;
 			let aMin;
 			let distMin;
-			const access = ipass == 0 ? PETRA.getLandAccess(gameState, ent) : undefined;
+			const access = ipass == 0 ? getLandAccess(gameState, ent) : undefined;
 			for (let a = 0; a < armiesNeeding.length; ++a)
 			{
 				if (access && armiesNeeding[a].access != access)
@@ -458,7 +468,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 				// Do not assign defender if it cannot attack at least part of the attacking army.
 				if (!armiesNeeding[a].army.foeEntities.some(eEnt => {
 					const eEntID = gameState.getEntityById(eEnt);
-					return ent.canAttackTarget(eEntID, PETRA.allowCapture(gameState, ent, eEntID));
+					return ent.canAttackTarget(eEntID, allowCapture(gameState, ent, eEntID));
 				}))
 					continue;
 
@@ -481,7 +491,8 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 			else if (aMin === undefined)
 				continue;
 
-			armiesNeeding[aMin].need -= PETRA.getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
+			armiesNeeding[aMin].need -=
+				getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
 			armiesNeeding[aMin].army.addOwn(gameState, potentialDefenders[i]);
 			armiesNeeding[aMin].army.assignUnit(gameState, potentialDefenders[i]);
 			potentialDefenders[i] = undefined;
@@ -500,7 +511,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 	gameState.ai.HQ.trainEmergencyUnits(gameState, armiesPos);
 };
 
-PETRA.DefenseManager.prototype.abortArmy = function(gameState, army)
+DefenseManager.prototype.abortArmy = function(gameState, army)
 {
 	army.clear(gameState);
 	for (let i = 0; i < this.armies.length; ++i)
@@ -518,7 +529,7 @@ PETRA.DefenseManager.prototype.abortArmy = function(gameState, army)
  * and if a ranged siege unit (not used for defense) is attacked, garrison it in the nearest fortress.
  * If our hero is attacked with regicide victory condition, the victoryManager will handle it.
  */
-PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
+DefenseManager.prototype.checkEvents = function(gameState, events)
 {
 	// Must be called every turn for all armies.
 	for (const army of this.armies)
@@ -607,7 +618,7 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 		if (plan !== undefined && plan >= 0)
 		{
 			const attack = gameState.ai.HQ.attackManager.getPlan(plan);
-			if (attack && attack.state != PETRA.AttackPlan.STATE_UNEXECUTED)
+			if (attack && attack.state != AttackPlan.STATE_UNEXECUTED)
 				continue;
 		}
 
@@ -689,7 +700,7 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 					continue;
 				if (unitAIStateOrder === "REPAIR" && currentTarget.hasDefensiveFire())
 					continue;
-				if (unitAIStateOrder === "COMBAT" && !PETRA.isSiegeUnit(currentTarget) &&
+				if (unitAIStateOrder === "COMBAT" && !isSiegeUnit(currentTarget) &&
 				    gameState.ai.HQ.capturableTargets.has(orderData[0].target))
 				{
 					// Take the nearest unit also attacking this structure to help us.
@@ -703,8 +714,11 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 						if (allAttacked[entId])
 							continue;
 						const ent = gameState.getEntityById(entId);
-						if (!ent || !ent.position() || !ent.canAttackTarget(attacker, PETRA.allowCapture(gameState, ent, attacker)))
+						if (!ent || !ent.position() || !ent.canAttackTarget(attacker,
+							allowCapture(gameState, ent, attacker)))
+						{
 							continue;
+						}
 						// Check that the unit is still attacking the structure (since the last played turn).
 						const state = ent.unitAIState();
 						if (!state || !state.split(".")[1] || state.split(".")[1] != "COMBAT")
@@ -722,18 +736,18 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 					if (minEnt)
 					{
 						capturableTarget.ents.delete(minEnt.id());
-						minEnt.attack(attacker.id(), PETRA.allowCapture(gameState, minEnt, attacker));
+						minEnt.attack(attacker.id(), allowCapture(gameState, minEnt, attacker));
 					}
 				}
 			}
-			const allowCapture = PETRA.allowCapture(gameState, target, attacker);
-			if (target.canAttackTarget(attacker, allowCapture))
-				target.attack(attacker.id(), allowCapture);
+			const shouldCapture = allowCapture(gameState, target, attacker);
+			if (target.canAttackTarget(attacker, shouldCapture))
+				target.attack(attacker.id(), shouldCapture);
 		}
 	}
 };
 
-PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target, data)
+DefenseManager.prototype.garrisonUnitsInside = function(gameState, target, data)
 {
 	if (target.hitpoints() < target.garrisonEjectHealth() * target.maxHitpoints())
 		return false;
@@ -750,16 +764,19 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 		if (dist >= range*range)
 			return false;
 	}
-	const access = PETRA.getLandAccess(gameState, target);
+	const access = getLandAccess(gameState, target);
 	const garrisonManager = gameState.ai.HQ.garrisonManager;
 	const garrisonArrowClasses = target.getGarrisonArrowClasses();
-	const typeGarrison = data.type || PETRA.GarrisonManager.TYPE_PROTECTION;
+	const typeGarrison = data.type || GarrisonManager.TYPE_PROTECTION;
 	let allowMelee = gameState.ai.HQ.garrisonManager.allowMelee(target);
 	if (allowMelee === undefined)
 	{
 		// Should be kept in sync with garrisonManager to avoid garrisoning-ungarrisoning some units.
 		if (data.attacker)
-			allowMelee = data.attacker.hasClass("Structure") ? data.attacker.attackRange("Ranged") : !PETRA.isSiegeUnit(data.attacker);
+		{
+			allowMelee = data.attacker.hasClass("Structure") ? data.attacker.attackRange("Ranged") :
+				!isSiegeUnit(data.attacker);
+		}
 		else
 			allowMelee = true;
 	}
@@ -768,7 +785,7 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 			return false;
 		if (!ent.hasClasses(garrisonArrowClasses))
 			return false;
-		if (typeGarrison !== PETRA.GarrisonManager.TYPE_DECAY && !allowMelee && ent.attackTypes().indexOf("Melee") != -1)
+		if (typeGarrison !== GarrisonManager.TYPE_DECAY && !allowMelee && ent.attackTypes().indexOf("Melee") != -1)
 			return false;
 		if (ent.getMetadata(PlayerID, "transport") !== undefined)
 			return false;
@@ -779,11 +796,14 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 		{
 			const subrole = ent.getMetadata(PlayerID, "subrole");
 			// When structure decaying (usually because we've just captured it in enemy territory), also allow units from an attack plan.
-			if (typeGarrison !== PETRA.GarrisonManager.TYPE_DECAY && subrole &&
-				(subrole === PETRA.Worker.SUBROLE_COMPLETING || subrole === PETRA.Worker.SUBROLE_WALKING || subrole === PETRA.Worker.SUBROLE_ATTACKING))
+			if (typeGarrison !== GarrisonManager.TYPE_DECAY && subrole &&
+				(subrole === Worker.SUBROLE_COMPLETING || subrole === Worker.SUBROLE_WALKING ||
+				subrole === Worker.SUBROLE_ATTACKING))
+			{
 				return false;
+			}
 		}
-		if (PETRA.getLandAccess(gameState, ent) != access)
+		if (getLandAccess(gameState, ent) != access)
 			return false;
 		return true;
 	}).filterNearest(target.position());
@@ -809,11 +829,11 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 };
 
 /** Garrison a attacked siege ranged unit inside the nearest fortress. */
-PETRA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
+DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
 {
 	let distmin = Math.min();
 	let nearest;
-	const unitAccess = PETRA.getLandAccess(gameState, unit);
+	const unitAccess = getLandAccess(gameState, unit);
 	const garrisonManager = gameState.ai.HQ.garrisonManager;
 	for (const ent of gameState.getAllyStructures().values())
 	{
@@ -825,7 +845,7 @@ PETRA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
 			continue;
 		if (ent.hitpoints() < ent.garrisonEjectHealth() * ent.maxHitpoints())
 			continue;
-		if (PETRA.getLandAccess(gameState, ent) != unitAccess)
+		if (getLandAccess(gameState, ent) != unitAccess)
 			continue;
 		const dist = API3.SquareVectorDistance(ent.position(), unit.position());
 		if (dist > distmin)
@@ -834,7 +854,7 @@ PETRA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
 		nearest = ent;
 	}
 	if (nearest)
-		garrisonManager.garrison(gameState, unit, nearest, PETRA.GarrisonManager.TYPE_PROTECTION);
+		garrisonManager.garrison(gameState, unit, nearest, GarrisonManager.TYPE_PROTECTION);
 	return nearest !== undefined;
 };
 
@@ -843,11 +863,11 @@ PETRA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
  * If emergency is true, the unit will be garrisoned in the closest possible structure.
  * Otherwise, it will garrison in the closest healing structure.
  */
-PETRA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, emergency = false)
+DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, emergency = false)
 {
 	let distmin = Math.min();
 	let nearest;
-	const unitAccess = PETRA.getLandAccess(gameState, unit);
+	const unitAccess = getLandAccess(gameState, unit);
 	const garrisonManager = gameState.ai.HQ.garrisonManager;
 	for (const ent of gameState.getAllyStructures().values())
 	{
@@ -862,7 +882,7 @@ PETRA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, 
 			continue;
 		if (ent.hitpoints() < ent.garrisonEjectHealth() * ent.maxHitpoints())
 			continue;
-		if (PETRA.getLandAccess(gameState, ent) != unitAccess)
+		if (getLandAccess(gameState, ent) != unitAccess)
 			continue;
 		const dist = API3.SquareVectorDistance(ent.position(), unit.position());
 		if (dist > distmin)
@@ -875,20 +895,21 @@ PETRA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, 
 
 	if (!emergency)
 	{
-		garrisonManager.garrison(gameState, unit, nearest, PETRA.GarrisonManager.TYPE_PROTECTION);
+		garrisonManager.garrison(gameState, unit, nearest, GarrisonManager.TYPE_PROTECTION);
 		return true;
 	}
 	if (garrisonManager.numberOfGarrisonedSlots(nearest) >= nearest.garrisonMax()) // make room for this ent
 		nearest.unload(nearest.garrisoned()[0]);
 
-	garrisonManager.garrison(gameState, unit, nearest, nearest.buffHeal() ? PETRA.GarrisonManager.TYPE_PROTECTION : PETRA.GarrisonManager.TYPE_EMERGENCY);
+	garrisonManager.garrison(gameState, unit, nearest,
+		nearest.buffHeal() ? GarrisonManager.TYPE_PROTECTION : GarrisonManager.TYPE_EMERGENCY);
 	return true;
 };
 
 /**
  * Be more inclined to help an ally attacked by several enemies.
  */
-PETRA.DefenseManager.prototype.GetCooperationLevel = function(ally)
+DefenseManager.prototype.GetCooperationLevel = function(ally)
 {
 	let cooperation = this.Config.personality.cooperative;
 	if (this.attackedAllies[ally] && this.attackedAllies[ally] > 1)
@@ -899,7 +920,7 @@ PETRA.DefenseManager.prototype.GetCooperationLevel = function(ally)
 /**
  * Switch a defense army into an attack if needed.
  */
-PETRA.DefenseManager.prototype.switchToAttack = function(gameState, army)
+DefenseManager.prototype.switchToAttack = function(gameState, army)
 {
 	if (!army)
 		return;
@@ -908,12 +929,12 @@ PETRA.DefenseManager.prototype.switchToAttack = function(gameState, army)
 		const target = gameState.getEntityById(targetId);
 		if (!target || !target.position() || !gameState.isPlayerEnemy(target.owner()))
 			continue;
-		const targetAccess = PETRA.getLandAccess(gameState, target);
+		const targetAccess = getLandAccess(gameState, target);
 		const targetPos = target.position();
 		for (const entId of army.ownEntities)
 		{
 			const ent = gameState.getEntityById(entId);
-			if (!ent || !ent.position() || PETRA.getLandAccess(gameState, ent) != targetAccess)
+			if (!ent || !ent.position() || getLandAccess(gameState, ent) != targetAccess)
 				continue;
 			if (API3.SquareVectorDistance(targetPos, ent.position()) > 14400)
 				continue;
@@ -923,7 +944,7 @@ PETRA.DefenseManager.prototype.switchToAttack = function(gameState, army)
 	}
 };
 
-PETRA.DefenseManager.prototype.Serialize = function()
+DefenseManager.prototype.Serialize = function()
 {
 	const properties = {
 		"targetList": this.targetList,
@@ -940,7 +961,7 @@ PETRA.DefenseManager.prototype.Serialize = function()
 	return { "properties": properties, "armies": armies };
 };
 
-PETRA.DefenseManager.prototype.Deserialize = function(gameState, data)
+DefenseManager.prototype.Deserialize = function(gameState, data)
 {
 	for (const key in data.properties)
 		this[key] = data.properties[key];
@@ -948,7 +969,7 @@ PETRA.DefenseManager.prototype.Deserialize = function(gameState, data)
 	this.armies = [];
 	for (const dataArmy of data.armies)
 	{
-		const army = new PETRA.DefenseArmy(gameState, []);
+		const army = new DefenseArmy(gameState, []);
 		army.Deserialize(dataArmy);
 		this.armies.push(army);
 	}
