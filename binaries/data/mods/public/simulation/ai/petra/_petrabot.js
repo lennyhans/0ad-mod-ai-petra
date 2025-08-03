@@ -1,13 +1,13 @@
+import { BaseAI } from "simulation/ai/common-api/baseAI.js";
+import { Entity } from "simulation/ai/common-api/entity.js";
 import { Config } from "simulation/ai/petra/config.js";
 import { Headquather } from "simulation/ai/petra/headquarters.js";
 import { Queue } from "simulation/ai/petra/queue.js";
 import { QueueManager } from "simulation/ai/petra/queueManager.js";
 
-Engine.IncludeModule("common-api");
-
 export function PetraBot(settings)
 {
-	API3.BaseAI.call(this, settings);
+	BaseAI.call(this, settings);
 
 	this.playedTurn = 0;
 	this.elapsedTime = 0;
@@ -24,7 +24,7 @@ export function PetraBot(settings)
 	this.savedEvents = {};
 }
 
-PetraBot.prototype = Object.create(API3.BaseAI.prototype);
+PetraBot.prototype = Object.create(BaseAI.prototype);
 
 PetraBot.prototype.CustomInit = function(gameState)
 {
@@ -46,7 +46,7 @@ PetraBot.prototype.CustomInit = function(gameState)
 				for (const keyevt in evt)
 				{
 					evtmod[keyevt] = evt[keyevt];
-					evtmod.entityObj = new API3.Entity(gameState.sharedScript, evt.entityObj);
+					evtmod.entityObj = new Entity(gameState.sharedScript, evt.entityObj);
 					this.savedEvents[key][i] = evtmod;
 				}
 			}

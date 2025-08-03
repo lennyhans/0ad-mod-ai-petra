@@ -1,3 +1,5 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { warn as aiWarn, SquareVectorDistance, VectorDistance } from "simulation/ai/common-api/utils.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import * as chat from "simulation/ai/petra/chatHelper.js";
 import { Config, DIFFICULTY_VERY_EASY } from "simulation/ai/petra/config.js";
@@ -35,7 +37,7 @@ export function AttackManager(config)
 /** More initialisation for stuff that needs the gameState */
 AttackManager.prototype.init = function(gameState)
 {
-	this.outOfPlan = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "plan", -1));
+	this.outOfPlan = gameState.getOwnUnits().filter(filters.byMetadata(PlayerID, "plan", -1));
 	this.outOfPlan.registerUpdates();
 };
 
@@ -164,7 +166,8 @@ AttackManager.prototype.assignBombers = function(gameState)
 		}
 	}
 
-	const bombers = gameState.updatingCollection("bombers", API3.Filters.byClasses(["BoltShooter", "StoneThrower"]), gameState.getOwnUnits());
+	const bombers = gameState.updatingCollection("bombers",
+		filters.byClasses(["BoltShooter", "StoneThrower"]), gameState.getOwnUnits());
 	for (const ent of bombers.values())
 	{
 		if (!ent.position() || !ent.isIdle() || !ent.attackRange("Ranged"))
@@ -206,7 +209,7 @@ AttackManager.prototype.assignBombers = function(gameState)
 				    !gameState.isPlayerEnemy(gameState.ai.HQ.territoryMap.getOwner(structPos)))
 					continue;
 			}
-			const dist = API3.VectorDistance(entPos, structPos);
+			const dist = VectorDistance(entPos, structPos);
 			if (dist > range)
 			{
 				const safety = struct.footprintRadius() + 30;
@@ -254,15 +257,25 @@ AttackManager.prototype.update = function(gameState, queues, events)
 	if (this.Config.debug > 2 && gameState.ai.elapsedTime > this.debugTime + 60)
 	{
 		this.debugTime = gameState.ai.elapsedTime;
-		API3.warn(" upcoming attacks =================");
+		aiWarn(" upcoming attacks =================");
 		for (const attackType in this.upcomingAttacks)
+		{
 			for (const attack of this.upcomingAttacks[attackType])
-				API3.warn(" plan " + attack.name + " type " + attackType + " state " + attack.state + " units " + attack.unitCollection.length);
-		API3.warn(" started attacks ==================");
+			{
+				aiWarn(" plan " + attack.name + " type " + attackType + " state " + attack.state +
+					" units " + attack.unitCollection.length);
+			}
+		}
+		aiWarn(" started attacks ==================");
 		for (const attackType in this.startedAttacks)
+		{
 			for (const attack of this.startedAttacks[attackType])
-				API3.warn(" plan " + attack.name + " type " + attackType + " state " + attack.state + " units " + attack.unitCollection.length);
-		API3.warn(" ==================================");
+			{
+				aiWarn(" plan " + attack.name + " type " + attackType + " state " + attack.state +
+					" units " + attack.unitCollection.length);
+			}
+		}
+		aiWarn(" ==================================");
 	}
 
 	this.checkEvents(gameState, events);
@@ -280,7 +293,10 @@ AttackManager.prototype.update = function(gameState, queues, events)
 			attack.checkEvents(gameState, events);
 
 			if (attack.isStarted())
-				API3.warn("Petra problem in attackManager: attack in preparation has already started ???");
+			{
+				aiWarn("Petra problem in attackManager: attack in preparation has already " +
+					"started ???");
+			}
 
 			const updateStep = attack.updatePreparation(gameState);
 			// now we're gonna check if the preparation time is over
@@ -293,7 +309,10 @@ AttackManager.prototype.update = function(gameState, queues, events)
 			else if (updateStep === AttackPlan.PREPARATION_FAILED)
 			{
 				if (this.Config.debug > 1)
-					API3.warn("Attack Manager: " + attack.getType() + " plan " + attack.getName() + " aborted.");
+				{
+					aiWarn("Attack Manager: " + attack.getType() + " plan " + attack.getName() +
+						" aborted.");
+				}
 				attack.Abort(gameState);
 				this.upcomingAttacks[attackType].splice(i--, 1);
 			}
@@ -302,7 +321,10 @@ AttackManager.prototype.update = function(gameState, queues, events)
 				if (attack.StartAttack(gameState))
 				{
 					if (this.Config.debug > 1)
-						API3.warn("Attack Manager: Starting " + attack.getType() + " plan " + attack.getName());
+					{
+						aiWarn("Attack Manager: Starting " + attack.getType() + " plan " +
+							attack.getName());
+					}
 					if (this.Config.chat)
 						chat.launchAttack(gameState, attack.targetPlayer, attack.getType());
 					this.startedAttacks[attackType].push(attack);
@@ -327,7 +349,10 @@ AttackManager.prototype.update = function(gameState, queues, events)
 			if (!remaining)
 			{
 				if (this.Config.debug > 1)
-					API3.warn("Military Manager: " + attack.getType() + " plan " + attack.getName() + " is finished with remaining " + remaining);
+				{
+					aiWarn("Military Manager: " + attack.getType() + " plan " +
+						attack.getName() + " is finished with remaining " + remaining);
+				}
 				attack.Abort(gameState);
 				this.startedAttacks[attackType].splice(i--, 1);
 			}
@@ -336,7 +361,7 @@ AttackManager.prototype.update = function(gameState, queues, events)
 
 	// creating plans after updating because an aborted plan might be reused in that case.
 
-	const barracksNb = gameState.getOwnEntitiesByClass("Barracks", true).filter(API3.Filters.isBuilt()).length;
+	const barracksNb = gameState.getOwnEntitiesByClass("Barracks", true).filter(filters.isBuilt()).length;
 	if (this.rushNumber < this.maxRushes && barracksNb >= 1)
 	{
 		if (unexecutedAttacks[AttackPlan.TYPE_RUSH] === 0)
@@ -348,7 +373,10 @@ AttackManager.prototype.update = function(gameState, queues, events)
 			if (!attackPlan.failed)
 			{
 				if (this.Config.debug > 1)
-					API3.warn("Military Manager: Rushing plan " + this.totalNumber + " with maxRushes " + this.maxRushes);
+				{
+					aiWarn("Military Manager: Rushing plan " + this.totalNumber +
+						" with maxRushes " + this.maxRushes);
+				}
 				this.totalNumber++;
 				attackPlan.init(gameState);
 				this.upcomingAttacks[AttackPlan.TYPE_RUSH].push(attackPlan);
@@ -377,7 +405,10 @@ AttackManager.prototype.update = function(gameState, queues, events)
 			else
 			{
 				if (this.Config.debug > 1)
-					API3.warn("Military Manager: Creating the plan " + type + "  " + this.totalNumber);
+				{
+					aiWarn("Military Manager: Creating the plan " + type + "  " +
+						this.totalNumber);
+				}
 				this.totalNumber++;
 				attackPlan.init(gameState);
 				this.upcomingAttacks[type].push(attackPlan);
@@ -521,7 +552,7 @@ AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 
 		let distmin;
 		let ccmin;
-		const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+		const ccEnts = gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre"));
 		for (const ourcc of ccEnts.values())
 		{
 			if (ourcc.owner() != PlayerID)
@@ -536,7 +567,7 @@ AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 					continue;
 				if (access !== getLandAccess(gameState, enemycc))
 					continue;
-				const dist = API3.SquareVectorDistance(ourPos, enemycc.position());
+				const dist = SquareVectorDistance(ourPos, enemycc.position());
 				if (distmin && dist > distmin)
 					continue;
 				ccmin = enemycc;
@@ -590,7 +621,7 @@ AttackManager.prototype.getWonderEnemyPlayer = function(gameState, attack)
 	let enemyPlayer;
 	let enemyWonder;
 	let moreAdvanced;
-	for (const wonder of gameState.getEnemyStructures().filter(API3.Filters.byClass("Wonder")).values())
+	for (const wonder of gameState.getEnemyStructures().filter(filters.byClass("Wonder")).values())
 	{
 		if (wonder.owner() == 0)
 			continue;
@@ -620,7 +651,7 @@ AttackManager.prototype.getWonderEnemyPlayer = function(gameState, attack)
 AttackManager.prototype.getRelicEnemyPlayer = function(gameState, attack)
 {
 	let enemyPlayer;
-	const allRelics = gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic"));
+	const allRelics = gameState.updatingGlobalCollection("allRelics", filters.byClass("Relic"));
 	let maxRelicsOwned = 0;
 	for (let i = 0; i < gameState.sharedScript.playersData.length; ++i)
 	{
@@ -672,7 +703,7 @@ AttackManager.prototype.raidTargetEntity = function(gameState, ent)
 	if (attackPlan.failed)
 		return null;
 	if (this.Config.debug > 1)
-		API3.warn("Military Manager: Raiding plan " + this.totalNumber);
+		aiWarn("Military Manager: Raiding plan " + this.totalNumber);
 	this.raidNumber++;
 	this.totalNumber++;
 	attackPlan.init(gameState);
@@ -691,7 +722,7 @@ AttackManager.prototype.numAttackingUnitsAround = function(pos, dist)
 		{
 			if (!attack.position)	// this attack may be inside a transport
 				continue;
-			if (API3.SquareVectorDistance(pos, attack.position) < dist*dist)
+			if (SquareVectorDistance(pos, attack.position) < dist*dist)
 				num += attack.unitCollection.length;
 		}
 	return num;
@@ -709,7 +740,7 @@ AttackManager.prototype.switchDefenseToAttack = function(gameState, target, data
 		return false;
 	if (!data.range && !data.armyID)
 	{
-		API3.warn(" attackManager.switchDefenseToAttack inconsistent data " + uneval(data));
+		aiWarn(" attackManager.switchDefenseToAttack inconsistent data " + uneval(data));
 		return false;
 	}
 	const attackData = data.uniqueTarget ? { "uniqueTargetId": target.id() } : undefined;
@@ -728,7 +759,7 @@ AttackManager.prototype.switchDefenseToAttack = function(gameState, target, data
 		if (data.range)
 		{
 			army.recalculatePosition(gameState);
-			if (API3.SquareVectorDistance(pos, army.foePosition) > data.range * data.range)
+			if (SquareVectorDistance(pos, army.foePosition) > data.range * data.range)
 				continue;
 		}
 		else if (army.ID != +data.armyID)

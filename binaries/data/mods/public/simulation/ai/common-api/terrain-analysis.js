@@ -1,5 +1,5 @@
-API3 = function(m)
-{
+import { InfoMap } from "simulation/ai/common-api/map-module.js";
+import { copyPrototype } from "simulation/ai/common-api/shared.js";
 
 /**
  * TerrainAnalysis, inheriting from the Map Component.
@@ -11,27 +11,27 @@ API3 = function(m)
  * This is intended for use with 8 bit maps for reduced memory usage.
  * Upgraded from QuantumState's original TerrainAnalysis for qBot.
  */
-m.TerrainAnalysis = function()
+export function TerrainAnalysis()
 {
-};
+}
 
-m.copyPrototype(m.TerrainAnalysis, m.Map);
+copyPrototype(TerrainAnalysis, InfoMap);
 
-m.TerrainAnalysis.prototype.IMPASSABLE = 0;
+TerrainAnalysis.prototype.IMPASSABLE = 0;
 /**
 * non-passable by land units
 */
-m.TerrainAnalysis.prototype.DEEP_WATER = 200;
+TerrainAnalysis.prototype.DEEP_WATER = 200;
 /**
 * passable by land units and water units
 */
-m.TerrainAnalysis.prototype.SHALLOW_WATER = 201;
+TerrainAnalysis.prototype.SHALLOW_WATER = 201;
 /**
 * passable by land units
 */
-m.TerrainAnalysis.prototype.LAND = 255;
+TerrainAnalysis.prototype.LAND = 255;
 
-m.TerrainAnalysis.prototype.init = function(sharedScript, rawState)
+TerrainAnalysis.prototype.init = function(sharedScript, rawState)
 {
 	const passabilityMap = rawState.passabilityMap;
 	this.width = passabilityMap.width;
@@ -54,7 +54,7 @@ m.TerrainAnalysis.prototype.init = function(sharedScript, rawState)
 			obstructionTiles[i] = this.SHALLOW_WATER;
 	}
 
-	this.Map(rawState, "passability", obstructionTiles);
+	this.InfoMap(rawState, "passability", obstructionTiles);
 };
 
 /**
@@ -65,15 +65,15 @@ m.TerrainAnalysis.prototype.init = function(sharedScript, rawState)
  * for optimizations it's called after the TerrainAnalyser has finished initializing his map
  * so this can use the land regions already.
  */
-m.Accessibility = function()
+export function Accessibility()
 {
-};
+}
 
-m.copyPrototype(m.Accessibility, m.TerrainAnalysis);
+copyPrototype(Accessibility, TerrainAnalysis);
 
-m.Accessibility.prototype.init = function(rawState, terrainAnalyser)
+Accessibility.prototype.init = function(rawState, terrainAnalyser)
 {
-	this.Map(rawState, "passability", terrainAnalyser.map);
+	this.InfoMap(rawState, "passability", terrainAnalyser.map);
 	this.landPassMap = new Uint16Array(terrainAnalyser.length);
 	this.navalPassMap = new Uint16Array(terrainAnalyser.length);
 
@@ -146,7 +146,7 @@ m.Accessibility.prototype.init = function(rawState, terrainAnalyser)
 	// Engine.DumpImage("NavalPassMap.png", this.navalPassMap, this.width, this.height, 255);
 };
 
-m.Accessibility.prototype.getAccessValue = function(position, onWater)
+Accessibility.prototype.getAccessValue = function(position, onWater)
 {
 	const gamePos = this.gamePosToMapPos(position);
 	if (onWater)
@@ -170,7 +170,7 @@ m.Accessibility.prototype.getAccessValue = function(position, onWater)
 	return ret;
 };
 
-m.Accessibility.prototype.getTrajectTo = function(start, end)
+Accessibility.prototype.getTrajectTo = function(start, end)
 {
 	const pstart = this.gamePosToMapPos(start);
 	const istart = pstart[0] + pstart[1]*this.width;
@@ -198,7 +198,7 @@ m.Accessibility.prototype.getTrajectTo = function(start, end)
  * this can tell you what sea zone you need to have a dock on, for example.
  * assumes a land unit unless start point is over deep water.
  */
-m.Accessibility.prototype.getTrajectToIndex = function(istart, iend)
+Accessibility.prototype.getTrajectToIndex = function(istart, iend)
 {
 	if (istart === iend)
 		return [istart];
@@ -227,7 +227,7 @@ m.Accessibility.prototype.getTrajectToIndex = function(istart, iend)
 	return undefined;
 };
 
-m.Accessibility.prototype.getRegionSize = function(position, onWater)
+Accessibility.prototype.getRegionSize = function(position, onWater)
 {
 	const pos = this.gamePosToMapPos(position);
 	const index = pos[0] + pos[1]*this.width;
@@ -237,7 +237,7 @@ m.Accessibility.prototype.getRegionSize = function(position, onWater)
 	return this.regionSize[ID];
 };
 
-m.Accessibility.prototype.getRegionSizei = function(index, onWater)
+Accessibility.prototype.getRegionSizei = function(index, onWater)
 {
 	if (this.regionSize[this.landPassMap[index]] === undefined && (!onWater || this.regionSize[this.navalPassMap[index]] === undefined))
 		return 0;
@@ -247,7 +247,7 @@ m.Accessibility.prototype.getRegionSizei = function(index, onWater)
 };
 
 /** Implementation of a fast flood fill. Reasonably good performances for JS. */
-m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
+Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 {
 	if (value > this.maxRegions)
 	{
@@ -383,7 +383,3 @@ m.Accessibility.prototype.floodFill = function(startIndex, value, onWater)
 	}
 	return true;
 };
-
-return m;
-
-}(API3);

@@ -1,3 +1,6 @@
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+
 /**
  * Common functions and variables to all queue plans.
  */
@@ -10,11 +13,11 @@ export function QueuePlan(gameState, type, metadata)
 	this.template = gameState.getTemplate(this.type);
 	if (!this.template)
 	{
-		API3.warn("Tried to add the inexisting template " + this.type + " to Petra.");
+		aiWarn("Tried to add the inexisting template " + this.type + " to Petra.");
 		return false;
 	}
 	this.ID = gameState.ai.uniqueIDs.plans++;
-	this.cost = new API3.Resources(this.template.cost());
+	this.cost = new ResourcesManager(this.template.cost());
 	this.number = 1;
 	this.category = "";
 
@@ -47,7 +50,7 @@ QueuePlan.prototype.start = function(gameState)
 
 QueuePlan.prototype.getCost = function()
 {
-	const costs = new API3.Resources();
+	const costs = new ResourcesManager();
 	costs.add(this.cost);
 	if (this.number !== 1)
 		costs.multiply(this.number);

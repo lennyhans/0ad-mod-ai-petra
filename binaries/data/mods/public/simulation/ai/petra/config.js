@@ -1,3 +1,5 @@
+import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+
 // These integers must be sequential
 /* eslint-disable prefer-const -- Mods should be able to change them */
 export let DIFFICULTY_SANDBOX = 0;
@@ -326,7 +328,7 @@ Config.prototype.setConfig = function(gameState)
 
 	if (this.debug < 2)
 		return;
-	API3.warn(" >>>  Petra bot: personality = " + uneval(this.personality));
+	aiWarn(" >>>  Petra bot: personality = " + uneval(this.personality));
 };
 
 Config.prototype.Cheat = function(gameState)

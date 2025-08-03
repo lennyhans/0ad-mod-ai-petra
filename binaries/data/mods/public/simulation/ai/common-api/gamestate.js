@@ -1,15 +1,18 @@
-API3 = function(m)
-{
+import { Template } from "simulation/ai/common-api/entity.js";
+import * as filters from "simulation/ai/common-api/filters.js";
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { Technology } from "simulation/ai/common-api/technology.js";
 
 /**
  * Provides an API for the rest of the AI scripts to query the world state at a
  * higher level than the raw data.
  */
-m.GameState = function() {
+export function GameState()
+{
 	this.ai = null; // must be updated by the AIs.
-};
+}
 
-m.GameState.prototype.init = function(SharedScript, state, player)
+GameState.prototype.init = function(SharedScript, state, player)
 {
 	this.sharedScript = SharedScript;
 	this.EntCollecNames = SharedScript._entityCollectionsName;
@@ -63,7 +66,7 @@ m.GameState.prototype.init = function(SharedScript, state, player)
 	}));
 };
 
-m.GameState.prototype.update = function(SharedScript)
+GameState.prototype.update = function(SharedScript)
 {
 	this.timeElapsed = SharedScript.timeElapsed;
 	this.playerData = SharedScript.playersData[this.player];
@@ -71,19 +74,19 @@ m.GameState.prototype.update = function(SharedScript)
 	this.ceasefireTimeRemaining = SharedScript.ceasefireTimeRemaining;
 };
 
-m.GameState.prototype.updatingCollection = function(id, filter, parentCollection)
+GameState.prototype.updatingCollection = function(id, filter, parentCollection)
 {
 	const gid = "player-" + this.player + "-" + id;	// automatically add the player ID
 	return this.updatingGlobalCollection(gid, filter, parentCollection);
 };
 
-m.GameState.prototype.destroyCollection = function(id)
+GameState.prototype.destroyCollection = function(id)
 {
 	const gid = "player-" + this.player + "-" + id;	// automatically add the player ID
 	this.destroyGlobalCollection(gid);
 };
 
-m.GameState.prototype.updatingGlobalCollection = function(gid, filter, parentCollection)
+GameState.prototype.updatingGlobalCollection = function(gid, filter, parentCollection)
 {
 	if (this.EntCollecNames.has(gid))
 		return this.EntCollecNames.get(gid);
@@ -94,7 +97,7 @@ m.GameState.prototype.updatingGlobalCollection = function(gid, filter, parentCol
 	return collection;
 };
 
-m.GameState.prototype.destroyGlobalCollection = function(gid)
+GameState.prototype.destroyGlobalCollection = function(gid)
 {
 	if (!this.EntCollecNames.has(gid))
 		return;
@@ -106,51 +109,51 @@ m.GameState.prototype.destroyGlobalCollection = function(gid)
 /**
  * Reset the entities collections which depend on diplomacy
  */
-m.GameState.prototype.resetOnDiplomacyChanged = function()
+GameState.prototype.resetOnDiplomacyChanged = function()
 {
 	for (const name of this.EntCollecNames.keys())
 		if (name.startsWith("player-" + this.player + "-diplo"))
 			this.destroyGlobalCollection(name);
 };
 
-m.GameState.prototype.getTimeElapsed = function()
+GameState.prototype.getTimeElapsed = function()
 {
 	return this.timeElapsed;
 };
 
-m.GameState.prototype.getBarterPrices = function()
+GameState.prototype.getBarterPrices = function()
 {
 	return this.playerData.barterPrices;
 };
 
-m.GameState.prototype.getVictoryConditions = function()
+GameState.prototype.getVictoryConditions = function()
 {
 	return this.victoryConditions;
 };
 
-m.GameState.prototype.getAlliedVictory = function()
+GameState.prototype.getAlliedVictory = function()
 {
 	return this.alliedVictory;
 };
 
-m.GameState.prototype.isCeasefireActive = function()
+GameState.prototype.isCeasefireActive = function()
 {
 	return this.ceasefireActive;
 };
 
-m.GameState.prototype.getTemplate = function(type)
+GameState.prototype.getTemplate = function(type)
 {
 	if (TechnologyTemplates.Has(type))
-		return new m.Technology(type);
+		return new Technology(type);
 
 	if (this.templates[type] === undefined)
 		this.sharedScript.GetTemplate(type);
 
-	return this.templates[type] ? new m.Template(this.sharedScript, type, this.templates[type]) : null;
+	return this.templates[type] ? new Template(this.sharedScript, type, this.templates[type]) : null;
 };
 
 /** Return the template of the structure built from this foundation */
-m.GameState.prototype.getBuiltTemplate = function(foundationName)
+GameState.prototype.getBuiltTemplate = function(foundationName)
 {
 	if (!foundationName.startsWith("foundation|"))
 	{
@@ -160,17 +163,17 @@ m.GameState.prototype.getBuiltTemplate = function(foundationName)
 	return this.getTemplate(foundationName.substr(11));
 };
 
-m.GameState.prototype.applyCiv = function(str)
+GameState.prototype.applyCiv = function(str)
 {
 	return str.replace(/\{civ\}/g, this.playerData.civ);
 };
 
-m.GameState.prototype.getPlayerCiv = function(player)
+GameState.prototype.getPlayerCiv = function(player)
 {
 	return player !== undefined ? this.sharedScript.playersData[player].civ : this.playerData.civ;
 };
 
-m.GameState.prototype.currentPhase = function()
+GameState.prototype.currentPhase = function()
 {
 	for (let i = this.phases.length; i > 0; --i)
 		if (this.isResearched(this.phases[i-1].name))
@@ -178,17 +181,17 @@ m.GameState.prototype.currentPhase = function()
 	return 0;
 };
 
-m.GameState.prototype.getNumberOfPhases = function()
+GameState.prototype.getNumberOfPhases = function()
 {
 	return this.phases.length;
 };
 
-m.GameState.prototype.getPhaseName = function(i)
+GameState.prototype.getPhaseName = function(i)
 {
 	return this.phases[i-1] ? this.phases[i-1].name : undefined;
 };
 
-m.GameState.prototype.getPhaseEntityRequirements = function(i)
+GameState.prototype.getPhaseEntityRequirements = function(i)
 {
 	const entityReqs = [];
 
@@ -207,18 +210,18 @@ m.GameState.prototype.getPhaseEntityRequirements = function(i)
 	return entityReqs;
 };
 
-m.GameState.prototype.isResearched = function(template)
+GameState.prototype.isResearched = function(template)
 {
 	return this.playerData.researchedTechs.has(template);
 };
 
-m.GameState.prototype.isResearching = function(template)
+GameState.prototype.isResearching = function(template)
 {
 	return this.playerData.researchQueued.has(template);
 };
 
 /** this is an "in-absolute" check that doesn't check if we have a building to research from. */
-m.GameState.prototype.canResearch = function(techTemplateName, noRequirementCheck)
+GameState.prototype.canResearch = function(techTemplateName, noRequirementCheck)
 {
 	if (this.playerData.disabledTechnologies[techTemplateName])
 		return false;
@@ -251,7 +254,7 @@ m.GameState.prototype.canResearch = function(techTemplateName, noRequirementChec
  * Basically copies TechnologyManager, but compares against
  * variables only available within the AI
  */
-m.GameState.prototype.checkTechRequirements = function(reqs)
+GameState.prototype.checkTechRequirements = function(reqs)
 {
 	if (!reqs)
 		return false;
@@ -291,42 +294,42 @@ m.GameState.prototype.checkTechRequirements = function(reqs)
 	});
 };
 
-m.GameState.prototype.getPassabilityMap = function()
+GameState.prototype.getPassabilityMap = function()
 {
 	return this.sharedScript.passabilityMap;
 };
 
-m.GameState.prototype.getPassabilityClassMask = function(name)
+GameState.prototype.getPassabilityClassMask = function(name)
 {
 	if (!this.sharedScript.passabilityClasses[name])
 		error("Tried to use invalid passability class name '" + name + "'");
 	return this.sharedScript.passabilityClasses[name];
 };
 
-m.GameState.prototype.getResources = function()
+GameState.prototype.getResources = function()
 {
-	return new m.Resources(this.playerData.resourceCounts);
+	return new ResourcesManager(this.playerData.resourceCounts);
 };
 
-m.GameState.prototype.getPopulation = function()
+GameState.prototype.getPopulation = function()
 {
 	return this.playerData.popCount;
 };
 
-m.GameState.prototype.getPopulationLimit = function() {
+GameState.prototype.getPopulationLimit = function() {
 	return this.playerData.popLimit;
 };
 
-m.GameState.prototype.getPopulationMax = function() {
+GameState.prototype.getPopulationMax = function() {
 	return this.playerData.popMax;
 };
 
-m.GameState.prototype.getPlayerID = function()
+GameState.prototype.getPlayerID = function()
 {
 	return this.player;
 };
 
-m.GameState.prototype.hasAllies = function()
+GameState.prototype.hasAllies = function()
 {
 	for (const i in this.playerData.isAlly)
 		if (this.playerData.isAlly[i] && +i !== this.player &&
@@ -335,7 +338,7 @@ m.GameState.prototype.hasAllies = function()
 	return false;
 };
 
-m.GameState.prototype.hasEnemies = function()
+GameState.prototype.hasEnemies = function()
 {
 	for (const i in this.playerData.isEnemy)
 		if (this.playerData.isEnemy[i] && +i !== 0 &&
@@ -344,7 +347,7 @@ m.GameState.prototype.hasEnemies = function()
 	return false;
 };
 
-m.GameState.prototype.hasNeutrals = function()
+GameState.prototype.hasNeutrals = function()
 {
 	for (const i in this.playerData.isNeutral)
 		if (this.playerData.isNeutral[i] &&
@@ -353,28 +356,28 @@ m.GameState.prototype.hasNeutrals = function()
 	return false;
 };
 
-m.GameState.prototype.isPlayerNeutral = function(id)
+GameState.prototype.isPlayerNeutral = function(id)
 {
 	return this.playerData.isNeutral[id];
 };
 
-m.GameState.prototype.isPlayerAlly = function(id)
+GameState.prototype.isPlayerAlly = function(id)
 {
 	return this.playerData.isAlly[id];
 };
 
-m.GameState.prototype.isPlayerMutualAlly = function(id)
+GameState.prototype.isPlayerMutualAlly = function(id)
 {
 	return this.playerData.isMutualAlly[id];
 };
 
-m.GameState.prototype.isPlayerEnemy = function(id)
+GameState.prototype.isPlayerEnemy = function(id)
 {
 	return this.playerData.isEnemy[id];
 };
 
 /** Return the number of players currently enemies, not including gaia */
-m.GameState.prototype.getNumPlayerEnemies = function()
+GameState.prototype.getNumPlayerEnemies = function()
 {
 	let num = 0;
 	for (let i = 1; i < this.playerData.isEnemy.length; ++i)
@@ -384,7 +387,7 @@ m.GameState.prototype.getNumPlayerEnemies = function()
 	return num;
 };
 
-m.GameState.prototype.getEnemies = function()
+GameState.prototype.getEnemies = function()
 {
 	const ret = [];
 	for (const i in this.playerData.isEnemy)
@@ -393,7 +396,7 @@ m.GameState.prototype.getEnemies = function()
 	return ret;
 };
 
-m.GameState.prototype.getNeutrals = function()
+GameState.prototype.getNeutrals = function()
 {
 	const ret = [];
 	for (const i in this.playerData.isNeutral)
@@ -402,7 +405,7 @@ m.GameState.prototype.getNeutrals = function()
 	return ret;
 };
 
-m.GameState.prototype.getAllies = function()
+GameState.prototype.getAllies = function()
 {
 	const ret = [];
 	for (const i in this.playerData.isAlly)
@@ -411,7 +414,7 @@ m.GameState.prototype.getAllies = function()
 	return ret;
 };
 
-m.GameState.prototype.getExclusiveAllies = function()
+GameState.prototype.getExclusiveAllies = function()
 {	// Player is not included
 	const ret = [];
 	for (const i in this.playerData.isAlly)
@@ -420,7 +423,7 @@ m.GameState.prototype.getExclusiveAllies = function()
 	return ret;
 };
 
-m.GameState.prototype.getMutualAllies = function()
+GameState.prototype.getMutualAllies = function()
 {
 	const ret = [];
 	for (const i in this.playerData.isMutualAlly)
@@ -430,165 +433,182 @@ m.GameState.prototype.getMutualAllies = function()
 	return ret;
 };
 
-m.GameState.prototype.isEntityAlly = function(ent)
+GameState.prototype.isEntityAlly = function(ent)
 {
 	if (!ent)
 		return false;
 	return this.playerData.isAlly[ent.owner()];
 };
 
-m.GameState.prototype.isEntityExclusiveAlly = function(ent)
+GameState.prototype.isEntityExclusiveAlly = function(ent)
 {
 	if (!ent)
 		return false;
 	return this.playerData.isAlly[ent.owner()] && ent.owner() !== this.player;
 };
 
-m.GameState.prototype.isEntityEnemy = function(ent)
+GameState.prototype.isEntityEnemy = function(ent)
 {
 	if (!ent)
 		return false;
 	return this.playerData.isEnemy[ent.owner()];
 };
 
-m.GameState.prototype.isEntityOwn = function(ent)
+GameState.prototype.isEntityOwn = function(ent)
 {
 	if (!ent)
 		return false;
 	return ent.owner() === this.player;
 };
 
-m.GameState.prototype.getEntityById = function(id)
+GameState.prototype.getEntityById = function(id)
 {
 	return this.entities._entities.get(+id);
 };
 
-m.GameState.prototype.getEntities = function(id)
+GameState.prototype.getEntities = function(id)
 {
 	if (id === undefined)
 		return this.entities;
 
-	return this.updatingGlobalCollection("player-" + id + "-entities", m.Filters.byOwner(id));
+	return this.updatingGlobalCollection("player-" + id + "-entities", filters.byOwner(id));
 };
 
-m.GameState.prototype.getStructures = function()
+GameState.prototype.getStructures = function()
 {
-	return this.updatingGlobalCollection("structures", m.Filters.byClass("Structure"), this.entities);
+	return this.updatingGlobalCollection("structures", filters.byClass("Structure"), this.entities);
 };
 
-m.GameState.prototype.getOwnEntities = function()
+GameState.prototype.getOwnEntities = function()
 {
-	return this.updatingGlobalCollection("player-" + this.player + "-entities", m.Filters.byOwner(this.player));
+	return this.updatingGlobalCollection("player-" + this.player + "-entities",
+		filters.byOwner(this.player));
 };
 
-m.GameState.prototype.getOwnStructures = function()
+GameState.prototype.getOwnStructures = function()
 {
-	return this.updatingGlobalCollection("player-" + this.player + "-structures", m.Filters.byClass("Structure"), this.getOwnEntities());
+	return this.updatingGlobalCollection("player-" + this.player + "-structures",
+		filters.byClass("Structure"), this.getOwnEntities());
 };
 
-m.GameState.prototype.getOwnUnits = function()
+GameState.prototype.getOwnUnits = function()
 {
-	return this.updatingGlobalCollection("player-" + this.player + "-units", m.Filters.byClass("Unit"), this.getOwnEntities());
+	return this.updatingGlobalCollection("player-" + this.player + "-units", filters.byClass("Unit"),
+		this.getOwnEntities());
 };
 
-m.GameState.prototype.getAllyEntities = function()
+GameState.prototype.getAllyEntities = function()
 {
-	return this.entities.filter(m.Filters.byOwners(this.getAllies()));
+	return this.entities.filter(filters.byOwners(this.getAllies()));
 };
 
-m.GameState.prototype.getExclusiveAllyEntities = function()
+GameState.prototype.getExclusiveAllyEntities = function()
 {
-	return this.entities.filter(m.Filters.byOwners(this.getExclusiveAllies()));
+	return this.entities.filter(filters.byOwners(this.getExclusiveAllies()));
 };
 
-m.GameState.prototype.getAllyStructures = function(allyID)
+GameState.prototype.getAllyStructures = function(allyID)
 {
 	if (allyID == undefined)
-		return this.updatingCollection("diplo-ally-structures", m.Filters.byOwners(this.getAllies()), this.getStructures());
+	{
+		return this.updatingCollection("diplo-ally-structures", filters.byOwners(this.getAllies()),
+			this.getStructures());
+	}
 
-	return this.updatingGlobalCollection("player-" + allyID + "-structures", m.Filters.byOwner(allyID), this.getStructures());
+	return this.updatingGlobalCollection("player-" + allyID + "-structures", filters.byOwner(allyID),
+		this.getStructures());
 };
 
-m.GameState.prototype.getNeutralStructures = function()
+GameState.prototype.getNeutralStructures = function()
 {
-	return this.getStructures().filter(m.Filters.byOwners(this.getNeutrals()));
+	return this.getStructures().filter(filters.byOwners(this.getNeutrals()));
 };
 
-m.GameState.prototype.getEnemyEntities = function()
+GameState.prototype.getEnemyEntities = function()
 {
-	return this.entities.filter(m.Filters.byOwners(this.getEnemies()));
+	return this.entities.filter(filters.byOwners(this.getEnemies()));
 };
 
-m.GameState.prototype.getEnemyStructures = function(enemyID)
-{
-	if (enemyID === undefined)
-		return this.updatingCollection("diplo-enemy-structures", m.Filters.byOwners(this.getEnemies()), this.getStructures());
-
-	return this.updatingGlobalCollection("player-" + enemyID + "-structures", m.Filters.byOwner(enemyID), this.getStructures());
-};
-
-m.GameState.prototype.getEnemyUnits = function(enemyID)
+GameState.prototype.getEnemyStructures = function(enemyID)
 {
 	if (enemyID === undefined)
-		return this.getEnemyEntities().filter(m.Filters.byClass("Unit"));
+	{
+		return this.updatingCollection("diplo-enemy-structures", filters.byOwners(this.getEnemies()),
+			this.getStructures());
+	}
 
-	return this.updatingGlobalCollection("player-" + enemyID + "-units", m.Filters.byClass("Unit"), this.getEntities(enemyID));
+	return this.updatingGlobalCollection("player-" + enemyID + "-structures", filters.byOwner(enemyID),
+		this.getStructures());
+};
+
+GameState.prototype.getEnemyUnits = function(enemyID)
+{
+	if (enemyID === undefined)
+		return this.getEnemyEntities().filter(filters.byClass("Unit"));
+
+	return this.updatingGlobalCollection("player-" + enemyID + "-units", filters.byClass("Unit"),
+		this.getEntities(enemyID));
 };
 
 /** if maintain is true, this will be stored. Otherwise it's one-shot. */
-m.GameState.prototype.getOwnEntitiesByMetadata = function(key, value, maintain)
+GameState.prototype.getOwnEntitiesByMetadata = function(key, value, maintain)
 {
 	if (maintain)
-		return this.updatingCollection(key + "-" + value, m.Filters.byMetadata(this.player, key, value), this.getOwnEntities());
-	return this.getOwnEntities().filter(m.Filters.byMetadata(this.player, key, value));
+	{
+		return this.updatingCollection(key + "-" + value, filters.byMetadata(this.player, key, value),
+			this.getOwnEntities());
+	}
+	return this.getOwnEntities().filter(filters.byMetadata(this.player, key, value));
 };
 
-m.GameState.prototype.getOwnEntitiesByRole = function(role, maintain)
+GameState.prototype.getOwnEntitiesByRole = function(role, maintain)
 {
 	return this.getOwnEntitiesByMetadata("role", role, maintain);
 };
 
-m.GameState.prototype.getOwnEntitiesByType = function(type, maintain)
+GameState.prototype.getOwnEntitiesByType = function(type, maintain)
 {
-	const filter = m.Filters.byType(type);
+	const filter = filters.byType(type);
 	if (maintain)
 		return this.updatingCollection("type-" + type, filter, this.getOwnEntities());
 	return this.getOwnEntities().filter(filter);
 };
 
-m.GameState.prototype.getOwnEntitiesByClass = function(cls, maintain)
+GameState.prototype.getOwnEntitiesByClass = function(cls, maintain)
 {
-	const filter = m.Filters.byClass(cls);
+	const filter = filters.byClass(cls);
 	if (maintain)
 		return this.updatingCollection("class-" + cls, filter, this.getOwnEntities());
 	return this.getOwnEntities().filter(filter);
 };
 
-m.GameState.prototype.getOwnFoundationsByClass = function(cls, maintain)
+GameState.prototype.getOwnFoundationsByClass = function(cls, maintain)
 {
-	const filter = m.Filters.byClass(cls);
+	const filter = filters.byClass(cls);
 	if (maintain)
 		return this.updatingCollection("foundations-class-" + cls, filter, this.getOwnFoundations());
 	return this.getOwnFoundations().filter(filter);
 };
 
-m.GameState.prototype.getOwnTrainingFacilities = function()
+GameState.prototype.getOwnTrainingFacilities = function()
 {
-	return this.updatingGlobalCollection("player-" + this.player + "-training-facilities", m.Filters.byTrainingQueue(), this.getOwnEntities());
+	return this.updatingGlobalCollection("player-" + this.player + "-training-facilities",
+		filters.byTrainingQueue(), this.getOwnEntities());
 };
 
-m.GameState.prototype.getOwnResearchFacilities = function()
+GameState.prototype.getOwnResearchFacilities = function()
 {
-	return this.updatingGlobalCollection("player-" + this.player + "-research-facilities", m.Filters.byResearchAvailable(this, this.playerData.civ), this.getOwnEntities());
+	return this.updatingGlobalCollection("player-" + this.player + "-research-facilities",
+		filters.byResearchAvailable(this, this.playerData.civ), this.getOwnEntities());
 };
 
 
-m.GameState.prototype.countEntitiesByType = function(type, maintain)
+GameState.prototype.countEntitiesByType = function(type, maintain)
 {
 	return this.getOwnEntitiesByType(type, maintain).length;
 };
 
-m.GameState.prototype.countEntitiesAndQueuedByType = function(type, maintain)
+GameState.prototype.countEntitiesAndQueuedByType = function(type, maintain)
 {
 	const template = this.getTemplate(type);
 	if (!template)
@@ -615,12 +635,15 @@ m.GameState.prototype.countEntitiesAndQueuedByType = function(type, maintain)
 	return count;
 };
 
-m.GameState.prototype.countFoundationsByType = function(type, maintain)
+GameState.prototype.countFoundationsByType = function(type, maintain)
 {
 	const foundationType = "foundation|" + type;
 
 	if (maintain)
-		return this.updatingCollection("foundation-type-" + type, m.Filters.byType(foundationType), this.getOwnFoundations()).length;
+	{
+		return this.updatingCollection("foundation-type-" + type, filters.byType(foundationType),
+			this.getOwnFoundations()).length;
+	}
 
 	let count = 0;
 	this.getOwnStructures().forEach(function(ent) {
@@ -630,12 +653,12 @@ m.GameState.prototype.countFoundationsByType = function(type, maintain)
 	return count;
 };
 
-m.GameState.prototype.countOwnEntitiesByRole = function(role)
+GameState.prototype.countOwnEntitiesByRole = function(role)
 {
 	return this.getOwnEntitiesByRole(role, "true").length;
 };
 
-m.GameState.prototype.countOwnEntitiesAndQueuedWithRole = function(role)
+GameState.prototype.countOwnEntitiesAndQueuedWithRole = function(role)
 {
 	let count = this.countOwnEntitiesByRole(role);
 
@@ -648,7 +671,7 @@ m.GameState.prototype.countOwnEntitiesAndQueuedWithRole = function(role)
 	return count;
 };
 
-m.GameState.prototype.countOwnQueuedEntitiesWithMetadata = function(data, value)
+GameState.prototype.countOwnQueuedEntitiesWithMetadata = function(data, value)
 {
 	// Count entities in building production queues
 	let count = 0;
@@ -660,42 +683,47 @@ m.GameState.prototype.countOwnQueuedEntitiesWithMetadata = function(data, value)
 	return count;
 };
 
-m.GameState.prototype.getOwnFoundations = function()
+GameState.prototype.getOwnFoundations = function()
 {
-	return this.updatingGlobalCollection("player-" + this.player + "-foundations", m.Filters.isFoundation(), this.getOwnStructures());
+	return this.updatingGlobalCollection("player-" + this.player + "-foundations",
+		filters.isFoundation(), this.getOwnStructures());
 };
 
-m.GameState.prototype.getOwnDropsites = function(resource)
+GameState.prototype.getOwnDropsites = function(resource)
 {
 	if (resource)
-		return this.updatingCollection("ownDropsite-" + resource, m.Filters.isDropsite(resource), this.getOwnEntities());
-	return this.updatingCollection("ownDropsite-all", m.Filters.isDropsite(), this.getOwnEntities());
+	{
+		return this.updatingCollection("ownDropsite-" + resource, filters.isDropsite(resource),
+			this.getOwnEntities());
+	}
+	return this.updatingCollection("ownDropsite-all", filters.isDropsite(), this.getOwnEntities());
 };
 
-m.GameState.prototype.getAnyDropsites = function(resource)
+GameState.prototype.getAnyDropsites = function(resource)
 {
 	if (resource)
-		return this.updatingGlobalCollection("anyDropsite-" + resource, m.Filters.isDropsite(resource), this.getEntities());
-	return this.updatingGlobalCollection("anyDropsite-all", m.Filters.isDropsite(), this.getEntities());
+		return this.updatingGlobalCollection("anyDropsite-" + resource, filters.isDropsite(resource), this.getEntities());
+	return this.updatingGlobalCollection("anyDropsite-all", filters.isDropsite(), this.getEntities());
 };
 
-m.GameState.prototype.getResourceSupplies = function(resource)
+GameState.prototype.getResourceSupplies = function(resource)
 {
-	return this.updatingGlobalCollection("resource-" + resource, m.Filters.byResource(resource), this.getEntities());
+	return this.updatingGlobalCollection("resource-" + resource, filters.byResource(resource),
+		this.getEntities());
 };
 
-m.GameState.prototype.getHuntableSupplies = function()
+GameState.prototype.getHuntableSupplies = function()
 {
-	return this.updatingGlobalCollection("resource-hunt", m.Filters.isHuntable(), this.getEntities());
+	return this.updatingGlobalCollection("resource-hunt", filters.isHuntable(), this.getEntities());
 };
 
-m.GameState.prototype.getFishableSupplies = function()
+GameState.prototype.getFishableSupplies = function()
 {
-	return this.updatingGlobalCollection("resource-fish", m.Filters.isFishable(), this.getEntities());
+	return this.updatingGlobalCollection("resource-fish", filters.isFishable(), this.getEntities());
 };
 
 /** This returns only units from buildings. */
-m.GameState.prototype.findTrainableUnits = function(classes, anticlasses)
+GameState.prototype.findTrainableUnits = function(classes, anticlasses)
 {
 	const allTrainable = [];
 	const civ = this.playerData.civ;
@@ -737,7 +765,7 @@ m.GameState.prototype.findTrainableUnits = function(classes, anticlasses)
  * Does not factor cost.
  * If there are pairs, both techs are returned.
  */
-m.GameState.prototype.findAvailableTech = function()
+GameState.prototype.findAvailableTech = function()
 {
 	const allResearchable = [];
 	const civ = this.playerData.civ;
@@ -776,7 +804,7 @@ m.GameState.prototype.findAvailableTech = function()
 /**
  * Return true if we have a building able to train that template
  */
-m.GameState.prototype.hasTrainer = function(template)
+GameState.prototype.hasTrainer = function(template)
 {
 	const civ = this.playerData.civ;
 	for (const ent of this.getOwnTrainingFacilities().values())
@@ -791,7 +819,7 @@ m.GameState.prototype.hasTrainer = function(template)
 /**
  * Find buildings able to train that template.
  */
-m.GameState.prototype.findTrainers = function(template)
+GameState.prototype.findTrainers = function(template)
 {
 	const civ = this.playerData.civ;
 	return this.getOwnTrainingFacilities().filter(function(ent) {
@@ -803,7 +831,7 @@ m.GameState.prototype.findTrainers = function(template)
 /**
  * Get any unit that is capable of constructing the given building type.
  */
-m.GameState.prototype.findBuilder = function(template)
+GameState.prototype.findBuilder = function(template)
 {
 	const civ = this.getPlayerCiv();
 	for (const ent of this.getOwnUnits().values())
@@ -816,7 +844,7 @@ m.GameState.prototype.findBuilder = function(template)
 };
 
 /** Return true if one of our buildings is capable of researching the given tech */
-m.GameState.prototype.hasResearchers = function(templateName, noRequirementCheck)
+GameState.prototype.hasResearchers = function(templateName, noRequirementCheck)
 {
 	// let's check we can research the tech.
 	if (!this.canResearch(templateName, noRequirementCheck))
@@ -849,7 +877,7 @@ m.GameState.prototype.hasResearchers = function(templateName, noRequirementCheck
 };
 
 /** Find buildings that are capable of researching the given tech */
-m.GameState.prototype.findResearchers = function(templateName, noRequirementCheck)
+GameState.prototype.findResearchers = function(templateName, noRequirementCheck)
 {
 	// let's check we can research the tech.
 	if (!this.canResearch(templateName, noRequirementCheck))
@@ -877,29 +905,29 @@ m.GameState.prototype.findResearchers = function(templateName, noRequirementChec
 	});
 };
 
-m.GameState.prototype.getEntityLimits = function()
+GameState.prototype.getEntityLimits = function()
 {
 	return this.playerData.entityLimits;
 };
 
-m.GameState.prototype.getEntityMatchCounts = function()
+GameState.prototype.getEntityMatchCounts = function()
 {
 	return this.playerData.matchEntityCounts;
 };
 
-m.GameState.prototype.getEntityCounts = function()
+GameState.prototype.getEntityCounts = function()
 {
 	return this.playerData.entityCounts;
 };
 
-m.GameState.prototype.isTemplateAvailable = function(templateName)
+GameState.prototype.isTemplateAvailable = function(templateName)
 {
 	if (this.templates[templateName] === undefined)
 		this.sharedScript.GetTemplate(templateName);
 	return this.templates[templateName] && !this.isTemplateDisabled(templateName);
 };
 
-m.GameState.prototype.isTemplateDisabled = function(templateName)
+GameState.prototype.isTemplateDisabled = function(templateName)
 {
 	if (!this.playerData.disabledTemplates[templateName])
 		return false;
@@ -907,7 +935,7 @@ m.GameState.prototype.isTemplateDisabled = function(templateName)
 };
 
 /** Checks whether the maximum number of buildings have been constructed for a certain catergory */
-m.GameState.prototype.isEntityLimitReached = function(category)
+GameState.prototype.isEntityLimitReached = function(category)
 {
 	if (this.playerData.entityLimits[category] === undefined ||
 	    this.playerData.entityCounts[category] === undefined)
@@ -915,7 +943,7 @@ m.GameState.prototype.isEntityLimitReached = function(category)
 	return this.playerData.entityCounts[category] >= this.playerData.entityLimits[category];
 };
 
-m.GameState.prototype.getTraderTemplatesGains = function()
+GameState.prototype.getTraderTemplatesGains = function()
 {
 	const shipMechantTemplateName = this.applyCiv("units/{civ}/ship_merchant");
 	const supportTraderTemplateName = this.applyCiv("units/{civ}/support_trader");
@@ -929,8 +957,3 @@ m.GameState.prototype.getTraderTemplatesGains = function()
 		ret.navalGainMultiplier = norm * shipMerchantTemplate.gainMultiplier();
 	return ret;
 };
-
-return m;
-
-}(API3);
-

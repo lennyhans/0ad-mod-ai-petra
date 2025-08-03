@@ -1,3 +1,7 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { InfoMap } from "simulation/ai/common-api/map-module.js";
+import { getMapIndices } from "simulation/ai/common-api/utils.js";
+
 /** map functions */
 
 /* eslint-disable prefer-const -- Mods should be able to change them */
@@ -81,7 +85,7 @@ export function createObstructionMap(gameState, accessIndex, template)
 		}
 	}
 
-	const map = new API3.Map(gameState.sharedScript, "passability", obstructionTiles);
+	const map = new InfoMap(gameState.sharedScript, "passability", obstructionTiles);
 	map.setMaxVal(255);
 
 	if (template && template.buildDistance())
@@ -96,7 +100,7 @@ export function createObstructionMap(gameState, accessIndex, template)
 			const fromClass = distance.FromClass;
 			const cellSize = passabilityMap.cellSize;
 			const cellDist = 1 + minDist / cellSize;
-			const structures = gameState.getOwnStructures().filter(API3.Filters.byClass(fromClass));
+			const structures = gameState.getOwnStructures().filter(filters.byClass(fromClass));
 			for (const ent of structures.values())
 			{
 				if (!ent.position())
@@ -117,7 +121,7 @@ export function createTerritoryMap(gameState)
 {
 	const map = gameState.ai.territoryMap;
 
-	const ret = new API3.Map(gameState.sharedScript, "territory", map.data);
+	const ret = new InfoMap(gameState.sharedScript, "territory", map.data);
 	ret.getOwner = function(p) { return this.point(p) & TERRITORY_PLAYER_MASK; };
 	ret.getOwnerIndex = function(p) { return this.map[p] & TERRITORY_PLAYER_MASK; };
 	ret.isBlinking = function(p) { return (this.point(p) & TERRITORY_BLINKING_MASK) != 0; };
@@ -145,7 +149,7 @@ export let fullFrontier_Mask = narrowFrontier_Mask | largeFrontier_Mask;
 
 export function createBorderMap(gameState)
 {
-	const map = new API3.Map(gameState.sharedScript, "territory");
+	const map = new InfoMap(gameState.sharedScript, "territory");
 	const width = map.width;
 	const border = Math.round(80 / map.cellSize);
 	const passabilityMap = gameState.getPassabilityMap();
@@ -162,7 +166,7 @@ export function createBorderMap(gameState)
 			if (radius < radcut)
 				continue;
 			map.map[j] = outside_Mask;
-			const ind = API3.getMapIndices(j, map, passabilityMap);
+			const ind = getMapIndices(j, map, passabilityMap);
 			for (const k of ind)
 			{
 				if (passabilityMap.data[k] & obstructionMask)
@@ -182,7 +186,7 @@ export function createBorderMap(gameState)
 			if (ix < border || ix >= borderCut || iy < border || iy >= borderCut)
 			{
 				map.map[j] = outside_Mask;
-				const ind = API3.getMapIndices(j, map, passabilityMap);
+				const ind = getMapIndices(j, map, passabilityMap);
 				for (const k of ind)
 				{
 					if (passabilityMap.data[k] & obstructionMask)

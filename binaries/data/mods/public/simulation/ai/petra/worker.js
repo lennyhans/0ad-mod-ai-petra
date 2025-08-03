@@ -1,3 +1,5 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { allowCapture, gatherTreasure, getBuiltEntity, getLandAccess, getSeaAccess, isFastMoving,
 	isSupplyFull, returnResources } from "simulation/ai/petra/entityExtend.js";
 import { TransportPlan } from "simulation/ai/petra/transportPlan.js";
@@ -68,7 +70,7 @@ Worker.prototype.update = function(gameState, ent)
 				}
 				if (!hasDropsite)
 				{
-					for (const unit of gameState.getOwnUnits().filter(API3.Filters.byClass("Support")).values())
+					for (const unit of gameState.getOwnUnits().filter(filters.byClass("Support")).values())
 					{
 						if (!unit.position() || getLandAccess(gameState, unit) != plan.endIndex)
 							continue;
@@ -149,7 +151,7 @@ Worker.prototype.update = function(gameState, ent)
 								continue;
 							if (targetAccess != getLandAccess(gameState, dropsite))
 								continue;
-							if (API3.SquareVectorDistance(target.position(), dropsite.position()) < distanceSquare)
+							if (SquareVectorDistance(target.position(), dropsite.position()) < distanceSquare)
 							{
 								hasFoodDropsiteWithinDistance = true;
 								break;
@@ -750,7 +752,7 @@ Worker.prototype.startGathering = function(gameState)
 	// If we are here, we have nothing left to gather ... certainly no more resources of this type
 	gameState.ai.HQ.lastFailedGather[resource] = gameState.ai.elapsedTime;
 	if (gameState.ai.Config.debug > 2)
-		API3.warn(" >>>>> worker with gather-type " + resource + " with nothing to gather ");
+		aiWarn(" >>>>> worker with gather-type " + resource + " with nothing to gather ");
 	this.ent.setMetadata(PlayerID, "subrole", Worker.SUBROLE_IDLE);
 	return false;
 };
@@ -790,7 +792,7 @@ Worker.prototype.startHunting = function(gameState, position)
 				continue;
 			if (supplyAccess != getLandAccess(gameState, dropsite))
 				continue;
-			if (API3.SquareVectorDistance(supplyPosition, dropsite.position()) < distSquare)
+			if (SquareVectorDistance(supplyPosition, dropsite.position()) < distSquare)
 				return true;
 		}
 		return false;
@@ -827,7 +829,7 @@ Worker.prototype.startHunting = function(gameState, position)
 			continue;
 
 		// measure the distance to the resource.
-		const dist = API3.SquareVectorDistance(entPosition, supply.position());
+		const dist = SquareVectorDistance(entPosition, supply.position());
 		if (dist > nearestSupplyDist)
 			continue;
 
@@ -884,8 +886,8 @@ Worker.prototype.startFishing = function(gameState)
 	let nearestSupply;
 
 	const fisherSea = getSeaAccess(gameState, this.ent);
-	const fishDropsites = (gameState.playerData.hasSharedDropsites ? gameState.getAnyDropsites("food") : gameState.getOwnDropsites("food")).
-		filter(API3.Filters.byClass("Dock")).toEntityArray();
+	const fishDropsites = (gameState.playerData.hasSharedDropsites ? gameState.getAnyDropsites("food") :
+		gameState.getOwnDropsites("food")).filter(filters.byClass("Dock")).toEntityArray();
 
 	const nearestDropsiteDist = function(supply) {
 		let distMin = 1000000;
@@ -900,7 +902,7 @@ Worker.prototype.startFishing = function(gameState)
 				continue;
 			if (fisherSea != getSeaAccess(gameState, dropsite))
 				continue;
-			distMin = Math.min(distMin, API3.SquareVectorDistance(pos, dropsite.position()));
+			distMin = Math.min(distMin, SquareVectorDistance(pos, dropsite.position()));
 		}
 		return distMin;
 	};
@@ -963,7 +965,8 @@ Worker.prototype.startFishing = function(gameState)
 
 Worker.prototype.gatherNearestField = function(gameState, baseID)
 {
-	const ownFields = gameState.getOwnEntitiesByClass("Field", true).filter(API3.Filters.isBuilt()).filter(API3.Filters.byMetadata(PlayerID, "base", baseID));
+	const ownFields = gameState.getOwnEntitiesByClass("Field", true).filter(filters.isBuilt())
+		.filter(filters.byMetadata(PlayerID, "base", baseID));
 	let bestFarm;
 
 	const gatherRates = this.ent.resourceGatherRates();
@@ -984,14 +987,17 @@ Worker.prototype.gatherNearestField = function(gameState, baseID)
 				rate = Math.pow(diminishing, num);
 		}
 		// Add a penalty distance depending on rate
-		const dist = API3.SquareVectorDistance(field.position(), this.ent.position()) + (1 - rate) * 160000;
+		const dist = SquareVectorDistance(field.position(), this.ent.position()) + (1 - rate) * 160000;
 		if (!bestFarm || dist < bestFarm.dist)
 			bestFarm = { "ent": field, "dist": dist, "rate": rate };
 	}
 	// If other field foundations available, better build them when rate becomes too small
-	if (!bestFarm || bestFarm.rate < 0.70 &&
-	                 gameState.getOwnFoundations().filter(API3.Filters.byClass("Field")).filter(API3.Filters.byMetadata(PlayerID, "base", baseID)).hasEntities())
+	if (!bestFarm || bestFarm.rate < 0.70 && gameState.getOwnFoundations()
+		.filter(filters.byClass("Field")).filter(filters.byMetadata(PlayerID, "base", baseID))
+		.hasEntities())
+	{
 		return false;
+	}
 	this.base.AddTCGatherer(bestFarm.ent.id());
 	this.ent.setMetadata(PlayerID, "supply", bestFarm.ent.id());
 	return bestFarm.ent;
@@ -1016,7 +1022,7 @@ Worker.prototype.buildAnyField = function(gameState, baseID)
 		if (current === undefined ||
 		    current >= gameState.getBuiltTemplate(found.templateName()).maxGatherers())
 			continue;
-		const dist = API3.SquareVectorDistance(found.position(), pos);
+		const dist = SquareVectorDistance(found.position(), pos);
 		if (dist > bestFarmDist)
 			continue;
 		bestFarmEnt = found;
@@ -1052,7 +1058,7 @@ Worker.prototype.moveToGatherer = function(gameState, ent, forced)
 		{
 			continue;
 		}
-		const distance = API3.SquareVectorDistance(pos, gatherer.position());
+		const distance = SquareVectorDistance(pos, gatherer.position());
 		if (distance > dist)
 			continue;
 		dist = distance;

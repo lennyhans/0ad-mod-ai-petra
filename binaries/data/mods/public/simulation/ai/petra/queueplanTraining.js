@@ -1,3 +1,6 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { QueuePlan } from "simulation/ai/petra/queueplan.js";
 import { Worker } from "simulation/ai/petra/worker.js";
 
@@ -5,14 +8,14 @@ export function TrainingPlan(gameState, type, metadata, number = 1, maxMerge = 5
 {
 	if (!QueuePlan.call(this, gameState, type, metadata))
 	{
-		API3.warn(" Plan training " + type + " canceled");
+		aiWarn(" Plan training " + type + " canceled");
 		return false;
 	}
 
 	// Refine the estimated cost and add pop cost
 	const trainers = this.getBestTrainers(gameState);
 	const trainer = trainers ? trainers[0] : undefined;
-	this.cost = new API3.Resources(this.template.cost(trainer), +this.template._template.Cost.Population);
+	this.cost = new ResourcesManager(this.template.cost(trainer), +this.template._template.Cost.Population);
 
 	this.category = "unit";
 	this.number = number;
@@ -28,7 +31,7 @@ TrainingPlan.prototype.canStart = function(gameState)
 	this.trainers = this.getBestTrainers(gameState);
 	if (!this.trainers)
 		return false;
-	this.cost = new API3.Resources(this.template.cost(this.trainers[0]), +this.template._template.Cost.Population);
+	this.cost = new ResourcesManager(this.template.cost(this.trainers[0]), +this.template._template.Cost.Population);
 	return true;
 };
 
@@ -43,9 +46,9 @@ TrainingPlan.prototype.getBestTrainers = function(gameState)
 
 	let allTrainers = gameState.findTrainers(this.type);
 	if (this.metadata && this.metadata.sea)
-		allTrainers = allTrainers.filter(API3.Filters.byMetadata(PlayerID, "sea", this.metadata.sea));
+		allTrainers = allTrainers.filter(filters.byMetadata(PlayerID, "sea", this.metadata.sea));
 	if (this.metadata && this.metadata.base)
-		allTrainers = allTrainers.filter(API3.Filters.byMetadata(PlayerID, "base", this.metadata.base));
+		allTrainers = allTrainers.filter(filters.byMetadata(PlayerID, "base", this.metadata.base));
 	if (!allTrainers || !allTrainers.hasEntities())
 		return undefined;
 
@@ -156,6 +159,6 @@ TrainingPlan.prototype.Deserialize = function(gameState, data)
 	for (const key in data)
 		this[key] = data[key];
 
-	this.cost = new API3.Resources();
+	this.cost = new ResourcesManager();
 	this.cost.Deserialize(data.cost);
 };

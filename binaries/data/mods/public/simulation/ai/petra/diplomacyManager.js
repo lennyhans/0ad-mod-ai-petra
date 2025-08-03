@@ -1,3 +1,4 @@
+import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import * as chat from "simulation/ai/petra/chatHelper.js";
 
 /**
@@ -108,7 +109,7 @@ DiplomacyManager.prototype.tributes = function(gameState)
 						this.nextTributeRequest.set(res, gameState.ai.elapsedTime + 240);
 						chat.requestTribute(gameState, res);
 						if (this.Config.debug > 1)
-							API3.warn("Tribute on " + res + " requested to player " + i);
+							aiWarn("Tribute on " + res + " requested to player " + i);
 						break;
 					}
 				}
@@ -117,7 +118,7 @@ DiplomacyManager.prototype.tributes = function(gameState)
 		if (!toSend)
 			continue;
 		if (this.Config.debug > 1)
-			API3.warn("Tribute " + uneval(tribute) + " sent to player " + i);
+			aiWarn("Tribute " + uneval(tribute) + " sent to player " + i);
 		if (this.Config.chat)
 			chat.sentTribute(gameState, i);
 		Engine.PostCommand(PlayerID, { "type": "tribute", "player": i, "amounts": tribute });
@@ -140,7 +141,10 @@ DiplomacyManager.prototype.checkEvents = function(gameState, events)
 				if (request.wanted <= 0)
 				{
 					if (this.Config.debug > 1)
-						API3.warn("Player " + uneval(evt.from) + " has sent the required tribute amount");
+					{
+						aiWarn("Player " + uneval(evt.from) +
+							" has sent the required tribute amount");
+					}
 
 					this.changePlayerDiplomacy(gameState, evt.from, request.requestType);
 					request.status = "accepted";
@@ -239,7 +243,10 @@ DiplomacyManager.prototype.checkEvents = function(gameState, events)
 		this.handleDiplomacyRequest(gameState, evt.source, evt.to);
 		const request = this.receivedDiplomacyRequests.get(evt.source);
 		if (this.Config.debug > 0)
-			API3.warn("Responding to diplomacy request from AI player " + evt.source + " with " + uneval(request));
+		{
+			aiWarn("Responding to diplomacy request from AI player " + evt.source + " with " +
+				uneval(request));
+		}
 
 		// Our diplomacy will have changed already if the response was "accept"
 		if (request.status === "waitingForTribute")
@@ -267,7 +274,10 @@ DiplomacyManager.prototype.checkEvents = function(gameState, events)
 			const responseTribute = {};
 			responseTribute[evt.resourceType] = evt.resourceWanted;
 			if (this.Config.debug > 0)
-				API3.warn("Responding to tribute request from AI player " + evt.source + " with " + uneval(responseTribute));
+			{
+				aiWarn("Responding to tribute request from AI player " + evt.source + " with " +
+					uneval(responseTribute));
+			}
 			Engine.PostCommand(PlayerID, { "type": "tribute", "player": evt.source, "amounts": responseTribute });
 			this.nextTributeUpdate = gameState.ai.elapsedTime + 15;
 		}
@@ -324,7 +334,7 @@ DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 
 		if (gameState.getVictoryConditions().has("wonder"))
 		{
-			const wonder = gameState.getEnemyStructures(i).filter(API3.Filters.byClass("Wonder"))[0];
+			const wonder = gameState.getEnemyStructures(i).filter(filters.byClass("Wonder"))[0];
 			if (wonder)
 			{
 				const wonderProgess = wonder.foundationProgress();
@@ -339,8 +349,8 @@ DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 
 		if (gameState.getVictoryConditions().has("capture_the_relic"))
 		{
-			const relicsCount = gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic"))
-				.filter(relic => relic.owner() === i).length;
+			const relicsCount = gameState.updatingGlobalCollection("allRelics",
+				filters.byClass("Relic")).filter(relic => relic.owner() === i).length;
 			turnFactor += relicsCount * this.betrayWeighting;
 		}
 
@@ -442,7 +452,7 @@ DiplomacyManager.prototype.changePlayerDiplomacy = function(gameState, player, n
 		gameState.ai.HQ.attackManager.cancelAttacksAgainstPlayer(gameState, player);
 	Engine.PostCommand(PlayerID, { "type": "diplomacy", "player": player, "to": newDiplomaticStance });
 	if (this.Config.debug > 1)
-		API3.warn("diplomacy stance with player " + player + " is now " + newDiplomaticStance);
+		aiWarn("diplomacy stance with player " + player + " is now " + newDiplomaticStance);
 	if (this.Config.chat)
 		chat.newDiplomacy(gameState, player, newDiplomaticStance);
 };
@@ -510,7 +520,7 @@ DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
 	});
 
 	if (this.Config.debug > 0)
-		API3.warn("Sending diplomacy request to player " + player + " with " + requestType);
+		aiWarn("Sending diplomacy request to player " + player + " with " + requestType);
 	Engine.PostCommand(PlayerID, { "type": "diplomacy-request", "source": PlayerID, "player": player, "to": requestType });
 	chat.newRequestDiplomacy(gameState, player, requestType, "sendRequest");
 };

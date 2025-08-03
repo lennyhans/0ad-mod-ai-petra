@@ -1,3 +1,6 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+
 /**
  * One task of this manager is to cache the list of structures we have builders for,
  * to avoid having to loop on all entities each time.
@@ -30,7 +33,8 @@ BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
 			const count = this.builderCounters.get(buildable) + increment;
 			if (count < 0)
 			{
-				API3.warn(" Petra error in incrementBuilderCounters for " + buildable + " with count < 0");
+				aiWarn(" Petra error in incrementBuilderCounters for " + buildable +
+					" with count < 0");
 				continue;
 			}
 			this.builderCounters.set(buildable, count);
@@ -38,7 +42,7 @@ BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
 		else if (increment > 0)
 			this.builderCounters.set(buildable, increment);
 		else
-			API3.warn(" Petra error in incrementBuilderCounters for " + buildable + " not yet set");
+			aiWarn(" Petra error in incrementBuilderCounters for " + buildable + " not yet set");
 	}
 };
 
@@ -121,7 +125,7 @@ BuildManager.prototype.findStructuresByFilter = function(gameState, filter)
  */
 BuildManager.prototype.findStructureWithClass = function(gameState, classes)
 {
-	return this.findStructuresByFilter(gameState, API3.Filters.byClasses(classes))[0];
+	return this.findStructuresByFilter(gameState, filters.byClasses(classes))[0];
 };
 
 BuildManager.prototype.hasBuilder = function(template)

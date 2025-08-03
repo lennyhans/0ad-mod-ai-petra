@@ -1,3 +1,5 @@
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
 import { ResearchPlan } from "simulation/ai/petra/queueplanResearch.js";
 import { TrainingPlan } from "simulation/ai/petra/queueplanTraining.js";
@@ -69,7 +71,7 @@ Queue.prototype.startNext = function(gameState)
  */
 Queue.prototype.maxAccountWanted = function(gameState, fraction)
 {
-	const cost = new API3.Resources();
+	const cost = new ResourcesManager();
 	if (this.plans.length > 0 && this.plans[0].isGo(gameState))
 		cost.add(this.plans[0].getCost());
 	if (this.plans.length > 1 && this.plans[1].isGo(gameState) && fraction > 0)
@@ -83,7 +85,7 @@ Queue.prototype.maxAccountWanted = function(gameState, fraction)
 
 Queue.prototype.queueCost = function()
 {
-	const cost = new API3.Resources();
+	const cost = new ResourcesManager();
 	for (const plan of this.plans)
 		cost.add(plan.getCost());
 	return cost;
@@ -155,7 +157,7 @@ Queue.prototype.Deserialize = function(gameState, data)
 			plan = new ResearchPlan(gameState, dataPlan.type);
 		else
 		{
-			API3.warn("Petra deserialization error: plan unknown " + uneval(dataPlan));
+			aiWarn("Petra deserialization error: plan unknown " + uneval(dataPlan));
 			continue;
 		}
 		plan.Deserialize(gameState, dataPlan);

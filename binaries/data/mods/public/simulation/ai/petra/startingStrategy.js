@@ -1,3 +1,6 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { Config, DIFFICULTY_SANDBOX } from "simulation/ai/petra/config.js";
 import { gatherTreasure, getLandAccess, isFastMoving } from "simulation/ai/petra/entityExtend.js";
 import { Headquather } from "simulation/ai/petra/headquarters.js";
@@ -35,13 +38,13 @@ Headquather.prototype.gameAnalysis = function(gameState)
 	this.canExpand = this.Config.difficulty != DIFFICULTY_SANDBOX;
 	// If no base yet, check if we can construct one. If not, dispatch our units to possible tasks/attacks
 	this.canBuildUnits = true;
-	if (!gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).hasEntities())
+	if (!gameState.getOwnStructures().filter(filters.byClass("CivCentre")).hasEntities())
 	{
 		const template = gameState.applyCiv("structures/{civ}/civil_centre");
 		if (!gameState.isTemplateAvailable(template) || !gameState.getTemplate(template).available(gameState))
 		{
 			if (this.Config.debug > 1)
-				API3.warn(" this AI is unable to produce any units");
+				aiWarn(" this AI is unable to produce any units");
 			this.canBuildUnits = false;
 			this.dispatchUnits(gameState);
 		}
@@ -70,7 +73,10 @@ Headquather.prototype.assignStartingEntities = function(gameState)
 		{
 			// TODO should support recursive garrisoning. Make a warning for now
 			if (ent.isGarrisonHolder() && ent.garrisoned().length)
-				API3.warn("Petra warning: support for garrisoned units inside garrisoned holders not yet implemented");
+			{
+				aiWarn("Petra warning: support for garrisoned units inside garrisoned holders " +
+					"not yet implemented");
+			}
 			continue;
 		}
 
@@ -106,7 +112,7 @@ Headquather.prototype.regionAnalysis = function(gameState)
 	const accessibility = gameState.ai.accessibility;
 	let landIndex;
 	let seaIndex;
-	const ccEnts = gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre"));
+	const ccEnts = gameState.getOwnStructures().filter(filters.byClass("CivCentre"));
 	for (const cc of ccEnts.values())
 	{
 		const land = accessibility.getAccessValue(cc.position());
@@ -136,7 +142,7 @@ Headquather.prototype.regionAnalysis = function(gameState)
 	}
 	if (!landIndex && !seaIndex)
 	{
-		API3.warn("Petra error: it does not know how to interpret this map");
+		aiWarn("Petra error: it does not know how to interpret this map");
 		return false;
 	}
 
@@ -184,10 +190,13 @@ Headquather.prototype.regionAnalysis = function(gameState)
 	if (this.Config.debug < 3)
 		return true;
 	for (const region in this.landRegions)
-		API3.warn(" >>> zone " + region + " taille " + cellArea*gameState.ai.accessibility.regionSize[region]);
-	API3.warn(" navalMap " + this.navalMap);
-	API3.warn(" landRegions " + uneval(this.landRegions));
-	API3.warn(" navalRegions " + uneval(this.navalRegions));
+	{
+		aiWarn(" >>> zone " + region + " taille " +
+			cellArea * gameState.ai.accessibility.regionSize[region]);
+	}
+	aiWarn(" navalMap " + this.navalMap);
+	aiWarn(" landRegions " + uneval(this.landRegions));
+	aiWarn(" navalRegions " + uneval(this.navalRegions));
 	return true;
 };
 
@@ -221,7 +230,7 @@ Headquather.prototype.buildFirstBase = function(gameState)
 		return;
 	const total = gameState.getResources();
 	let goal = "civil_centre";
-	if (!total.canAfford(new API3.Resources(template.cost())))
+	if (!total.canAfford(new ResourcesManager(template.cost())))
 	{
 		const totalExpected = gameState.getResources();
 		// Check for treasures around available in some maps at startup
@@ -244,12 +253,12 @@ Headquather.prototype.buildFirstBase = function(gameState)
 				if (type in totalExpected)
 					totalExpected[type] += types[type];
 			// If we can collect enough resources from these treasures, wait for them.
-			if (totalExpected.canAfford(new API3.Resources(template.cost())))
+			if (totalExpected.canAfford(new ResourcesManager(template.cost())))
 				return;
 		}
 
 		// not enough resource to build a cc, try with a dock to accumulate resources if none yet
-		if (!this.navalManager.docks.filter(API3.Filters.byClass("Dock")).hasEntities())
+		if (!this.navalManager.docks.filter(filters.byClass("Dock")).hasEntities())
 		{
 			if (gameState.ai.queues.dock.hasQueuedUnits())
 				return;
@@ -257,7 +266,7 @@ Headquather.prototype.buildFirstBase = function(gameState)
 			if (gameState.isTemplateDisabled(templateName))
 				return;
 			template = gameState.getTemplate(templateName);
-			if (!template || !total.canAfford(new API3.Resources(template.cost())))
+			if (!template || !total.canAfford(new ResourcesManager(template.cost())))
 				return;
 			goal = "dock";
 		}
@@ -290,7 +299,7 @@ Headquather.prototype.buildFirstBase = function(gameState)
 		{
 			if (land !== point.land || sea !== point.sea)
 				continue;
-			if (API3.SquareVectorDistance(point.pos, pos) > 2500)
+			if (SquareVectorDistance(point.pos, pos) > 2500)
 				continue;
 			point.weight += 1;
 			found = true;
@@ -328,17 +337,21 @@ Headquather.prototype.buildFirstBase = function(gameState)
  */
 Headquather.prototype.dispatchUnits = function(gameState)
 {
-	const allycc = gameState.getExclusiveAllyEntities().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
+	const allycc = gameState.getExclusiveAllyEntities().filter(filters.byClass("CivCentre"))
+		.toEntityArray();
 	if (allycc.length)
 	{
 		if (this.Config.debug > 1)
-			API3.warn(" We have allied cc " + allycc.length + " and " + gameState.getOwnUnits().length + " units ");
+		{
+			aiWarn(" We have allied cc " + allycc.length + " and " + gameState.getOwnUnits().length +
+				" units ");
+		}
 		const units = gameState.getOwnUnits();
 		let num = Math.max(Math.min(Math.round(0.08*(1+this.Config.personality.cooperative)*units.length), 20), 5);
 		let num1 = Math.floor(num / 2);
 		let num2 = num1;
 		// first pass to affect ranged infantry
-		units.filter(API3.Filters.byClasses(["Infantry+Ranged"])).forEach(ent => {
+		units.filter(filters.byClasses(["Infantry+Ranged"])).forEach(ent => {
 			if (!num || !num1)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
@@ -357,7 +370,7 @@ Headquather.prototype.dispatchUnits = function(gameState)
 			}
 		});
 		// second pass to affect melee infantry
-		units.filter(API3.Filters.byClasses(["Infantry+Melee"])).forEach(ent => {
+		units.filter(filters.byClasses(["Infantry+Melee"])).forEach(ent => {
 			if (!num || !num2)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
@@ -425,7 +438,7 @@ Headquather.prototype.configFirstBase = function(gameState)
 	const cell = gameState.getPassabilityMap().cellSize;
 	startingSize = startingSize * cell * cell;
 	if (this.Config.debug > 1)
-		API3.warn("starting size " + startingSize + "(cut at 24000 for fish pushing)");
+		aiWarn("starting size " + startingSize + "(cut at 24000 for fish pushing)");
 	if (startingSize < 25000)
 	{
 		this.saveSpace = true;
@@ -464,7 +477,10 @@ Headquather.prototype.configFirstBase = function(gameState)
 	startingWood += this.getTotalResourceLevel(gameState, ["wood"], ["nearby", "medium", "faraway"]).wood;
 
 	if (this.Config.debug > 1)
-		API3.warn("startingWood: " + startingWood + " (cut at 8500 for no rush and 6000 for saveResources)");
+	{
+		aiWarn("startingWood: " + startingWood +
+			" (cut at 8500 for no rush and 6000 for saveResources)");
+	}
 	if (startingWood < 6000)
 	{
 		this.saveResources = true;
@@ -498,11 +514,11 @@ Headquather.prototype.configFirstBase = function(gameState)
 		{
 			// if we start with enough workers, put our available resources in this first dropsite
 			// same thing if our pop exceed the allowed one, as we will need several houses
-			const numWorkers = gameState.getOwnUnits().filter(API3.Filters.byClass("Worker")).length;
+			const numWorkers = gameState.getOwnUnits().filter(filters.byClass("Worker")).length;
 			if (numWorkers > 12 && newDP.quality > 60 ||
 				gameState.getPopulation() > gameState.getPopulationLimit() + 20)
 			{
-				const cost = new API3.Resources(gameState.getTemplate(newDP.templateName).cost());
+				const cost = new ResourcesManager(gameState.getTemplate(newDP.templateName).cost());
 				gameState.ai.queueManager.setAccounts(gameState, cost, "dropsites");
 			}
 			gameState.ai.queues.dropsites.addPlan(new ConstructionPlan(gameState, newDP.templateName,

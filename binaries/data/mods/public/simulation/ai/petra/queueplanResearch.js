@@ -1,3 +1,4 @@
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
 import { QueuePlan } from "simulation/ai/petra/queueplan.js";
 
 export function ResearchPlan(gameState, type, rush = false)
@@ -11,7 +12,7 @@ export function ResearchPlan(gameState, type, rush = false)
 	// Refine the estimated cost
 	const researchers = this.getBestResearchers(gameState, true);
 	if (researchers)
-		this.cost = new API3.Resources(this.template.cost(researchers[0]));
+		this.cost = new ResourcesManager(this.template.cost(researchers[0]));
 
 	this.category = "technology";
 	this.rush = rush;
@@ -26,7 +27,7 @@ ResearchPlan.prototype.canStart = function(gameState)
 	this.researchers = this.getBestResearchers(gameState);
 	if (!this.researchers)
 		return false;
-	this.cost = new API3.Resources(this.template.cost(this.researchers[0]));
+	this.cost = new ResourcesManager(this.template.cost(this.researchers[0]));
 	return true;
 };
 
@@ -104,6 +105,6 @@ ResearchPlan.prototype.Deserialize = function(gameState, data)
 	for (const key in data)
 		this[key] = data[key];
 
-	this.cost = new API3.Resources();
+	this.cost = new ResourcesManager();
 	this.cost.Deserialize(data.cost);
 };

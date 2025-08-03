@@ -1,3 +1,4 @@
+import { SquareVectorDistance } from "simulation/ai/common-api/utils.js";
 import { allowCapture, getLandAccess, getMaxStrength, isSiegeUnit, returnResources } from
 	"simulation/ai/petra/entityExtend.js";
 import { TransportPlan } from "simulation/ai/petra/transportPlan.js";
@@ -62,7 +63,7 @@ DefenseArmy.prototype.addFoe = function(gameState, enemyId, force)
 		return false;
 
 	// check distance
-	if (!force && API3.SquareVectorDistance(ent.position(), this.foePosition) > this.compactSize)
+	if (!force && SquareVectorDistance(ent.position(), this.foePosition) > this.compactSize)
 		return false;
 
 	this.foeEntities.push(enemyId);
@@ -257,7 +258,7 @@ DefenseArmy.prototype.clear = function(gameState)
 			const defensiveStruct = struct.hasDefensiveFire();
 			if (defensiveFound && !defensiveStruct)
 				continue;
-			const dist = API3.SquareVectorDistance(posOther, pos);
+			const dist = SquareVectorDistance(posOther, pos);
 			if (distmin && dist > distmin && (defensiveFound || !defensiveStruct))
 				continue;
 			if (defensiveStruct)
@@ -332,7 +333,7 @@ DefenseArmy.prototype.assignUnit = function(gameState, entID)
 			this.assignedAgainst[id].length > 5 && !eEnt.hasClass("Hero") && !isSiegeUnit(eEnt))
 			continue;
 
-		const dist = API3.SquareVectorDistance(ent.position(), eEnt.position());
+		const dist = SquareVectorDistance(ent.position(), eEnt.position());
 		if (idMinAll === undefined || dist < distMinAll)
 		{
 			idMinAll = id;
@@ -620,7 +621,7 @@ DefenseArmy.prototype.update = function(gameState)
 			const ent = gameState.getEntityById(id);
 			if (!ent || !ent.position())
 				continue;
-			if (API3.SquareVectorDistance(ent.position(), this.foePosition) > this.breakawaySize)
+			if (SquareVectorDistance(ent.position(), this.foePosition) > this.breakawaySize)
 			{
 				breakaways.push(id);
 				if (this.removeFoe(gameState, id))

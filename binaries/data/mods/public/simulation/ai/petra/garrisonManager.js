@@ -1,3 +1,4 @@
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { dumpEntity, isSiegeUnit } from "simulation/ai/petra/entityExtend.js";
 import { Worker } from "simulation/ai/petra/worker.js";
 
@@ -115,9 +116,10 @@ GarrisonManager.prototype.update = function(gameState, events)
 				{
 					if (gameState.ai.Config.debug > 0)
 					{
-						API3.warn("Petra garrison error: unit " + ent.id() + " (" + ent.genericName() +
-							  ") is expected to garrison in " + id + " (" + holder.genericName() +
-							  "), but has no such garrison order " + uneval(ent.unitAIOrderData()));
+						aiWarn("Petra garrison error: unit " + ent.id() + " (" +
+							ent.genericName() + ") is expected to garrison in " + id + " (" +
+							holder.genericName() + "), but has no such garrison order " +
+							uneval(ent.unitAIOrderData()));
 						dumpEntity(ent);
 					}
 					list.splice(j--, 1);
@@ -149,7 +151,7 @@ GarrisonManager.prototype.update = function(gameState, events)
 					continue;
 				if (!ent.position())
 					continue;
-				const dist = API3.SquareVectorDistance(ent.position(), holder.position());
+				const dist = SquareVectorDistance(ent.position(), holder.position());
 				if (dist > range*range)
 					continue;
 				if (ent.hasClass("Structure"))
@@ -332,9 +334,9 @@ GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 	default:
 		if (ent.getMetadata(PlayerID, "onBoard") === "onBoard")  // transport is not (yet ?) managed by garrisonManager
 			return true;
-		API3.warn("unknown type in garrisonManager " + ent.getMetadata(PlayerID, "garrisonType") +
-		          " for " + ent.genericName() + " id " + ent.id() +
-		          " inside " + holder.genericName() + " id " + holder.id());
+		aiWarn("unknown type in garrisonManager " + ent.getMetadata(PlayerID, "garrisonType") +
+			" for " + ent.genericName() + " id " + ent.id() + " inside " + holder.genericName() +
+			" id " + holder.id());
 		ent.setMetadata(PlayerID, "garrisonType", GarrisonManager.TYPE_PROTECTION);
 		return true;
 	}

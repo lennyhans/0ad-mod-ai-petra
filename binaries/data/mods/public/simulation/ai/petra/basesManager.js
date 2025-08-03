@@ -1,3 +1,7 @@
+import { EntityCollection } from "simulation/ai/common-api/entitycollection.js";
+import * as filters from "simulation/ai/common-api/filters.js";
+import { InfoMap } from "simulation/ai/common-api/map-module.js";
+import { SquareVectorDistance, warn as aiWarn, getMapIndices } from "simulation/ai/common-api/utils.js";
 import { BaseManager } from "simulation/ai/petra/baseManager.js";
 import { getBestBase, getLandAccess } from "simulation/ai/petra/entityExtend.js";
 import { Worker } from "simulation/ai/petra/worker.js";
@@ -26,13 +30,13 @@ export function BasesManager(Config)
 BasesManager.prototype.init = function(gameState)
 {
 	// Initialize base map. Each pixel is a base ID, or 0 if not or not accessible.
-	this.basesMap = new API3.Map(gameState.sharedScript, "territory");
+	this.basesMap = new InfoMap(gameState.sharedScript, "territory");
 
 	this.noBase = new BaseManager(gameState, this);
 	this.noBase.init(gameState, BaseManager.STATE_WITH_ANCHOR);
 	this.noBase.accessIndex = 0;
 
-	for (const cc of gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).values())
+	for (const cc of gameState.getOwnStructures().filter(filters.byClass("CivCentre")).values())
 		if (cc.foundationProgress() === undefined)
 			this.createBase(gameState, cc, BaseManager.STATE_WITH_ANCHOR);
 		else
@@ -45,7 +49,7 @@ BasesManager.prototype.init = function(gameState)
 BasesManager.prototype.postinit = function(gameState)
 {
 	// Rebuild the base maps from the territory indices of each base.
-	this.basesMap = new API3.Map(gameState.sharedScript, "territory");
+	this.basesMap = new InfoMap(gameState.sharedScript, "territory");
 	for (const base of this.baseManagers)
 		for (const j of base.territoryIndices)
 			this.basesMap.map[j] = base.ID;
@@ -100,9 +104,9 @@ BasesManager.prototype.createBase = function(gameState, ent, type = BaseManager.
 
 	if (this.Config.debug > 0)
 	{
-		API3.warn(" ----------------------------------------------------------");
-		API3.warn(" BasesManager createBase entrance avec access " + access + " and type " + type);
-		API3.warn(" with access " + uneval(this.baseManagers.map(base => base.accessIndex)) +
+		aiWarn(" ----------------------------------------------------------");
+		aiWarn(" BasesManager createBase entrance avec access " + access + " and type " + type);
+		aiWarn(" with access " + uneval(this.baseManagers.map(base => base.accessIndex)) +
 			  " and base nbr " + uneval(this.baseManagers.map(base => base.ID)) +
 			  " and anchor " + uneval(this.baseManagers.map(base => !!base.anchor)));
 	}
@@ -327,7 +331,7 @@ BasesManager.prototype.checkEvents = function(gameState, events)
 				{
 					if (!dropsite.position() || getLandAccess(gameState, dropsite) != access)
 						continue;
-					const dist = API3.SquareVectorDistance(pos, dropsite.position());
+					const dist = SquareVectorDistance(pos, dropsite.position());
 					if (dist > distmin)
 						continue;
 					distmin = dist;
@@ -364,7 +368,7 @@ BasesManager.prototype.bulkPickWorkers = function(gameState, baseRef, number)
 	});
 
 	let needed = number;
-	const workers = new API3.EntityCollection(gameState.sharedScript);
+	const workers = new EntityCollection(gameState.sharedScript);
 	for (const base of baseBest)
 	{
 		if (base.ID == baseRef.ID)
@@ -659,10 +663,10 @@ BasesManager.prototype.removeBaseFromTerritoryIndex = function(territoryIndex)
 		if (index != -1)
 			base.territoryIndices.splice(index, 1);
 		else
-			API3.warn(" problem in headquarters::updateTerritories for base " + baseID);
+			aiWarn(" problem in headquarters::updateTerritories for base " + baseID);
 	}
 	else
-		API3.warn(" problem in headquarters::updateTerritories without base " + baseID);
+		aiWarn(" problem in headquarters::updateTerritories without base " + baseID);
 	this.basesMap.map[territoryIndex] = 0;
 };
 
@@ -674,7 +678,7 @@ BasesManager.prototype.addTerritoryIndexToBase = function(gameState, territoryIn
 	if (this.baseAtIndex(territoryIndex) != 0)
 		return false;
 	let landPassable = false;
-	const ind = API3.getMapIndices(territoryIndex, gameState.ai.HQ.territoryMap, passabilityMap);
+	const ind = getMapIndices(territoryIndex, gameState.ai.HQ.territoryMap, passabilityMap);
 	let access;
 	for (const k of ind)
 	{
@@ -695,7 +699,7 @@ BasesManager.prototype.addTerritoryIndexToBase = function(gameState, territoryIn
 			continue;
 		if (base.accessIndex != access)
 			continue;
-		const dist = API3.SquareVectorDistance(base.anchor.position(), pos);
+		const dist = SquareVectorDistance(base.anchor.position(), pos);
 		if (dist >= distmin)
 			continue;
 		distmin = dist;
@@ -719,7 +723,7 @@ BasesManager.prototype.reassignTerritories = function(deletedBase, territoryMap)
 			continue;
 		if (territoryMap.getOwnerIndex(j) != PlayerID)
 		{
-			API3.warn("Petra reassignTerritories: should never happen");
+			aiWarn("Petra reassignTerritories: should never happen");
 			this.basesMap.map[j] = 0;
 			continue;
 		}
@@ -733,7 +737,7 @@ BasesManager.prototype.reassignTerritories = function(deletedBase, territoryMap)
 				continue;
 			if (base.accessIndex != deletedBase.accessIndex)
 				continue;
-			const dist = API3.SquareVectorDistance(base.anchor.position(), pos);
+			const dist = SquareVectorDistance(base.anchor.position(), pos);
 			if (dist >= distmin)
 				continue;
 			distmin = dist;

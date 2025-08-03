@@ -1,12 +1,8 @@
-API3 = function(m)
-{
-
 /**
  * The map module.
  * Copied with changes from QuantumState's original for qBot, it's a component for storing 8 bit values.
  */
-// The function needs to be named too because of the copyConstructor functionality
-m.Map = function Map(sharedScript, type, originalMap, actualCopy)
+export function InfoMap(sharedScript, type, originalMap, actualCopy)
 {
 	// get the correct dimensions according to the map type
 	const map = type == "territory" || type == "resource" ? sharedScript.territoryMap : sharedScript.passabilityMap;
@@ -31,19 +27,19 @@ m.Map = function Map(sharedScript, type, originalMap, actualCopy)
 		this.map = originalMap;
 	else
 		this.map = new Uint8Array(this.length);
-};
+}
 
-m.Map.prototype.setMaxVal = function(val)
+InfoMap.prototype.setMaxVal = function(val)
 {
 	this.maxVal = val;
 };
 
-m.Map.prototype.gamePosToMapPos = function(p)
+InfoMap.prototype.gamePosToMapPos = function(p)
 {
 	return [Math.floor(p[0]/this.cellSize), Math.floor(p[1]/this.cellSize)];
 };
 
-m.Map.prototype.point = function(p)
+InfoMap.prototype.point = function(p)
 {
 	const q = this.gamePosToMapPos(p);
 	q[0] = q[0] >= this.width ? this.width-1 : q[0] < 0 ? 0 : q[0];
@@ -51,7 +47,7 @@ m.Map.prototype.point = function(p)
 	return this.map[q[0] + this.width * q[1]];
 };
 
-m.Map.prototype.runLoop = function(x0, x1, y0, y1, cx, cy, maxDist2, func)
+InfoMap.prototype.runLoop = function(x0, x1, y0, y1, cx, cy, maxDist2, func)
 {
 	for (let y = y0; y < y1; ++y)
 	{
@@ -69,7 +65,7 @@ m.Map.prototype.runLoop = function(x0, x1, y0, y1, cx, cy, maxDist2, func)
 	}
 };
 
-m.Map.prototype.addInfluence = function(cx, cy, maxDist, strength, type = "linear")
+InfoMap.prototype.addInfluence = function(cx, cy, maxDist, strength, type = "linear")
 {
 	strength = strength ? strength : maxDist;
 
@@ -94,7 +90,7 @@ m.Map.prototype.addInfluence = function(cx, cy, maxDist, strength, type = "linea
 
 };
 
-m.Map.prototype.multiplyInfluence = function(cx, cy, maxDist, strength, type = "constant")
+InfoMap.prototype.multiplyInfluence = function(cx, cy, maxDist, strength, type = "constant")
 {
 	strength = strength ? +strength : +maxDist;
 
@@ -119,20 +115,20 @@ m.Map.prototype.multiplyInfluence = function(cx, cy, maxDist, strength, type = "
 };
 
 /** add to current map by the parameter map pixelwise */
-m.Map.prototype.add = function(map)
+InfoMap.prototype.add = function(map)
 {
 	for (let i = 0; i < this.length; ++i)
 		this.set(i, this.map[i] + map.map[i]);
 };
 
 /** Set the value taking overflow into account */
-m.Map.prototype.set = function(i, value)
+InfoMap.prototype.set = function(i, value)
 {
 	this.map[i] = value < 0 ? 0 : value > this.maxVal ? this.maxVal : value;
 };
 
 /** Find the best non-obstructed tile */
-m.Map.prototype.findBestTile = function(radius, obstruction)
+InfoMap.prototype.findBestTile = function(radius, obstruction)
 {
 	let bestIdx;
 	let bestVal = 0;
@@ -151,7 +147,7 @@ m.Map.prototype.findBestTile = function(radius, obstruction)
 };
 
 /** return any non obstructed (small) tile inside the (big) tile i from obstruction map */
-m.Map.prototype.getNonObstructedTile = function(i, radius, obstruction)
+InfoMap.prototype.getNonObstructedTile = function(i, radius, obstruction)
 {
 	const ratio = this.cellSize / obstruction.cellSize;
 	const ix = (i % this.width) * ratio;
@@ -178,7 +174,7 @@ m.Map.prototype.getNonObstructedTile = function(i, radius, obstruction)
 };
 
 /** return true if the area centered on tile kx-ky and with radius is obstructed */
-m.Map.prototype.isObstructedTile = function(kx, ky, radius)
+InfoMap.prototype.isObstructedTile = function(kx, ky, radius)
 {
 	const w = this.width;
 	if (kx < radius || kx >= w - radius || ky < radius || ky >= w - radius || this.map[kx+ky*w] == 0)
@@ -210,11 +206,7 @@ m.Map.prototype.isObstructedTile = function(kx, ky, radius)
 	return null;
 };
 
-m.Map.prototype.dumpIm = function(name = "default.png", threshold = this.maxVal)
+InfoMap.prototype.dumpIm = function(name = "default.png", threshold = this.maxVal)
 {
 	Engine.DumpImage(name, this.map, this.width, this.height, threshold);
 };
-
-return m;
-
-}(API3);

@@ -1,3 +1,6 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { Queue } from "simulation/ai/petra/queue.js";
 import { Worker } from "simulation/ai/petra/worker.js";
 
@@ -35,7 +38,7 @@ export function QueueManager(Config, queues)
 	this.queueArrays = [];
 	for (const q in this.queues)
 	{
-		this.accounts[q] = new API3.Resources();
+		this.accounts[q] = new ResourcesManager();
 		this.queueArrays.push([q, this.queues[q]]);
 	}
 	const priorities = this.priorities;
@@ -52,7 +55,7 @@ QueueManager.prototype.getAvailableResources = function(gameState)
 
 QueueManager.prototype.getTotalAccountedResources = function()
 {
-	const resources = new API3.Resources();
+	const resources = new ResourcesManager();
 	for (const key in this.queues)
 		resources.add(this.accounts[key]);
 	return resources;
@@ -60,7 +63,7 @@ QueueManager.prototype.getTotalAccountedResources = function()
 
 QueueManager.prototype.currentNeeds = function(gameState)
 {
-	const needed = new API3.Resources();
+	const needed = new ResourcesManager();
 	// queueArrays because it's faster.
 	for (const q of this.queueArrays)
 	{
@@ -167,14 +170,16 @@ QueueManager.prototype.printQueues = function(gameState)
 			numWorkers++;
 		}
 	});
-	API3.warn("---------- QUEUES ------------ with pop " + gameState.getPopulation() + " and workers " + numWorkers);
+	aiWarn("---------- QUEUES ------------ with pop " + gameState.getPopulation() + " and workers " +
+		numWorkers);
 	for (const i in this.queues)
 	{
 		const q = this.queues[i];
 		if (q.hasQueuedUnits())
 		{
-			API3.warn(i + ": ( with priority " + this.priorities[i] +" and accounts " + uneval(this.accounts[i]) +")");
-			API3.warn(" while maxAccountWanted(0.6) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
+			aiWarn(i + ": ( with priority " + this.priorities[i] +" and accounts " +
+				uneval(this.accounts[i]) +")");
+			aiWarn(" while maxAccountWanted(0.6) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
 		}
 		for (const plan of q.plans)
 		{
@@ -182,18 +187,18 @@ QueueManager.prototype.printQueues = function(gameState)
 			if (plan.number)
 				qStr += "x" + plan.number;
 			qStr += "   isGo " + plan.isGo(gameState);
-			API3.warn(qStr);
+			aiWarn(qStr);
 		}
 	}
-	API3.warn("Accounts");
+	aiWarn("Accounts");
 	for (const p in this.accounts)
-		API3.warn(p + ": " + uneval(this.accounts[p]));
-	API3.warn("Current Resources: " + uneval(gameState.getResources()));
-	API3.warn("Available Resources: " + uneval(this.getAvailableResources(gameState)));
-	API3.warn("Wanted Gather Rates: " + uneval(gameState.ai.HQ.GetWantedGatherRates(gameState)));
-	API3.warn("Current Gather Rates: " + uneval(gameState.ai.HQ.GetCurrentGatherRates(gameState)));
-	API3.warn("Most needed resources: " + uneval(gameState.ai.HQ.pickMostNeededResources(gameState)));
-	API3.warn("------------------------------------");
+		aiWarn(p + ": " + uneval(this.accounts[p]));
+	aiWarn("Current Resources: " + uneval(gameState.getResources()));
+	aiWarn("Available Resources: " + uneval(this.getAvailableResources(gameState)));
+	aiWarn("Wanted Gather Rates: " + uneval(gameState.ai.HQ.GetWantedGatherRates(gameState)));
+	aiWarn("Current Gather Rates: " + uneval(gameState.ai.HQ.GetCurrentGatherRates(gameState)));
+	aiWarn("Most needed resources: " + uneval(gameState.ai.HQ.pickMostNeededResources(gameState)));
+	aiWarn("------------------------------------");
 };
 
 QueueManager.prototype.clear = function()
@@ -319,7 +324,7 @@ QueueManager.prototype.distributeResources = function(gameState)
 			}
 		}
 		if (available < 0)
-			API3.warn("Petra: problem with remaining " + res + " in queueManager " + available);
+			aiWarn("Petra: problem with remaining " + res + " in queueManager " + available);
 	}
 };
 
@@ -353,7 +358,10 @@ QueueManager.prototype.switchResource = function(gameState, res)
 			this.accounts[i][res] -= diff;
 			++otherQueue.switched;
 			if (this.Config.debug > 2)
-				API3.warn ("switching queue " + res + " from " + i + " to " + j + " in amount " + diff);
+			{
+				aiWarn("switching queue " + res + " from " + i + " to " + j + " in amount " +
+					diff);
+			}
 			break;
 		}
 	}
@@ -398,7 +406,8 @@ QueueManager.prototype.update = function(gameState)
 		this.queues[i].check(gameState);  // do basic sanity checks on the queue
 		if (this.priorities[i] > 0)
 			continue;
-		API3.warn("QueueManager received bad priorities, please report this error: " + uneval(this.priorities));
+		aiWarn("QueueManager received bad priorities, please report this error: " +
+			uneval(this.priorities));
 		this.priorities[i] = 1;  // TODO: make the Queue Manager not die when priorities are zero.
 	}
 
@@ -440,17 +449,26 @@ QueueManager.prototype.checkPausedQueues = function(gameState)
 		if (toBePaused)
 		{
 			if (q == "field" && gameState.ai.HQ.needFarm &&
-				!gameState.getOwnStructures().filter(API3.Filters.byClass("Field")).hasEntities())
+				!gameState.getOwnStructures().filter(filters.byClass("Field")).hasEntities())
+			{
 				toBePaused = false;
+			}
 			if (q == "corral" && gameState.ai.HQ.needCorral &&
-				!gameState.getOwnStructures().filter(API3.Filters.byClass("Field")).hasEntities())
+				!gameState.getOwnStructures().filter(filters.byClass("Field")).hasEntities())
+			{
 				toBePaused = false;
+			}
 			if (q == "dock" && gameState.ai.HQ.needFish &&
-				!gameState.getOwnStructures().filter(API3.Filters.byClass("Dock")).hasEntities())
+				!gameState.getOwnStructures().filter(filters.byClass("Dock")).hasEntities())
+			{
 				toBePaused = false;
+			}
 			if (q == "ships" && gameState.ai.HQ.needFish &&
-				!gameState.ai.HQ.navalManager.ships.filter(API3.Filters.byClass("FishingBoat")).hasEntities())
+				!gameState.ai.HQ.navalManager.ships.filter(filters.byClass("FishingBoat"))
+					.hasEntities())
+			{
 				toBePaused = false;
+			}
 		}
 
 		const queue = this.queues[q];
@@ -521,7 +539,7 @@ QueueManager.prototype.addQueue = function(queueName, priority)
 
 	this.queues[queueName] = new Queue();
 	this.priorities[queueName] = priority;
-	this.accounts[queueName] = new API3.Resources();
+	this.accounts[queueName] = new ResourcesManager();
 
 	this.queueArrays = [];
 	for (const q in this.queues)
@@ -554,7 +572,10 @@ QueueManager.prototype.getPriority = function(queueName)
 QueueManager.prototype.changePriority = function(queueName, newPriority)
 {
 	if (this.Config.debug > 1)
-		API3.warn(">>> Priority of queue " + queueName + " changed from " + this.priorities[queueName] + " to " + newPriority);
+	{
+		aiWarn(">>> Priority of queue " + queueName + " changed from " + this.priorities[queueName] +
+			" to " + newPriority);
+	}
 	if (this.queues[queueName] !== undefined)
 		this.priorities[queueName] = newPriority;
 	const priorities = this.priorities;
@@ -570,8 +591,10 @@ QueueManager.prototype.Serialize = function()
 		queues[q] = this.queues[q].Serialize();
 		accounts[q] = this.accounts[q].Serialize();
 		if (this.Config.debug == -100)
-			API3.warn("queueManager serialization: queue " + q + " >>> " +
-				uneval(queues[q]) + " with accounts " + uneval(accounts[q]));
+		{
+			aiWarn("queueManager serialization: queue " + q + " >>> " + uneval(queues[q]) +
+				" with accounts " + uneval(accounts[q]));
+		}
 	}
 
 	return {
@@ -593,7 +616,7 @@ QueueManager.prototype.Deserialize = function(gameState, data)
 	{
 		this.queues[q] = new Queue();
 		this.queues[q].Deserialize(gameState, data.queues[q]);
-		this.accounts[q] = new API3.Resources();
+		this.accounts[q] = new ResourcesManager();
 		this.accounts[q].Deserialize(data.accounts[q]);
 		this.queueArrays.push([q, this.queues[q]]);
 	}

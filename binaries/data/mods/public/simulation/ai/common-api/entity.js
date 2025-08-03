@@ -1,8 +1,8 @@
-API3 = function(m)
-{
+import { Class } from "simulation/ai/common-api/class.js";
+import { VectorDistance } from "simulation/ai/common-api/utils.js";
 
 // defines a template.
-m.Template = m.Class({
+export const Template = Class({
 
 	"_init": function(sharedAI, templateName, template)
 	{
@@ -557,8 +557,8 @@ m.Template = m.Class({
 
 // defines an entity, with a super Template.
 // also redefines several of the template functions where the only change is applying aura and tech modifications.
-m.Entity = m.Class({
-	"_super": m.Template,
+export const Entity = Class({
+	"_super": Template,
 
 	"_init": function(sharedAI, entity)
 	{
@@ -860,7 +860,7 @@ m.Entity = m.Class({
 		if (this.position() !== undefined)
 		{
 			let direction = [this.position()[0] - point[0], this.position()[1] - point[1]];
-			const norm = m.VectorDistance(point, this.position());
+			const norm = VectorDistance(point, this.position());
 			if (norm === 0)
 				direction = [1, 0];
 			else
@@ -1009,7 +1009,3 @@ m.Entity = m.Class({
 		return this;
 	}
 });
-
-return m;
-
-}(API3);

@@ -1,3 +1,6 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { AttackManager } from "simulation/ai/petra/attackManager.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import { BasesManager } from "simulation/ai/petra/basesManager.js";
@@ -115,9 +118,9 @@ Headquather.prototype.getSeaBetweenIndices = function(gameState, index1, index2)
 
 	if (this.Config.debug > 1)
 	{
-		API3.warn("bad path from " + index1 + " to " + index2 + " ??? " + uneval(path));
-		API3.warn(" regionLinks start " + uneval(gameState.ai.accessibility.regionLinks[index1]));
-		API3.warn(" regionLinks end   " + uneval(gameState.ai.accessibility.regionLinks[index2]));
+		aiWarn("bad path from " + index1 + " to " + index2 + " ??? " + uneval(path));
+		aiWarn(" regionLinks start " + uneval(gameState.ai.accessibility.regionLinks[index1]));
+		aiWarn(" regionLinks end   " + uneval(gameState.ai.accessibility.regionLinks[index2]));
 	}
 	return undefined;
 };
@@ -575,7 +578,7 @@ Headquather.prototype.findBestTrainableUnit = function(gameState, classes, requi
 					bValue *= param[1];
 			}
 			else
-				API3.warn(" trainMoreUnits avec non prevu " + uneval(param));
+				aiWarn(" trainMoreUnits avec non prevu " + uneval(param));
 		}
 		return -aValue/aCost + bValue/bCost;
 	});
@@ -675,8 +678,9 @@ Headquather.prototype.findEconomicCCLocation = function(gameState, template, res
 	else if (template.get("Footprint/Circle"))
 		halfSize = +template.get("Footprint/Circle/@radius");
 
-	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
-	const dpEnts = gameState.getOwnDropsites().filter(API3.Filters.not(API3.Filters.byClasses(["CivCentre", "Unit"])));
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre"));
+	const dpEnts = gameState.getOwnDropsites().filter(
+		filters.not(filters.byClasses(["CivCentre", "Unit"])));
 	const ccList = [];
 	for (const cc of ccEnts.values())
 		ccList.push({ "ent": cc, "pos": cc.position(), "ally": gameState.isPlayerAlly(cc.owner()) });
@@ -740,7 +744,7 @@ Headquather.prototype.findEconomicCCLocation = function(gameState, template, res
 		let oversea = false;
 
 		if (proximity)	// This is our first cc, let's do it near our units
-			norm /= 1 + API3.SquareVectorDistance(proximity, pos) / scale;
+			norm /= 1 + SquareVectorDistance(proximity, pos) / scale;
 		else
 		{
 			let minDist = Math.min();
@@ -748,7 +752,7 @@ Headquather.prototype.findEconomicCCLocation = function(gameState, template, res
 
 			for (const cc of ccList)
 			{
-				const dist = API3.SquareVectorDistance(cc.pos, pos);
+				const dist = SquareVectorDistance(cc.pos, pos);
 				if (dist < nearbyRejected)
 				{
 					norm = 0;
@@ -793,7 +797,7 @@ Headquather.prototype.findEconomicCCLocation = function(gameState, template, res
 			{
 				for (const dp of dpList)
 				{
-					const dist = API3.SquareVectorDistance(dp.pos, pos);
+					const dist = SquareVectorDistance(dp.pos, pos);
 					if (dist < 3600)
 					{
 						norm = 0;
@@ -833,7 +837,7 @@ Headquather.prototype.findEconomicCCLocation = function(gameState, template, res
 	if (bestVal === undefined)
 		return false;
 	if (this.Config.debug > 1)
-		API3.warn("we have found a base for " + resource + " with best (cut=" + cut + ") = " + bestVal);
+		aiWarn("we have found a base for " + resource + " with best (cut=" + cut + ") = " + bestVal);
 	// not good enough.
 	if (bestVal < cut)
 		return false;
@@ -866,7 +870,7 @@ Headquather.prototype.findStrategicCCLocation = function(gameState, template)
 	// with the constraints that all CC have dist > 200 and at least one have dist < 400
 	// This needs at least 2 CC. Otherwise, go back to economic CC.
 
-	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre"));
 	const ccList = [];
 	let numAllyCC = 0;
 	for (const cc of ccEnts.values())
@@ -919,7 +923,7 @@ Headquather.prototype.findStrategicCCLocation = function(gameState, template)
 
 		for (const cc of ccList)
 		{
-			const dist = API3.SquareVectorDistance(cc.pos, pos);
+			const dist = SquareVectorDistance(cc.pos, pos);
 			if (dist < 14000)    // Reject if too near from any cc
 			{
 				minDist = 0;
@@ -974,7 +978,7 @@ Headquather.prototype.findStrategicCCLocation = function(gameState, template)
 	}
 
 	if (this.Config.debug > 1)
-		API3.warn("We've found a strategic base with bestVal = " + bestVal);
+		aiWarn("We've found a strategic base with bestVal = " + bestVal);
 
 	Engine.ProfileStop();
 
@@ -1007,9 +1011,10 @@ Headquather.prototype.findStrategicCCLocation = function(gameState, template)
  */
 Headquather.prototype.findMarketLocation = function(gameState, template)
 {
-	let markets = gameState.updatingCollection("diplo-ExclusiveAllyMarkets", API3.Filters.byClass("Trade"), gameState.getExclusiveAllyEntities()).toEntityArray();
+	let markets = gameState.updatingCollection("diplo-ExclusiveAllyMarkets", filters.byClass("Trade"),
+		gameState.getExclusiveAllyEntities()).toEntityArray();
 	if (!markets.length)
-		markets = gameState.updatingCollection("OwnMarkets", API3.Filters.byClass("Trade"), gameState.getOwnStructures()).toEntityArray();
+		markets = gameState.updatingCollection("OwnMarkets", filters.byClass("Trade"), gameState.getOwnStructures()).toEntityArray();
 
 	if (!markets.length)	// this is the first market. For the time being, place it arbitrarily by the ConstructionPlan
 		return [-1, -1, -1, 0];
@@ -1074,7 +1079,7 @@ Headquather.prototype.findMarketLocation = function(gameState, template)
 				continue;
 			if (!gainMultiplier)
 				continue;
-			const distSq = API3.SquareVectorDistance(market.position(), pos);
+			const distSq = SquareVectorDistance(market.position(), pos);
 			if (gainMultiplier * distSq > maxVal)
 			{
 				maxVal = gainMultiplier * distSq;
@@ -1096,13 +1101,13 @@ Headquather.prototype.findMarketLocation = function(gameState, template)
 	}
 
 	if (this.Config.debug > 1)
-		API3.warn("We found a market position with bestVal = " + bestVal);
+		aiWarn("We found a market position with bestVal = " + bestVal);
 
 	if (bestVal === undefined)  // no constraints. For the time being, place it arbitrarily by the ConstructionPlan
 		return [-1, -1, -1, 0];
 	const expectedGain = Math.round(bestGainMult * TradeGain(bestDistSq, gameState.sharedScript.mapSize));
 	if (this.Config.debug > 1)
-		API3.warn("this would give a trading gain of " + expectedGain);
+		aiWarn("this would give a trading gain of " + expectedGain);
 	// Do not keep it if gain is too small, except if this is our first Market.
 	let idx;
 	if (expectedGain < this.tradeManager.minimalGain)
@@ -1131,16 +1136,20 @@ Headquather.prototype.findDefensiveLocation = function(gameState, template)
 	// but requiring a minimal distance with our other defensive structures
 	// and not in range of any enemy defensive structure to avoid building under fire.
 
-	const ownStructures = gameState.getOwnStructures().filter(API3.Filters.byClasses(["Fortress", "Tower"])).toEntityArray();
-	let enemyStructures = gameState.getEnemyStructures().filter(API3.Filters.not(API3.Filters.byOwner(0))).
-		filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
+	const ownStructures = gameState.getOwnStructures().filter(filters.byClasses(["Fortress", "Tower"]))
+		.toEntityArray();
+	let enemyStructures = gameState.getEnemyStructures().filter(filters.not(filters.byOwner(0)))
+		.filter(filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 	if (!enemyStructures.hasEntities())	// we may be in cease fire mode, build defense against neutrals
 	{
-		enemyStructures = gameState.getNeutralStructures().filter(API3.Filters.not(API3.Filters.byOwner(0))).
-			filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
+		enemyStructures = gameState.getNeutralStructures().filter(filters.not(filters.byOwner(0)))
+			.filter(filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 		if (!enemyStructures.hasEntities() && !gameState.getAlliedVictory())
-			enemyStructures = gameState.getAllyStructures().filter(API3.Filters.not(API3.Filters.byOwner(PlayerID))).
-				filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
+		{
+			enemyStructures = gameState.getAllyStructures().filter(
+				filters.not(filters.byOwner(PlayerID))).filter(
+				filters.byClasses(["CivCentre", "Fortress", "Tower"]));
+		}
 		if (!enemyStructures.hasEntities())
 			return undefined;
 	}
@@ -1151,7 +1160,7 @@ Headquather.prototype.findDefensiveLocation = function(gameState, template)
 	let wonders;
 	if (wonderMode)
 	{
-		wonders = gameState.getOwnStructures().filter(API3.Filters.byClass("Wonder")).toEntityArray();
+		wonders = gameState.getOwnStructures().filter(filters.byClass("Wonder")).toEntityArray();
 		wonderMode = wonders.length != 0;
 		if (wonderMode)
 			wonderDistmin = (50 + wonders[0].footprintRadius()) * (50 + wonders[0].footprintRadius());
@@ -1203,7 +1212,7 @@ Headquather.prototype.findDefensiveLocation = function(gameState, template)
 		let dista = 0;
 		if (wonderMode)
 		{
-			dista = API3.SquareVectorDistance(wonders[0].position(), pos);
+			dista = SquareVectorDistance(wonders[0].position(), pos);
 			if (dista < wonderDistmin)
 				continue;
 			dista *= 200;   // empirical factor (TODO should depend on map size) to stay near the wonder
@@ -1216,7 +1225,7 @@ Headquather.prototype.findDefensiveLocation = function(gameState, template)
 			const strPos = str.position();
 			if (!strPos)
 				continue;
-			const dist = API3.SquareVectorDistance(strPos, pos);
+			const dist = SquareVectorDistance(strPos, pos);
 			if (dist < 6400) // TODO check on true attack range instead of this 80×80
 			{
 				minDist = -1;
@@ -1234,7 +1243,7 @@ Headquather.prototype.findDefensiveLocation = function(gameState, template)
 			const strPos = str.position();
 			if (!strPos)
 				continue;
-			if (API3.SquareVectorDistance(strPos, pos) < cutDist)
+			if (SquareVectorDistance(strPos, pos) < cutDist)
 			{
 				minDist = -1;
 				break;
@@ -1446,11 +1455,12 @@ Headquather.prototype.buildMoreHouses = function(gameState, queues)
 			if (!houseTemplate.hasClass(entityReq.class))
 				continue;
 
-			const count = gameState.getOwnStructures().filter(API3.Filters.byClass(entityReq.class)).length;
+			const count = gameState.getOwnStructures().filter(filters.byClass(entityReq.class))
+				.length;
 			if (count < entityReq.count && this.buildManager.isUnbuildable(gameState, houseTemplateName))
 			{
 				if (this.Config.debug > 1)
-					API3.warn("no room to place a house ... try to be less restrictive");
+					aiWarn("no room to place a house ... try to be less restrictive");
 				this.buildManager.setBuildable(houseTemplateName);
 				this.requireHouses = true;
 			}
@@ -1472,15 +1482,18 @@ Headquather.prototype.buildMoreHouses = function(gameState, queues)
 	{
 		const houseTemplate = gameState.getTemplate(gameState.applyCiv(houseTemplateString));
 		if (!this.phasing || gameState.getPhaseEntityRequirements(this.phasing).every(req =>
-			!houseTemplate.hasClass(req.class) || gameState.getOwnStructures().filter(API3.Filters.byClass(req.class)).length >= req.count))
+			!houseTemplate.hasClass(req.class) ||
+			gameState.getOwnStructures().filter(filters.byClass(req.class)).length >= req.count))
+		{
 			this.requireHouses = undefined;
+		}
 	}
 
 	// When population limit too tight
 	//    - if no room to build, try to improve with technology
 	//    - otherwise increase temporarily the priority of houses
 	const house = gameState.applyCiv(houseTemplateString);
-	const HouseNb = gameState.getOwnFoundations().filter(API3.Filters.byClass("House")).length;
+	const HouseNb = gameState.getOwnFoundations().filter(filters.byClass("House")).length;
 	const popBonus = gameState.getTemplate(house).getPopulationBonus();
 	const freeSlots = gameState.getPopulationLimit() + HouseNb*popBonus - this.getAccountedPopulation(gameState);
 	let priority;
@@ -1489,7 +1502,7 @@ Headquather.prototype.buildMoreHouses = function(gameState, queues)
 		if (this.buildManager.isUnbuildable(gameState, house))
 		{
 			if (this.Config.debug > 1)
-				API3.warn("no room to place a house ... try to improve with technology");
+				aiWarn("no room to place a house ... try to improve with technology");
 			this.researchManager.researchPopulationBonus(gameState, queues);
 		}
 		else
@@ -1517,7 +1530,7 @@ Headquather.prototype.checkBaseExpansion = function(gameState, queues)
 	if (this.buildManager.numberMissingRoom(gameState) > 1)
 	{
 		if (this.Config.debug > 2)
-			API3.warn("try to build a new base because not enough room to build ");
+			aiWarn("try to build a new base because not enough room to build ");
 		this.buildNewBase(gameState, queues);
 		return;
 	}
@@ -1531,7 +1544,10 @@ Headquather.prototype.checkBaseExpansion = function(gameState, queues)
 	if (numUnits > activeBases * (65 + numvar + (10 + numvar)*(activeBases-1)) || this.saveResources && numUnits > 50)
 	{
 		if (this.Config.debug > 2)
-			API3.warn("try to build a new base because of population " + numUnits + " for " + activeBases + " CCs");
+		{
+			aiWarn("try to build a new base because of population " + numUnits + " for " +
+				activeBases + " CCs");
+		}
 		this.buildNewBase(gameState, queues);
 	}
 };
@@ -1540,13 +1556,13 @@ Headquather.prototype.buildNewBase = function(gameState, queues, resource)
 {
 	if (this.hasPotentialBase() && this.currentPhase == 1 && !gameState.isResearching(gameState.getPhaseName(2)))
 		return false;
-	if (gameState.getOwnFoundations().filter(API3.Filters.byClass("CivCentre")).hasEntities() || queues.civilCentre.hasQueuedUnits())
+	if (gameState.getOwnFoundations().filter(filters.byClass("CivCentre")).hasEntities() || queues.civilCentre.hasQueuedUnits())
 		return false;
 
 	let template;
 	// We require at least one of this civ civCentre as they may allow specific units or techs
 	let hasOwnCC = false;
-	for (const ent of gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).values())
+	for (const ent of gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre")).values())
 	{
 		if (ent.owner() != PlayerID || ent.templateName() != gameState.applyCiv("structures/{civ}/civil_centre"))
 			continue;
@@ -1564,7 +1580,7 @@ Headquather.prototype.buildNewBase = function(gameState, queues, resource)
 
 	// base "-1" means new base.
 	if (this.Config.debug > 1)
-		API3.warn("new base " + gameState.applyCiv(template) + " planned with resource " + resource);
+		aiWarn("new base " + gameState.applyCiv(template) + " planned with resource " + resource);
 	queues.civilCentre.addPlan(new ConstructionPlan(gameState, template, { "base": -1, "resource": resource }));
 	return true;
 };
@@ -1664,7 +1680,7 @@ Headquather.prototype.constructTrainingBuildings = function(gameState, queues)
 	const numStables = gameState.getOwnEntitiesByClass("Stable", true).length;
 
 	if (this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks1 ||
-	    this.phasing == 2 && gameState.getOwnStructures().filter(API3.Filters.byClass("Village")).length < 5)
+	    this.phasing == 2 && gameState.getOwnStructures().filter(filters.byClass("Village")).length < 5)
 	{
 		// First barracks/range and stable.
 		if (numBarracks + numRanges == 0)
@@ -1763,7 +1779,7 @@ Headquather.prototype.constructTrainingBuildings = function(gameState, queues)
  */
 Headquather.prototype.findBestBaseForMilitary = function(gameState)
 {
-	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).toEntityArray();
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre")).toEntityArray();
 	let bestBase;
 	let enemyFound = false;
 	let distMin = Math.min();
@@ -1781,7 +1797,7 @@ Headquather.prototype.findBestBaseForMilitary = function(gameState)
 				continue;
 			if (getLandAccess(gameState, cc) != access)
 				continue;
-			const dist = API3.SquareVectorDistance(cc.position(), cce.position());
+			const dist = SquareVectorDistance(cc.position(), cce.position());
 			if (!enemyFound && isEnemy)
 				enemyFound = true;
 			else if (dist > distMin)
@@ -1829,7 +1845,7 @@ Headquather.prototype.trainEmergencyUnits = function(gameState, positions)
 				if (time/1000 > 5)
 					continue;
 			}
-			const dist = API3.SquareVectorDistance(base.anchor.position(), pos);
+			const dist = SquareVectorDistance(base.anchor.position(), pos);
 			if (nearestAnchor && dist > distmin)
 				continue;
 			distmin = dist;
@@ -1869,7 +1885,7 @@ Headquather.prototype.trainEmergencyUnits = function(gameState, positions)
 			continue;
 		if (autogarrison && !template.hasClasses(garrisonArrowClasses))
 			continue;
-		if (!total.canAfford(new API3.Resources(template.cost())))
+		if (!total.canAfford(new ResourcesManager(template.cost())))
 			continue;
 		templateFound = [trainable, template];
 		if (template.hasClass("Ranged") == rangedWanted)
@@ -1882,7 +1898,7 @@ Headquather.prototype.trainEmergencyUnits = function(gameState, positions)
 	// and if not, take some of other accounted resources
 	// TODO sort the queues to be substracted
 	const queueManager = gameState.ai.queueManager;
-	const cost = new API3.Resources(templateFound[1].cost());
+	const cost = new ResourcesManager(templateFound[1].cost());
 	queueManager.setAccounts(gameState, cost, "emergency");
 	if (!queueManager.canAfford("emergency", cost))
 	{
@@ -2070,7 +2086,7 @@ Headquather.prototype.isDangerousLocation = function(gameState, pos, radius)
 Headquather.prototype.isNearInvadingArmy = function(pos)
 {
 	for (const army of this.defenseManager.armies)
-		if (army.foePosition && API3.SquareVectorDistance(army.foePosition, pos) < 12000)
+		if (army.foePosition && SquareVectorDistance(army.foePosition, pos) < 12000)
 			return true;
 	return false;
 };
@@ -2078,11 +2094,14 @@ Headquather.prototype.isNearInvadingArmy = function(pos)
 Headquather.prototype.isUnderEnemyFire = function(gameState, pos, radius = 0)
 {
 	if (!this.turnCache.firingStructures)
-		this.turnCache.firingStructures = gameState.updatingCollection("diplo-FiringStructures", API3.Filters.hasDefensiveFire(), gameState.getEnemyStructures());
+	{
+		this.turnCache.firingStructures = gameState.updatingCollection("diplo-FiringStructures",
+			filters.hasDefensiveFire(), gameState.getEnemyStructures());
+	}
 	for (const ent of this.turnCache.firingStructures.values())
 	{
 		const range = radius + ent.attackRange("Ranged").max;
-		if (API3.SquareVectorDistance(ent.position(), pos) < range*range)
+		if (SquareVectorDistance(ent.position(), pos) < range*range)
 			return true;
 	}
 	return false;
@@ -2221,14 +2240,15 @@ Headquather.prototype.update = function(gameState, queues, events)
 	this.emergencyManager.update(gameState);
 	this.turnCache = {};
 	this.territoryMap = createTerritoryMap(gameState);
-	this.canBarter = gameState.getOwnEntitiesByClass("Market", true).filter(API3.Filters.isBuilt()).hasEntities();
+	this.canBarter = gameState.getOwnEntitiesByClass("Market", true).filter(filters.isBuilt())
+		.hasEntities();
 	// TODO find a better way to update
 	if (this.currentPhase != gameState.currentPhase())
 	{
 		if (this.Config.debug > 0)
-			API3.warn(" civ " + gameState.getPlayerCiv() + " has phasedUp from " + this.currentPhase +
-			          " to " + gameState.currentPhase() + " at time " + gameState.ai.elapsedTime +
-				  " phasing " + this.phasing);
+			aiWarn(" civ " + gameState.getPlayerCiv() + " has phasedUp from " + this.currentPhase +
+				" to " + gameState.currentPhase() + " at time " + gameState.ai.elapsedTime +
+				" phasing " + this.phasing);
 		this.currentPhase = gameState.currentPhase();
 
 		// In principle, this.phasing should be already reset to 0 when starting the research
@@ -2354,19 +2374,19 @@ Headquather.prototype.Serialize = function()
 
 	if (this.Config.debug == -100)
 	{
-		API3.warn(" HQ serialization ---------------------");
-		API3.warn(" properties " + uneval(properties));
-		API3.warn(" basesManager " + uneval(this.basesManager.Serialize()));
-		API3.warn(" attackManager " + uneval(this.attackManager.Serialize()));
-		API3.warn(" buildManager " + uneval(this.buildManager.Serialize()));
-		API3.warn(" defenseManager " + uneval(this.defenseManager.Serialize()));
-		API3.warn(" tradeManager " + uneval(this.tradeManager.Serialize()));
-		API3.warn(" navalManager " + uneval(this.navalManager.Serialize()));
-		API3.warn(" researchManager " + uneval(this.researchManager.Serialize()));
-		API3.warn(" diplomacyManager " + uneval(this.diplomacyManager.Serialize()));
-		API3.warn(" garrisonManager " + uneval(this.garrisonManager.Serialize()));
-		API3.warn(" victoryManager " + uneval(this.victoryManager.Serialize()));
-		API3.warn(" emergencyManager " + uneval(this.emergencyManager.Serialize()));
+		aiWarn(" HQ serialization ---------------------");
+		aiWarn(" properties " + uneval(properties));
+		aiWarn(" basesManager " + uneval(this.basesManager.Serialize()));
+		aiWarn(" attackManager " + uneval(this.attackManager.Serialize()));
+		aiWarn(" buildManager " + uneval(this.buildManager.Serialize()));
+		aiWarn(" defenseManager " + uneval(this.defenseManager.Serialize()));
+		aiWarn(" tradeManager " + uneval(this.tradeManager.Serialize()));
+		aiWarn(" navalManager " + uneval(this.navalManager.Serialize()));
+		aiWarn(" researchManager " + uneval(this.researchManager.Serialize()));
+		aiWarn(" diplomacyManager " + uneval(this.diplomacyManager.Serialize()));
+		aiWarn(" garrisonManager " + uneval(this.garrisonManager.Serialize()));
+		aiWarn(" victoryManager " + uneval(this.victoryManager.Serialize()));
+		aiWarn(" emergencyManager " + uneval(this.emergencyManager.Serialize()));
 	}
 
 	return {

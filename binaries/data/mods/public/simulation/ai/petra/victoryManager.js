@@ -1,3 +1,5 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { SquareVectorDistance } from "simulation/ai/common-api/utils.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import { getAttackBonus, getBestBase, getLandAccess, returnResources } from
 	"simulation/ai/petra/entityExtend.js";
@@ -53,7 +55,8 @@ VictoryManager.prototype.init = function(gameState)
 
 	if (gameState.getVictoryConditions().has("capture_the_relic"))
 	{
-		for (const relic of gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic")).values())
+		for (const relic of
+			gameState.updatingGlobalCollection("allRelics", filters.byClass("Relic")).values())
 		{
 			if (relic.owner() == PlayerID)
 				this.criticalEnts.set(relic.id(), { "guardsAssigned": 0, "guards": new Map() });
@@ -622,7 +625,8 @@ VictoryManager.prototype.update = function(gameState, events, queues)
 		}
 		// And look for some new gaia relics visible by any of our units
 		// or that may be on our territory
-		const allGaiaRelics = gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic")).filter(relic => relic.owner() == 0);
+		const allGaiaRelics = gameState.updatingGlobalCollection("allRelics", filters.byClass("Relic"))
+			.filter(relic => relic.owner() == 0);
 		for (const relic of allGaiaRelics.values())
 		{
 			const relicPosition = relic.position();
@@ -643,7 +647,7 @@ VictoryManager.prototype.update = function(gameState, events, queues)
 			{
 				if (!ent.position() || !ent.visionRange())
 					continue;
-				if (API3.SquareVectorDistance(ent.position(), relicPosition) > Math.square(ent.visionRange()))
+				if (SquareVectorDistance(ent.position(), relicPosition) > Math.square(ent.visionRange()))
 					continue;
 				this.targetedGaiaRelics.set(relic.id(), []);
 				this.captureGaiaRelic(gameState, relic);

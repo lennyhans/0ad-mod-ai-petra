@@ -1,3 +1,5 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import { DefenseArmy } from "simulation/ai/petra/defenseArmy.js";
 import { allowCapture, getLandAccess, getMaxStrength, isSiegeUnit } from
@@ -121,7 +123,7 @@ DefenseManager.prototype.isDangerous = function(gameState, entity)
 				{
 					if (building.foundationProgress() == 0)
 						continue;
-					if (API3.SquareVectorDistance(building.position(), entity.position()) > 30000)
+					if (SquareVectorDistance(building.position(), entity.position()) > 30000)
 						continue;
 					this.targetList.push(targetId);
 					return true;
@@ -143,11 +145,11 @@ DefenseManager.prototype.isDangerous = function(gameState, entity)
 		// The enemy base is either destroyed or built.
 		if (!target || !target.position())
 			continue;
-		if (API3.SquareVectorDistance(target.position(), entity.position()) < dist2Min)
+		if (SquareVectorDistance(target.position(), entity.position()) < dist2Min)
 			return true;
 	}
 
-	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre"));
 	for (const cc of ccEnts.values())
 	{
 		if (!gameState.isEntityExclusiveAlly(cc) || cc.foundationProgress() == 0)
@@ -155,15 +157,17 @@ DefenseManager.prototype.isDangerous = function(gameState, entity)
 		const cooperation = this.GetCooperationLevel(cc.owner());
 		if (cooperation < 0.3 || cooperation < 0.6 && !!cc.foundationProgress())
 			continue;
-		if (API3.SquareVectorDistance(cc.position(), entity.position()) < dist2Min)
+		if (SquareVectorDistance(cc.position(), entity.position()) < dist2Min)
 			return true;
 	}
 
 	for (const building of gameState.getOwnStructures().values())
 	{
 		if (building.foundationProgress() == 0 ||
-		    API3.SquareVectorDistance(building.position(), entity.position()) > dist2Min)
+			SquareVectorDistance(building.position(), entity.position()) > dist2Min)
+		{
 			continue;
+		}
 		if (!this.territoryMap.isBlinking(building.position()) || gameState.ai.HQ.isDefendable(building))
 			return true;
 	}
@@ -178,8 +182,10 @@ DefenseManager.prototype.isDangerous = function(gameState, entity)
 			for (const building of gameState.getAllyStructures(territoryOwner).values())
 			{
 				if (building.foundationProgress() == 0 ||
-				    API3.SquareVectorDistance(building.position(), entity.position()) > dist2Min)
+					SquareVectorDistance(building.position(), entity.position()) > dist2Min)
+				{
 					continue;
+				}
 				if (!this.territoryMap.isBlinking(building.position()))
 					return true;
 			}
@@ -302,8 +308,10 @@ DefenseManager.prototype.checkEnemyArmies = function(gameState)
 		{
 			const otherArmy = this.armies[j];
 			if (otherArmy.getType() != "default" ||
-				API3.SquareVectorDistance(army.foePosition, otherArmy.foePosition) > this.armyMergeSize)
+				SquareVectorDistance(army.foePosition, otherArmy.foePosition) > this.armyMergeSize)
+			{
 				continue;
+			}
 			// No need to clear here.
 			army.merge(gameState, otherArmy);
 			this.armies.splice(j--, 1);
@@ -351,7 +359,7 @@ DefenseManager.prototype.checkEnemyArmies = function(gameState)
 		// Army in neutral territory.
 		// TODO check smaller distance with all our buildings instead of only ccs with big distance.
 		let stillDangerous = false;
-		const bases = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+		const bases = gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre"));
 		for (const base of bases.values())
 		{
 			if (!gameState.isEntityAlly(base))
@@ -359,19 +367,19 @@ DefenseManager.prototype.checkEnemyArmies = function(gameState)
 			const cooperation = this.GetCooperationLevel(base.owner());
 			if (cooperation < 0.3 && !gameState.isEntityOwn(base))
 				continue;
-			if (API3.SquareVectorDistance(base.position(), army.foePosition) > 40000)
+			if (SquareVectorDistance(base.position(), army.foePosition) > 40000)
 				continue;
 			if (this.Config.debug > 1)
-				API3.warn("army in neutral territory, but still near one of our CC");
+				aiWarn("army in neutral territory, but still near one of our CC");
 			stillDangerous = true;
 			break;
 		}
 		if (stillDangerous)
 			continue;
 		// Need to also check docks because of oversea bases.
-		for (const dock of gameState.getOwnStructures().filter(API3.Filters.byClass("Dock")).values())
+		for (const dock of gameState.getOwnStructures().filter(filters.byClass("Dock")).values())
 		{
-			if (API3.SquareVectorDistance(dock.position(), army.foePosition) > 10000)
+			if (SquareVectorDistance(dock.position(), army.foePosition) > 10000)
 				continue;
 			stillDangerous = true;
 			break;
@@ -409,7 +417,7 @@ DefenseManager.prototype.assignDefenders = function(gameState)
 			break;
 		}
 		if (!armyAccess)
-			API3.warn(" Petra error: attacking army " + army.ID + " without access");
+			aiWarn(" Petra error: attacking army " + army.ID + " without access");
 		army.recalculatePosition(gameState);
 		armiesNeeding.push({ "army": army, "access": armyAccess, "need": needsDef });
 	}
@@ -472,7 +480,8 @@ DefenseManager.prototype.assignDefenders = function(gameState)
 				}))
 					continue;
 
-				const dist = API3.SquareVectorDistance(ent.position(), armiesNeeding[a].army.foePosition);
+				const dist = SquareVectorDistance(ent.position(),
+					armiesNeeding[a].army.foePosition);
 				if (aMin !== undefined && dist > distMin)
 					continue;
 				aMin = a;
@@ -584,7 +593,7 @@ DefenseManager.prototype.checkEvents = function(gameState, events)
 			{
 				const pos = attacker.position();
 				const range = attacker.attackRange("Ranged") ? attacker.attackRange("Ranged").max + 15 : 25;
-				if (range * range > API3.SquareVectorDistance(pos, target.position()))
+				if (range * range > SquareVectorDistance(pos, target.position()))
 					target.moveToRange(pos[0], pos[1], range, range + 5);
 			}
 			continue;
@@ -727,7 +736,7 @@ DefenseManager.prototype.checkEvents = function(gameState, events)
 						if (!entOrderData || !entOrderData.length || !entOrderData[0].target ||
 						     entOrderData[0].target != orderData[0].target)
 							continue;
-						const dist = API3.SquareVectorDistance(pos, ent.position());
+						const dist = SquareVectorDistance(pos, ent.position());
 						if (minEnt && dist > minDist)
 							continue;
 						minDist = dist;
@@ -759,7 +768,7 @@ DefenseManager.prototype.garrisonUnitsInside = function(gameState, target, data)
 		const attackTypes = target.attackTypes();
 		if (!attackTypes || attackTypes.indexOf("Ranged") == -1)
 			return false;
-		const dist = API3.SquareVectorDistance(data.attacker.position(), target.position());
+		const dist = SquareVectorDistance(data.attacker.position(), target.position());
 		const range = target.attackRange("Ranged").max;
 		if (dist >= range*range)
 			return false;
@@ -847,7 +856,7 @@ DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
 			continue;
 		if (getLandAccess(gameState, ent) != unitAccess)
 			continue;
-		const dist = API3.SquareVectorDistance(ent.position(), unit.position());
+		const dist = SquareVectorDistance(ent.position(), unit.position());
 		if (dist > distmin)
 			continue;
 		distmin = dist;
@@ -884,7 +893,7 @@ DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, emerge
 			continue;
 		if (getLandAccess(gameState, ent) != unitAccess)
 			continue;
-		const dist = API3.SquareVectorDistance(ent.position(), unit.position());
+		const dist = SquareVectorDistance(ent.position(), unit.position());
 		if (dist > distmin)
 			continue;
 		distmin = dist;
@@ -936,7 +945,7 @@ DefenseManager.prototype.switchToAttack = function(gameState, army)
 			const ent = gameState.getEntityById(entId);
 			if (!ent || !ent.position() || getLandAccess(gameState, ent) != targetAccess)
 				continue;
-			if (API3.SquareVectorDistance(targetPos, ent.position()) > 14400)
+			if (SquareVectorDistance(targetPos, ent.position()) > 14400)
 				continue;
 			gameState.ai.HQ.attackManager.switchDefenseToAttack(gameState, target, { "armyID": army.ID, "uniqueTarget": true });
 			return;

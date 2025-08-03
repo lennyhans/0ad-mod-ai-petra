@@ -1,3 +1,5 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { newTradeRoute as chatNewTradeRoute } from "simulation/ai/petra/chatHelper.js";
 import { Config, DIFFICULTY_VERY_EASY } from "simulation/ai/petra/config.js";
 import { gatherTreasure, getBestBase, getLandAccess, getSeaAccess, isLineInsideEnemyTerritory } from
@@ -22,7 +24,7 @@ export function TradeManager(config)
 TradeManager.prototype.init = function(gameState)
 {
 	this.traders = gameState.getOwnUnits().filter(
-		API3.Filters.byMetadata(PlayerID, "role", Worker.ROLE_TRADER));
+		filters.byMetadata(PlayerID, "role", Worker.ROLE_TRADER));
 	this.traders.registerUpdates();
 	this.minimalGain = gameState.ai.HQ.navalMap ? 3 : 5;
 };
@@ -44,7 +46,7 @@ TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 		return;
 
 	let numTraders = this.traders.length;
-	let numSeaTraders = this.traders.filter(API3.Filters.byClass("Ship")).length;
+	let numSeaTraders = this.traders.filter(filters.byClass("Ship")).length;
 	let numLandTraders = numTraders - numSeaTraders;
 	// add traders already in training
 	gameState.getOwnTrainingFacilities().forEach(function(ent) {
@@ -109,8 +111,10 @@ TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 	if (!gameState.getTemplate(template))
 	{
 		if (this.Config.debug > 0)
-			API3.warn("Petra error: trying to train " + template + " for civ " +
-			          gameState.getPlayerCiv() + " but no template found.");
+		{
+			aiWarn("Petra error: trying to train " + template + " for civ " +
+				gameState.getPlayerCiv() + " but no template found.");
+		}
 		return;
 	}
 	queues.trader.addPlan(new TrainingPlan(gameState, template, metadata, 1, 1));
@@ -139,14 +143,17 @@ TradeManager.prototype.updateTrader = function(gameState, ent)
 	{
 		// TODO try to garrison land trader inside merchant ship when only sea routes available
 		if (this.Config.debug > 0)
-			API3.warn(" no available route for " + ent.genericName() + " " + ent.id());
+			aiWarn(" no available route for " + ent.genericName() + " " + ent.id());
 		Engine.ProfileStop();
 		return;
 	}
 
 	let nearerSource = true;
-	if (API3.SquareVectorDistance(route.target.position(), ent.position()) < API3.SquareVectorDistance(route.source.position(), ent.position()))
+	if (SquareVectorDistance(route.target.position(), ent.position()) <
+		SquareVectorDistance(route.source.position(), ent.position()))
+	{
 		nearerSource = false;
+	}
 
 	if (!ent.hasClass("Ship") && route.land != access)
 	{
@@ -216,7 +223,7 @@ TradeManager.prototype.setTradingGoods = function(gameState)
 		tradingGoods[mostNeeded[0].type] += nextNeed;
 	Engine.PostCommand(PlayerID, { "type": "set-trading-goods", "tradingGoods": tradingGoods });
 	if (this.Config.debug > 2)
-		API3.warn(" trading goods set to " + uneval(tradingGoods));
+		aiWarn(" trading goods set to " + uneval(tradingGoods));
 };
 
 /**
@@ -225,7 +232,8 @@ TradeManager.prototype.setTradingGoods = function(gameState)
  */
 TradeManager.prototype.performBarter = function(gameState)
 {
-	const barterers = gameState.getOwnEntitiesByClass("Barter", true).filter(API3.Filters.isBuilt()).toEntityArray();
+	const barterers = gameState.getOwnEntitiesByClass("Barter", true).filter(filters.isBuilt())
+		.toEntityArray();
 	if (barterers.length == 0)
 		return false;
 	const resBarterCodes = Resources.GetBarterableCodes();
@@ -294,11 +302,13 @@ TradeManager.prototype.performBarter = function(gameState)
 			const amount = available[bestToSell] > 5000 ? 500 : 100;
 			barterers[0].barter(buy, bestToSell, amount);
 			if (this.Config.debug > 2)
-				API3.warn("Necessity bartering: sold " + bestToSell +" for " + buy +
-				          " >> need sell " + needs[bestToSell] + " need buy " + needs[buy] +
-				          " rate buy " + rates[buy] + " available sell " + available[bestToSell] +
-				          " available buy " + available[buy] + " barterRate " + bestRate +
-				          " amount " + amount);
+			{
+				aiWarn("Necessity bartering: sold " + bestToSell +" for " + buy +
+					" >> need sell " + needs[bestToSell] + " need buy " + needs[buy] +
+					" rate buy " + rates[buy] + " available sell " + available[bestToSell] +
+					" available buy " + available[buy] + " barterRate " + bestRate +
+					" amount " + amount);
+			}
 			return true;
 		}
 	}
@@ -330,10 +340,11 @@ TradeManager.prototype.performBarter = function(gameState)
 		const amount = available.food > 5000 ? 500 : 100;
 		barterers[0].barter(bestToBuy, "food", amount);
 		if (this.Config.debug > 2)
-			API3.warn("Contingency bartering: sold food for " + bestToBuy +
-			          " available sell " + available.food + " available buy " + available[bestToBuy] +
-			          " barterRate " + getBarterRate(barterPrices, bestToBuy, "food") +
-			          " amount " + amount);
+		{
+			aiWarn("Contingency bartering: sold food for " + bestToBuy + " available sell " +
+				available.food + " available buy " + available[bestToBuy] + " barterRate " +
+				getBarterRate(barterPrices, bestToBuy, "food") + " amount " + amount);
+		}
 		return true;
 	}
 
@@ -430,8 +441,9 @@ TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 		return false;
 	}
 
-	const market1 = gameState.updatingCollection("OwnMarkets", API3.Filters.byClass("Trade"), gameState.getOwnStructures());
-	let market2 = gameState.updatingCollection("diplo-ExclusiveAllyMarkets", API3.Filters.byClass("Trade"), gameState.getExclusiveAllyEntities());
+	const market1 = gameState.updatingCollection("OwnMarkets", filters.byClass("Trade"), gameState.getOwnStructures());
+	let market2 = gameState.updatingCollection("diplo-ExclusiveAllyMarkets", filters.byClass("Trade"),
+		gameState.getExclusiveAllyEntities());
 	if (market1.length + market2.length < 2)  // We have to wait  ... markets will be built soon
 	{
 		this.tradeRoute = undefined;
@@ -477,7 +489,8 @@ TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 				gainMultiplier = traderTemplatesGains.navalGainMultiplier;
 			else
 				continue;
-			const gain = Math.round(gainMultiplier * TradeGain(API3.SquareVectorDistance(m1.position(), m2.position()), mapSize));
+			const gain = Math.round(gainMultiplier *
+				TradeGain(SquareVectorDistance(m1.position(), m2.position()), mapSize));
 			if (gain < this.minimalGain)
 				continue;
 			if (m1.foundationProgress() === undefined && m2.foundationProgress() === undefined)
@@ -521,7 +534,7 @@ TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 	if (candidate.gain < 1)
 	{
 		if (this.Config.debug > 2)
-			API3.warn("no better trade route possible");
+			aiWarn("no better trade route possible");
 		this.tradeRoute = undefined;
 		return false;
 	}
@@ -529,10 +542,13 @@ TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 	if (this.Config.debug > 1 && this.tradeRoute)
 	{
 		if (candidate.gain > this.tradeRoute.gain)
-			API3.warn("one better trade route set with gain " + candidate.gain + " instead of " + this.tradeRoute.gain);
+		{
+			aiWarn("one better trade route set with gain " + candidate.gain + " instead of " +
+				this.tradeRoute.gain);
+		}
 	}
 	else if (this.Config.debug > 1)
-		API3.warn("one trade route set with gain " + candidate.gain);
+		aiWarn("one trade route set with gain " + candidate.gain);
 	this.tradeRoute = candidate;
 
 	if (this.Config.chat)
@@ -601,9 +617,13 @@ TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 		return;
 	if (!gameState.ai.HQ.canBuild(gameState, "structures/{civ}/market"))
 		return;
-	if (!gameState.updatingCollection("OwnMarkets", API3.Filters.byClass("Trade"), gameState.getOwnStructures()).hasEntities() &&
-	    !gameState.updatingCollection("diplo-ExclusiveAllyMarkets", API3.Filters.byClass("Trade"), gameState.getExclusiveAllyEntities()).hasEntities())
+	if (!gameState.updatingCollection("OwnMarkets", filters.byClass("Trade"),
+		gameState.getOwnStructures()).hasEntities() &&
+		!gameState.updatingCollection("diplo-ExclusiveAllyMarkets", filters.byClass("Trade"),
+			gameState.getExclusiveAllyEntities()).hasEntities())
+	{
 		return;
+	}
 	const template = gameState.getTemplate(gameState.applyCiv("structures/{civ}/market"));
 	if (!template)
 		return;
@@ -624,11 +644,15 @@ TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 	if (this.Config.debug > 1)
 	{
 		if (this.potentialTradeRoute)
-			API3.warn("turn " + gameState.ai.playedTurn + "we could have a new route with gain " +
+		{
+			aiWarn("turn " + gameState.ai.playedTurn + "we could have a new route with gain " +
 				marketPos[3] + " instead of the present " + this.potentialTradeRoute.gain);
+		}
 		else
-			API3.warn("turn " + gameState.ai.playedTurn + "we could have a first route with gain " +
+		{
+			aiWarn("turn " + gameState.ai.playedTurn + "we could have a first route with gain " +
 				marketPos[3]);
+		}
 	}
 
 	if (!this.tradeRoute)

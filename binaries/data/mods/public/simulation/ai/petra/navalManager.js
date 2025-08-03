@@ -1,3 +1,5 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { gatherTreasure, getLandAccess, getSeaAccess, isSiegeUnit, setSeaAccess } from
 	"simulation/ai/petra/entityExtend.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
@@ -42,15 +44,16 @@ export function NavalManager(Config)
 NavalManager.prototype.init = function(gameState, deserializing)
 {
 	// docks
-	this.docks = gameState.getOwnStructures().filter(API3.Filters.byClasses(["Dock", "Shipyard"]));
+	this.docks = gameState.getOwnStructures().filter(filters.byClasses(["Dock", "Shipyard"]));
 	this.docks.registerUpdates();
 
-	this.ships = gameState.getOwnUnits().filter(API3.Filters.and(API3.Filters.byClass("Ship"),
-		API3.Filters.not(API3.Filters.byMetadata(PlayerID, "role", Worker.ROLE_TRADER))));
+	this.ships = gameState.getOwnUnits().filter(filters.and(filters.byClass("Ship"),
+		filters.not(filters.byMetadata(PlayerID, "role", Worker.ROLE_TRADER))));
 	// note: those two can overlap (some transport ships are warships too and vice-versa).
-	this.transportShips = this.ships.filter(API3.Filters.and(API3.Filters.byCanGarrison(), API3.Filters.not(API3.Filters.byClass("FishingBoat"))));
-	this.warShips = this.ships.filter(API3.Filters.byClass("Warship"));
-	this.fishShips = this.ships.filter(API3.Filters.byClass("FishingBoat"));
+	this.transportShips = this.ships.filter(filters.and(filters.byCanGarrison(),
+		filters.not(filters.byClass("FishingBoat"))));
+	this.warShips = this.ships.filter(filters.byClass("Warship"));
+	this.fishShips = this.ships.filter(filters.byClass("FishingBoat"));
 
 	this.ships.registerUpdates();
 	this.transportShips.registerUpdates();
@@ -84,16 +87,16 @@ NavalManager.prototype.init = function(gameState, deserializing)
 		}
 		else
 		{
-			let collec = this.ships.filter(API3.Filters.byMetadata(PlayerID, "sea", i));
+			let collec = this.ships.filter(filters.byMetadata(PlayerID, "sea", i));
 			collec.registerUpdates();
 			this.seaShips.push(collec);
-			collec = this.transportShips.filter(API3.Filters.byMetadata(PlayerID, "sea", i));
+			collec = this.transportShips.filter(filters.byMetadata(PlayerID, "sea", i));
 			collec.registerUpdates();
 			this.seaTransportShips.push(collec);
-			collec = this.warShips.filter(API3.Filters.byMetadata(PlayerID, "sea", i));
+			collec = this.warShips.filter(filters.byMetadata(PlayerID, "sea", i));
 			collec.registerUpdates();
 			this.seaWarShips.push(collec);
-			collec = this.fishShips.filter(API3.Filters.byMetadata(PlayerID, "sea", i));
+			collec = this.fishShips.filter(filters.byMetadata(PlayerID, "sea", i));
 			collec.registerUpdates();
 			this.seaFishShips.push(collec);
 			this.wantedTransportShips.push(0);
@@ -292,7 +295,10 @@ NavalManager.prototype.checkEvents = function(gameState, queues, events)
 
 		const shipId = evt.entityObj.id();
 		if (this.Config.debug > 1)
-			API3.warn("one ship " + shipId + " from plan " + plan.ID + " destroyed during " + plan.state);
+		{
+			aiWarn("one ship " + shipId + " from plan " + plan.ID + " destroyed during " +
+				plan.state);
+		}
 		if (plan.state === TransportPlan.BOARDING)
 		{
 			// just reset the units onBoard metadata and wait for a new ship to be assigned to this plan
@@ -362,7 +368,10 @@ NavalManager.prototype.requireTransport = function(gameState, ent, startIndex, e
 	if (ent.getMetadata(PlayerID, "transport") !== undefined)
 	{
 		if (this.Config.debug > 0)
-			API3.warn("Petra naval manager error: unit " + ent.id() + " has already required a transport");
+		{
+			aiWarn("Petra naval manager error: unit " + ent.id() +
+				" has already required a transport");
+		}
 		return false;
 	}
 
@@ -391,7 +400,7 @@ NavalManager.prototype.requireTransport = function(gameState, ent, startIndex, e
 	if (plan.failed)
 	{
 		if (this.Config.debug > 1)
-			API3.warn(">>>> transport plan aborted <<<<");
+			aiWarn(">>>> transport plan aborted <<<<");
 		return false;
 	}
 	plan.init(gameState);
@@ -403,12 +412,12 @@ NavalManager.prototype.requireTransport = function(gameState, ent, startIndex, e
 NavalManager.prototype.splitTransport = function(gameState, plan)
 {
 	if (this.Config.debug > 1)
-		API3.warn(">>>> split of transport plan started <<<<");
+		aiWarn(">>>> split of transport plan started <<<<");
 	const newplan = new TransportPlan(gameState, [], plan.startIndex, plan.endIndex, plan.endPos);
 	if (newplan.failed)
 	{
 		if (this.Config.debug > 1)
-			API3.warn(">>>> split of transport plan aborted <<<<");
+			aiWarn(">>>> split of transport plan aborted <<<<");
 		return false;
 	}
 	newplan.init(gameState);
@@ -499,7 +508,7 @@ NavalManager.prototype.maintainFleet = function(gameState, queues)
 {
 	if (queues.ships.hasQueuedUnits())
 		return;
-	if (!this.docks.filter(API3.Filters.isBuilt()).hasEntities())
+	if (!this.docks.filter(filters.isBuilt()).hasEntities())
 		return;
 	// check if we have enough transport ships per region.
 	for (let sea = 0; sea < this.seaShips.length; ++sea)
@@ -549,7 +558,7 @@ NavalManager.prototype.isShipBoarding = function(ship)
 	const plan = this.getPlan(ship.getMetadata(PlayerID, "transporter"));
 	if (!plan || !plan.boardingPos[ship.id()])
 		return false;
-	return API3.SquareVectorDistance(plan.boardingPos[ship.id()], ship.position()) < plan.boardingRange;
+	return SquareVectorDistance(plan.boardingPos[ship.id()], ship.position()) < plan.boardingRange;
 };
 
 /** let blocking ships move apart from active ships (waiting for a better pathfinder)
@@ -607,11 +616,12 @@ NavalManager.prototype.moveApart = function(gameState)
 				continue;
 			// Do not stay idle near a dock to not disturb other ships
 			const sea = ship.getMetadata(PlayerID, "sea");
-			for (const dock of gameState.getAllyStructures().filter(API3.Filters.byClass("Dock")).values())
+			for (const dock of
+				gameState.getAllyStructures().filter(filters.byClass("Dock")).values())
 			{
 				if (getSeaAccess(gameState, dock) != sea)
 					continue;
-				if (API3.SquareVectorDistance(shipPosition, dock.position()) > 4900)
+				if (SquareVectorDistance(shipPosition, dock.position()) > 4900)
 					continue;
 				ship.moveToRange(dock.position()[0], dock.position()[1], 70, 75);
 			}
@@ -619,7 +629,7 @@ NavalManager.prototype.moveApart = function(gameState)
 		}
 	}
 
-	for (const ship of gameState.ai.HQ.tradeManager.traders.filter(API3.Filters.byClass("Ship")).values())
+	for (const ship of gameState.ai.HQ.tradeManager.traders.filter(filters.byClass("Ship")).values())
 	{
 		const shipPosition = ship.position();
 		if (!shipPosition)
@@ -664,11 +674,11 @@ NavalManager.prototype.moveApart = function(gameState)
 				continue;
 			// Do not stay idle near a dock to not disturb other ships
 			const sea = ship.getMetadata(PlayerID, "sea");
-			for (const dock of gameState.getAllyStructures().filter(API3.Filters.byClass("Dock")).values())
+			for (const dock of gameState.getAllyStructures().filter(filters.byClass("Dock")).values())
 			{
 				if (getSeaAccess(gameState, dock) != sea)
 					continue;
-				if (API3.SquareVectorDistance(shipPosition, dock.position()) > 4900)
+				if (SquareVectorDistance(shipPosition, dock.position()) > 4900)
 					continue;
 				ship.moveToRange(dock.position()[0], dock.position()[1], 70, 75);
 			}
@@ -683,7 +693,7 @@ NavalManager.prototype.moveApart = function(gameState)
 		{
 			if (blockedIds.indexOf(blockingShip.id()) != -1 || !blockingShip.position())
 				continue;
-			const distSquare = API3.SquareVectorDistance(shipPosition, blockingShip.position());
+			const distSquare = SquareVectorDistance(shipPosition, blockingShip.position());
 			const unitAIState = blockingShip.unitAIState();
 			if (blockingShip.getMetadata(PlayerID, "transporter") === undefined &&
 			    unitAIState != "INDIVIDUAL.GATHER.APPROACHING" &&
@@ -696,7 +706,8 @@ NavalManager.prototype.moveApart = function(gameState)
 				blockingShip.moveToRange(shipPosition[0], shipPosition[1], 30, 35);
 		}
 
-		for (const blockingShip of gameState.ai.HQ.tradeManager.traders.filter(API3.Filters.byClass("Ship")).values())
+		for (const blockingShip of
+			gameState.ai.HQ.tradeManager.traders.filter(filters.byClass("Ship")).values())
 		{
 			if (blockingShip.getMetadata(PlayerID, "sea") != sea)
 				continue;
@@ -705,7 +716,7 @@ NavalManager.prototype.moveApart = function(gameState)
 			const role = blockingShip.getMetadata(PlayerID, "role");
 			if (role === undefined || role !== Worker.ROLE_TRADER)	// already accounted before
 				continue;
-			const distSquare = API3.SquareVectorDistance(shipPosition, blockingShip.position());
+			const distSquare = SquareVectorDistance(shipPosition, blockingShip.position());
 			const unitAIState = blockingShip.unitAIState();
 			if (unitAIState != "INDIVIDUAL.TRADE.APPROACHINGMARKET")
 			{
@@ -726,7 +737,8 @@ NavalManager.prototype.buildNavalStructures = function(gameState, queues)
 	if (gameState.ai.HQ.getAccountedPopulation(gameState) > this.Config.Economy.popForDock)
 	{
 		if (queues.dock.countQueuedUnitsWithClass("Dock") === 0 &&
-			!gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClass("Dock"), API3.Filters.isFoundation())).hasEntities() &&
+			!gameState.getOwnStructures().filter(filters.and(filters.byClass("Dock"),
+				filters.isFoundation())).hasEntities() &&
 			gameState.ai.HQ.canBuild(gameState, "structures/{civ}/dock"))
 		{
 			let dockStarted = false;
@@ -755,9 +767,11 @@ NavalManager.prototype.buildNavalStructures = function(gameState, queues)
 	if (gameState.currentPhase() < 2 || gameState.ai.HQ.getAccountedPopulation(gameState) < this.Config.Economy.popPhase2 + 15 ||
 	    queues.militaryBuilding.hasQueuedUnits())
 		return;
-	if (!this.docks.filter(API3.Filters.byClass("Dock")).hasEntities() ||
-	     this.docks.filter(API3.Filters.byClass("Shipyard")).hasEntities())
+	if (!this.docks.filter(filters.byClass("Dock")).hasEntities() ||
+		this.docks.filter(filters.byClass("Shipyard")).hasEntities())
+	{
 		return;
+	}
 	// Use in priority resources to build a Market.
 	if (!gameState.getOwnEntitiesByClass("Market", true).hasEntities() &&
 	    gameState.ai.HQ.canBuild(gameState, "structures/{civ}/market"))
@@ -783,17 +797,18 @@ NavalManager.prototype.getBestShip = function(gameState, sea, goal)
 {
 	const civ = gameState.getPlayerCiv();
 	const trainableShips = [];
-	gameState.getOwnTrainingFacilities().filter(API3.Filters.byMetadata(PlayerID, "sea", sea)).forEach(function(ent) {
-		const trainables = ent.trainableEntities(civ);
-		for (const trainable of trainables)
-		{
-			if (gameState.isTemplateDisabled(trainable))
-				continue;
-			const template = gameState.getTemplate(trainable);
-			if (template && template.hasClass("Ship") && trainableShips.indexOf(trainable) === -1)
-				trainableShips.push(trainable);
-		}
-	});
+	gameState.getOwnTrainingFacilities().filter(filters.byMetadata(PlayerID, "sea", sea)).forEach(
+		function(ent) {
+			const trainables = ent.trainableEntities(civ);
+			for (const trainable of trainables)
+			{
+				if (gameState.isTemplateDisabled(trainable))
+					continue;
+				const template = gameState.getTemplate(trainable);
+				if (template && template.hasClass("Ship") && trainableShips.indexOf(trainable) === -1)
+					trainableShips.push(trainable);
+			}
+		});
 
 	let best = 0;
 	let bestShip;
@@ -847,7 +862,7 @@ NavalManager.prototype.update = function(gameState, queues, events)
 		if (remaining)
 			continue;
 		if (this.Config.debug > 1)
-			API3.warn("no more units on transport plan " + this.transportPlans[i].ID);
+			aiWarn("no more units on transport plan " + this.transportPlans[i].ID);
 		this.transportPlans[i].releaseAll();
 		this.transportPlans.splice(i--, 1);
 	}

@@ -1,3 +1,5 @@
+import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
+
 /** returns true if this unit should be considered as a siege unit */
 export function isSiegeUnit(ent)
 {
@@ -34,7 +36,10 @@ export function getMaxStrength(ent, debugLevel, DamageTypeImportance, againstCla
 			if (DamageTypeImportance[str])
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
 			else if (debugLevel > 0)
-				API3.warn("Petra: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
+			{
+				aiWarn("Petra: " + str + " unknown attackStrength in getMaxStrength (please add " +
+					str + "  to config.js).");
+			}
 		}
 
 		const attackRange = ent.attackRange(type);
@@ -54,7 +59,7 @@ export function getMaxStrength(ent, debugLevel, DamageTypeImportance, againstCla
 				strength -= val / 100000;
 				break;
 			default:
-				API3.warn("Petra: " + str + " unknown attackTimes in getMaxStrength");
+				aiWarn("Petra: " + str + " unknown attackTimes in getMaxStrength");
 			}
 		}
 	}
@@ -68,7 +73,8 @@ export function getMaxStrength(ent, debugLevel, DamageTypeImportance, againstCla
 			if (DamageTypeImportance[str])
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
 			else if (debugLevel > 0)
-				API3.warn("Petra: " + str + " unknown resistanceStrength in getMaxStrength (please add " + str + "  to config.js).");
+				aiWarn("Petra: " + str + " unknown resistanceStrength in getMaxStrength " +
+					"(please add " + str + "  to config.js).");
 		}
 
 	// ToDo: Add support for StatusEffects and Capture.
@@ -88,7 +94,7 @@ export function getLandAccess(gameState, ent)
 			if (holder)
 				return getLandAccess(gameState, holder);
 
-			API3.warn("Petra error: entity without position, but not garrisoned");
+			aiWarn("Petra error: entity without position, but not garrisoned");
 			dumpEntity(ent);
 			return undefined;
 		}
@@ -242,7 +248,7 @@ export function returnResources(gameState, ent)
 			continue;
 		if (getLandAccess(gameState, dropsite) != access)
 			continue;
-		const dist = API3.SquareVectorDistance(ent.position(), dropsite.position());
+		const dist = SquareVectorDistance(ent.position(), dropsite.position());
 		if (dist > distmin)
 			continue;
 		distmin = dist;
@@ -277,7 +283,7 @@ export function getBestBase(gameState, ent, onlyConstructedBase = false, exclude
 		const holder = getHolder(gameState, ent);
 		if (!holder || !holder.position())
 		{
-			API3.warn("Petra error: entity without position, but not garrisoned");
+			aiWarn("Petra error: entity without position, but not garrisoned");
 			dumpEntity(ent);
 			return gameState.ai.HQ.basesManager.baselessBase();
 		}
@@ -299,7 +305,7 @@ export function getBestBase(gameState, ent, onlyConstructedBase = false, exclude
 		if (ent.hasClass("Structure") && base.accessIndex != accessIndex)
 			continue;
 		if (base.anchor && base.anchor.position())
-			dist = API3.SquareVectorDistance(base.anchor.position(), pos);
+			dist = SquareVectorDistance(base.anchor.position(), pos);
 		else
 		{
 			let found = false;
@@ -307,7 +313,7 @@ export function getBestBase(gameState, ent, onlyConstructedBase = false, exclude
 			{
 				if (!structure.position())
 					continue;
-				dist = API3.SquareVectorDistance(structure.position(), pos);
+				dist = SquareVectorDistance(structure.position(), pos);
 				found = true;
 				break;
 			}
@@ -367,7 +373,7 @@ export function isNotWorthBuilding(gameState, ent)
  */
 export function isLineInsideEnemyTerritory(gameState, pos1, pos2, step=70)
 {
-	const n = Math.floor(Math.sqrt(API3.SquareVectorDistance(pos1, pos2))/step) + 1;
+	const n = Math.floor(Math.sqrt(SquareVectorDistance(pos1, pos2))/step) + 1;
 	const stepx = (pos2[0] - pos1[0]) / n;
 	const stepy = (pos2[1] - pos1[1]) / n;
 	for (let i = 1; i < n; ++i)
@@ -404,7 +410,7 @@ export function gatherTreasure(gameState, ent, water = false)
 		const territoryOwner = gameState.ai.HQ.territoryMap.getOwner(treasure.position());
 		if (territoryOwner != 0 && !gameState.isPlayerAlly(territoryOwner))
 			continue;
-		const dist = API3.SquareVectorDistance(ent.position(), treasure.position());
+		const dist = SquareVectorDistance(ent.position(), treasure.position());
 		if (dist > 120000 || territoryOwner != PlayerID && dist > 14000) // AI has no LOS, so restrict it a bit
 			continue;
 		if (dist > distmin)
@@ -424,17 +430,17 @@ export function dumpEntity(ent)
 {
 	if (!ent)
 		return;
-	API3.warn(" >>> id " + ent.id() + " name " + ent.genericName() + " pos " + ent.position() +
-		  " state " + ent.unitAIState());
-	API3.warn(" base " + ent.getMetadata(PlayerID, "base") + " >>> role " + ent.getMetadata(PlayerID, "role") +
-		  " subrole " + ent.getMetadata(PlayerID, "subrole"));
-	API3.warn("owner " + ent.owner() + " health " + ent.hitpoints() + " healthMax " + ent.maxHitpoints() +
-	          " foundationProgress " + ent.foundationProgress());
-	API3.warn(" garrisoning " + ent.getMetadata(PlayerID, "garrisoning") +
-		  " garrisonHolder " + ent.getMetadata(PlayerID, "garrisonHolder") +
-		  " plan " + ent.getMetadata(PlayerID, "plan")	+ " transport " + ent.getMetadata(PlayerID, "transport"));
-	API3.warn(" stance " + ent.getStance() + " transporter " + ent.getMetadata(PlayerID, "transporter") +
-		  " gather-type " + ent.getMetadata(PlayerID, "gather-type") +
-		  " target-foundation " + ent.getMetadata(PlayerID, "target-foundation") +
-		  " PartOfArmy " + ent.getMetadata(PlayerID, "PartOfArmy"));
+	aiWarn(" >>> id " + ent.id() + " name " + ent.genericName() + " pos " + ent.position() + " state " +
+		ent.unitAIState());
+	aiWarn(" base " + ent.getMetadata(PlayerID, "base") + " >>> role " +
+		ent.getMetadata(PlayerID, "role") + " subrole " + ent.getMetadata(PlayerID, "subrole"));
+	aiWarn("owner " + ent.owner() + " health " + ent.hitpoints() + " healthMax " + ent.maxHitpoints() +
+		" foundationProgress " + ent.foundationProgress());
+	aiWarn(" garrisoning " + ent.getMetadata(PlayerID, "garrisoning") + " garrisonHolder " +
+		ent.getMetadata(PlayerID, "garrisonHolder") + " plan " + ent.getMetadata(PlayerID, "plan") +
+		" transport " + ent.getMetadata(PlayerID, "transport"));
+	aiWarn(" stance " + ent.getStance() + " transporter " + ent.getMetadata(PlayerID, "transporter") +
+		" gather-type " + ent.getMetadata(PlayerID, "gather-type") + " target-foundation " +
+		ent.getMetadata(PlayerID, "target-foundation") + " PartOfArmy " +
+		ent.getMetadata(PlayerID, "PartOfArmy"));
 }

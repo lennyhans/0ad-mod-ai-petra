@@ -1,118 +1,182 @@
-API3 = function(m)
+export function byType(type)
 {
-
-m.Filters = {
-	"byType": type => ({
+	return {
 		"func": ent => ent.templateName() == type,
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"byClass": cls => ({
+export function byClass(cls)
+{
+	return {
 		"func": ent => ent.hasClass(cls),
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"byClasses": clsList => ({
+export function byClasses(clsList)
+{
+	return {
 		"func": ent => ent.hasClasses(clsList),
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"byMetadata": (player, key, value) => ({
+export function byMetadata(player, key, value)
+{
+	return {
 		"func": ent => ent.getMetadata(player, key) == value,
 		"dynamicProperties": ['metadata.' + key]
-	}),
+	};
+}
 
-	"byHasMetadata": (player, key) => ({
+export function byHasMetadata(player, key)
+{
+	return {
 		"func": ent => ent.getMetadata(player, key) !== undefined,
 		"dynamicProperties": ['metadata.' + key]
-	}),
+	};
+}
 
-	"and": (filter1, filter2) => ({
+export function and(filter1, filter2)
+{
+	return {
 		"func": ent => filter1.func(ent) && filter2.func(ent),
 		"dynamicProperties": filter1.dynamicProperties.concat(filter2.dynamicProperties)
-	}),
+	};
+}
 
-	"or": (filter1, filter2) => ({
+export function or(filter1, filter2)
+{
+	return {
 		"func": ent => filter1.func(ent) || filter2.func(ent),
 		"dynamicProperties": filter1.dynamicProperties.concat(filter2.dynamicProperties)
-	}),
+	};
+}
 
-	"not": (filter) => ({
+export function not(filter)
+{
+	return {
 		"func": ent => !filter.func(ent),
 		"dynamicProperties": filter.dynamicProperties
-	}),
+	};
+}
 
-	"byOwner": owner => ({
+export function byOwner(owner)
+{
+	return {
 		"func": ent => ent.owner() == owner,
 		"dynamicProperties": ['owner']
-	}),
+	};
+}
 
-	"byNotOwner": owner => ({
+export function byNotOwner(owner)
+{
+	return {
 		"func": ent => ent.owner() != owner,
 		"dynamicProperties": ['owner']
-	}),
+	};
+}
 
-	"byOwners": owners => ({
+export function byOwners(owners)
+{
+	return {
 		"func": ent => owners.some(owner => owner == ent.owner()),
 		"dynamicProperties": ['owner']
-	}),
+	};
+}
 
-	"byCanGarrison": () => ({
+export function byCanGarrison()
+{
+	return {
 		"func": ent => ent.garrisonMax() > 0,
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"byTrainingQueue": () => ({
+export function byTrainingQueue()
+{
+	return {
 		"func": ent => ent.trainingQueue(),
 		"dynamicProperties": ['trainingQueue']
-	}),
+	};
+}
 
-	"byResearchAvailable": (gameState, civ) => ({
+export function byResearchAvailable(gameState, civ)
+{
+	return {
 		"func": ent => ent.researchableTechs(gameState, civ) !== undefined,
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"byCanAttackClass": aClass => ({
+export function byCanAttackClass(aClass)
+{
+	return {
 		"func": ent => ent.canAttackClass(aClass),
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"byCanAttackTarget": target => ({
+export function byCanAttackTarget(target)
+{
+	return {
 		"func": ent => ent.canAttackTarget(target),
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"isGarrisoned": () => ({
+export function isGarrisoned()
+{
+	return {
 		"func": ent => ent.position() === undefined,
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"isIdle": () => ({
+export function isIdle()
+{
+	return {
 		"func": ent => ent.isIdle(),
 		"dynamicProperties": ['idle']
-	}),
+	};
+}
 
-	"isFoundation": () => ({
+export function isFoundation()
+{
+	return {
 		"func": ent => ent.foundationProgress() !== undefined,
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"isBuilt": () => ({
+export function isBuilt()
+{
+	return {
 		"func": ent => ent.foundationProgress() === undefined,
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"hasDefensiveFire": () => ({
+export function hasDefensiveFire()
+{
+	return {
 		"func": ent => ent.hasDefensiveFire(),
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"isDropsite": resourceType => ({
+export function isDropsite(resourceType)
+{
+	return {
 		"func": ent => ent.isResourceDropsite(resourceType),
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"isTreasure": () => ({
+export function isTreasure()
+{
+	return {
 		"func": ent => {
 			if (!ent.isTreasure())
 				return false;
@@ -124,9 +188,12 @@ m.Filters = {
 			    template != "gaia/treasure/shipwreck";
 		},
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"byResource": resourceType => ({
+export function byResource(resourceType)
+{
+	return {
 		"func": ent => {
 			if (!ent.resourceSupplyMax())
 				return false;
@@ -142,23 +209,24 @@ m.Filters = {
 			return resourceType == type.generic;
 		},
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"isHuntable": () => ({
-		// Skip targets that are too hard to hunt and don't go for the fish! TODO: better accessibility checks
+export function isHuntable()
+{
+	// Skip targets that are too hard to hunt and don't go for the fish! TODO: better accessibility checks
+	return {
 		"func": ent => ent.hasClass("Animal") && ent.resourceSupplyMax() &&
-		               ent.isHuntable() && !ent.hasClass("SeaCreature"),
+			         ent.isHuntable() && !ent.hasClass("SeaCreature"),
 		"dynamicProperties": []
-	}),
+	};
+}
 
-	"isFishable": () => ({
-		// temporarily do not fish moving fish (i.e. whales)
+export function isFishable()
+{
+	// temporarily do not fish moving fish (i.e. whales)
+	return {
 		"func": ent => !ent.get("UnitMotion") && ent.hasClass("SeaCreature") && ent.resourceSupplyMax(),
 		"dynamicProperties": []
-	})
-};
-
-return m;
-
-}(API3);
-
+	};
+}

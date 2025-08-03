@@ -1,3 +1,7 @@
+import * as filters from "simulation/ai/common-api/filters.js";
+import { InfoMap } from "simulation/ai/common-api/map-module.js";
+import { ResourcesManager } from "simulation/ai/common-api/resources.js";
+import { SquareVectorDistance, VectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { getBuiltEntity, getLandAccess, getSeaAccess } from "simulation/ai/petra/entityExtend.js";
 import { border_Mask, createObstructionMap, fullBorder_Mask, outside_Mask } from
 	"simulation/ai/petra/mapModule.js";
@@ -46,7 +50,7 @@ ConstructionPlan.prototype.start = function(gameState)
 	const builder = gameState.findBuilder(this.type);
 	if (!builder)
 	{
-		API3.warn("petra error: builder not found when starting construction.");
+		aiWarn("petra error: builder not found when starting construction.");
 		Engine.ProfileStop();
 		return;
 	}
@@ -152,8 +156,11 @@ ConstructionPlan.prototype.findGoodPosition = function(gameState)
 			if (gameState.ai.HQ.canBuild(gameState, templateName) && !gameState.isTemplateDisabled(templateName))
 			{
 				template = gameState.getTemplate(templateName);
-				if (template && gameState.getResources().canAfford(new API3.Resources(template.cost())))
+				if (template && gameState.getResources().canAfford(
+					new ResourcesManager(template.cost())))
+				{
 					this.buildOverseaDock(gameState, template);
+				}
 			}
 			return false;
 		}
@@ -183,7 +190,7 @@ ConstructionPlan.prototype.findGoodPosition = function(gameState)
 
 	// Compute each tile's closeness to friendly structures:
 
-	const placement = new API3.Map(gameState.sharedScript, "territory");
+	const placement = new InfoMap(gameState.sharedScript, "territory");
 	const cellSize = placement.cellSize; // size of each tile
 
 	let alreadyHasHouses = false;
@@ -416,8 +423,9 @@ ConstructionPlan.prototype.findDockPosition = function(gameState)
 	// water is a measure of the water space around, and maxWater is the max value that can be returned by checkDockPlacement
 	const maxRes = 10;
 	const maxWater = 16;
-	const ccEnts = oversea ? gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")) : null;
-	const docks = oversea ? gameState.getOwnStructures().filter(API3.Filters.byClass("Dock")) : null;
+	const ccEnts = oversea ? gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre")) :
+		null;
+	const docks = oversea ? gameState.getOwnStructures().filter(filters.byClass("Dock")) : null;
 	// Normalisation factors (only guessed, no attempt to optimize them)
 	const factor = proxyAccess ? 1 : oversea ? 0.2 : 40;
 	for (let j = 0; j < territoryMap.length; ++j)
@@ -444,7 +452,7 @@ ConstructionPlan.prototype.findDockPosition = function(gameState)
 
 		// If proximity is given, we look for the nearest point
 		if (proxyAccess)
-			score = API3.VectorDistance(this.metadata.proximity, pos);
+			score = VectorDistance(this.metadata.proximity, pos);
 
 		// Bonus for resources
 		score += 20 * (maxRes - res);
@@ -459,7 +467,7 @@ ConstructionPlan.prototype.findDockPosition = function(gameState)
 				const owner = cc.owner();
 				if (owner != PlayerID && !gameState.isPlayerEnemy(owner))
 					continue;
-				const dist = API3.SquareVectorDistance(pos, cc.position());
+				const dist = SquareVectorDistance(pos, cc.position());
 				if (owner == PlayerID && (!ownDist || dist < ownDist))
 					ownDist = dist;
 				if (gameState.isPlayerEnemy(owner) && (!enemyDist || dist < enemyDist))
@@ -474,7 +482,7 @@ ConstructionPlan.prototype.findDockPosition = function(gameState)
 			{
 				if (getSeaAccess(gameState, dock) != navalPassMap[i])
 					continue;
-				const dist = API3.SquareVectorDistance(pos, dock.position());
+				const dist = SquareVectorDistance(pos, dock.position());
 				if (dist > dockDist)
 					dockDist = dist;
 			}
@@ -541,13 +549,13 @@ ConstructionPlan.prototype.findDockPosition = function(gameState)
  */
 ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 {
-	const docks = gameState.getOwnStructures().filter(API3.Filters.byClass("Dock"));
+	const docks = gameState.getOwnStructures().filter(filters.byClass("Dock"));
 	if (!docks.hasEntities())
 		return;
 
 	const passabilityMap = gameState.getPassabilityMap();
 	const cellArea = passabilityMap.cellSize * passabilityMap.cellSize;
-	const ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+	const ccEnts = gameState.updatingGlobalCollection("allCCs", filters.byClass("CivCentre"));
 
 	const land = {};
 	let found;
@@ -591,7 +599,7 @@ ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 	if (!found)
 		return;
 	if (!gameState.ai.HQ.navalMap)
-		API3.warn("petra.findOverseaLand on a non-naval map??? we should never go there ");
+		aiWarn("petra.findOverseaLand on a non-naval map??? we should never go there ");
 
 	const oldTemplate = this.template;
 	const oldMetadata = this.metadata;
@@ -944,6 +952,6 @@ ConstructionPlan.prototype.Deserialize = function(gameState, data)
 	for (const key in data)
 		this[key] = data[key];
 
-	this.cost = new API3.Resources();
+	this.cost = new ResourcesManager();
 	this.cost.Deserialize(data.cost);
 };

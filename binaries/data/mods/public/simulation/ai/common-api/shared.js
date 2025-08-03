@@ -1,8 +1,11 @@
-API3 = function(m)
-{
+import { Entity } from "simulation/ai/common-api/entity.js";
+import { EntityCollection } from "simulation/ai/common-api/entitycollection.js";
+import { GameState } from "simulation/ai/common-api/gamestate.js";
+import { InfoMap } from "simulation/ai/common-api/map-module.js";
+import { Accessibility, TerrainAnalysis } from "simulation/ai/common-api/terrain-analysis.js";
 
 /** Shared script handling templates and basic terrain analysis */
-m.SharedScript = function(settings)
+export function SharedScript(settings)
 {
 	if (!settings)
 		return;
@@ -22,10 +25,10 @@ m.SharedScript = function(settings)
 	this._entityCollectionsName = new Map();
 	this._entityCollectionsByDynProp = {};
 	this._entityCollectionsUID = 0;
-};
+}
 
 /** Return a simple object (using no classes etc) that will be serialized into saved games */
-m.SharedScript.prototype.Serialize = function()
+SharedScript.prototype.Serialize = function()
 {
 	return {
 		"players": this._players,
@@ -39,7 +42,7 @@ m.SharedScript.prototype.Serialize = function()
  * Called after the constructor when loading a saved game, with 'data' being
  * whatever Serialize() returned
  */
-m.SharedScript.prototype.Deserialize = function(data)
+SharedScript.prototype.Deserialize = function(data)
 {
 	this._players = data.players;
 	this._templatesModifications = data.templatesModifications;
@@ -49,7 +52,7 @@ m.SharedScript.prototype.Deserialize = function(data)
 	this.isDeserialized = true;
 };
 
-m.SharedScript.prototype.GetTemplate = function(name)
+SharedScript.prototype.GetTemplate = function(name)
 {
 	if (this._templates[name] === undefined)
 		this._templates[name] = Engine.GetTemplate(name) || null;
@@ -62,7 +65,7 @@ m.SharedScript.prototype.GetTemplate = function(name)
  * We need to know the initial state of the game for this, as we will use it.
  * This is called right at the end of the map generation.
  */
-m.SharedScript.prototype.init = function(state, deserialization)
+SharedScript.prototype.init = function(state, deserialization)
 {
 	if (!deserialization)
 		this._entitiesModifications = new Map();
@@ -105,14 +108,14 @@ m.SharedScript.prototype.init = function(state, deserialization)
 	this._entities = new Map();
 	if (state.entities)
 		for (const id in state.entities)
-			this._entities.set(+id, new m.Entity(this, state.entities[id]));
+			this._entities.set(+id, new Entity(this, state.entities[id]));
 	// entity collection updated on create/destroy event.
-	this.entities = new m.EntityCollection(this, this._entities);
+	this.entities = new EntityCollection(this, this._entities);
 
 	// create the terrain analyzer
-	this.terrainAnalyzer = new m.TerrainAnalysis();
+	this.terrainAnalyzer = new TerrainAnalysis();
 	this.terrainAnalyzer.init(this, state);
-	this.accessibility = new m.Accessibility();
+	this.accessibility = new Accessibility();
 	this.accessibility.init(state, this.terrainAnalyzer);
 
 	// Resource types: ignore = not used for resource maps
@@ -130,7 +133,7 @@ m.SharedScript.prototype.init = function(state, deserialization)
 	this.gameState = {};
 	for (const player of this._players)
 	{
-		this.gameState[player] = new m.GameState();
+		this.gameState[player] = new GameState();
 		this.gameState[player].init(this, state, player);
 	}
 };
@@ -139,7 +142,7 @@ m.SharedScript.prototype.init = function(state, deserialization)
  * General update of the shared script, before each AI's update
  * applies entity deltas, and each gamestate.
  */
-m.SharedScript.prototype.onUpdate = function(state)
+SharedScript.prototype.onUpdate = function(state)
 {
 	if (this.isDeserialized)
 	{
@@ -176,7 +179,7 @@ m.SharedScript.prototype.onUpdate = function(state)
 	Engine.ProfileStop();
 };
 
-m.SharedScript.prototype.ApplyEntitiesDelta = function(state)
+SharedScript.prototype.ApplyEntitiesDelta = function(state)
 {
 	Engine.ProfileStart("Shared ApplyEntitiesDelta");
 
@@ -190,7 +193,7 @@ m.SharedScript.prototype.ApplyEntitiesDelta = function(state)
 		if (!state.entities[evt.entity])
 			continue; // Sometimes there are things like foundations which get destroyed too fast
 
-		const entity = new m.Entity(this, state.entities[evt.entity]);
+		const entity = new Entity(this, state.entities[evt.entity]);
 		this._entities.set(evt.entity, entity);
 		this.entities.addEnt(entity);
 
@@ -285,7 +288,7 @@ m.SharedScript.prototype.ApplyEntitiesDelta = function(state)
 	Engine.ProfileStop();
 };
 
-m.SharedScript.prototype.ApplyTemplatesDelta = function(state)
+SharedScript.prototype.ApplyTemplatesDelta = function(state)
 {
 	Engine.ProfileStart("Shared ApplyTemplatesDelta");
 
@@ -307,7 +310,7 @@ m.SharedScript.prototype.ApplyTemplatesDelta = function(state)
 	Engine.ProfileStop();
 };
 
-m.SharedScript.prototype.registerUpdatingEntityCollection = function(entCollection)
+SharedScript.prototype.registerUpdatingEntityCollection = function(entCollection)
 {
 	entCollection.setUID(this._entityCollectionsUID);
 	this._entityCollections.set(this._entityCollectionsUID, entCollection);
@@ -320,7 +323,7 @@ m.SharedScript.prototype.registerUpdatingEntityCollection = function(entCollecti
 	this._entityCollectionsUID++;
 };
 
-m.SharedScript.prototype.removeUpdatingEntityCollection = function(entCollection)
+SharedScript.prototype.removeUpdatingEntityCollection = function(entCollection)
 {
 	const uid = entCollection.getUID();
 
@@ -332,7 +335,7 @@ m.SharedScript.prototype.removeUpdatingEntityCollection = function(entCollection
 			this._entityCollectionsByDynProp[prop].delete(uid);
 };
 
-m.SharedScript.prototype.updateEntityCollections = function(property, ent)
+SharedScript.prototype.updateEntityCollections = function(property, ent)
 {
 	if (this._entityCollectionsByDynProp[property] === undefined)
 		return;
@@ -341,7 +344,7 @@ m.SharedScript.prototype.updateEntityCollections = function(property, ent)
 		entCol.updateEnt(ent);
 };
 
-m.SharedScript.prototype.setMetadata = function(player, ent, key, value)
+SharedScript.prototype.setMetadata = function(player, ent, key, value)
 {
 	let metadata = this._entityMetadata[player][ent.id()];
 	if (!metadata)
@@ -355,12 +358,12 @@ m.SharedScript.prototype.setMetadata = function(player, ent, key, value)
 	this.updateEntityCollections('metadata.' + key, ent);
 };
 
-m.SharedScript.prototype.getMetadata = function(player, ent, key)
+SharedScript.prototype.getMetadata = function(player, ent, key)
 {
 	return this._entityMetadata[player][ent.id()]?.[key];
 };
 
-m.SharedScript.prototype.deleteMetadata = function(player, ent, key)
+SharedScript.prototype.deleteMetadata = function(player, ent, key)
 {
 	const metadata = this._entityMetadata[player][ent.id()];
 
@@ -373,7 +376,7 @@ m.SharedScript.prototype.deleteMetadata = function(player, ent, key)
 	return true;
 };
 
-m.copyPrototype = function(descendant, parent)
+export function copyPrototype(descendant, parent)
 {
 	const sConstructor = parent.toString();
 	const aMatch = sConstructor.match(/\s*function (.*)\(/);
@@ -383,10 +386,10 @@ m.copyPrototype = function(descendant, parent)
 
 	for (const p in parent.prototype)
 		descendant.prototype[p] = parent.prototype[p];
-};
+}
 
 /** creates a map of resource density */
-m.SharedScript.prototype.createResourceMaps = function()
+SharedScript.prototype.createResourceMaps = function()
 {
 	for (const resource of Resources.GetCodes())
 	{
@@ -395,8 +398,8 @@ m.SharedScript.prototype.createResourceMaps = function()
 			continue;
 		// We're creating them 8-bit. Things could go above 255 if there are really tons of resources
 		// But at that point the precision is not really important anyway. And it saves memory.
-		this.resourceMaps[resource] = new m.Map(this, "resource");
-		this.ccResourceMaps[resource] = new m.Map(this, "resource");
+		this.resourceMaps[resource] = new InfoMap(this, "resource");
+		this.ccResourceMaps[resource] = new InfoMap(this, "resource");
 	}
 	for (const ent of this._entities.values())
 		this.addEntityToResourceMap(ent);
@@ -405,7 +408,7 @@ m.SharedScript.prototype.createResourceMaps = function()
 /**
  * @param {Object} events - The events from a turn.
  */
-m.SharedScript.prototype.updateResourceMaps = function(events)
+SharedScript.prototype.updateResourceMaps = function(events)
 {
 	for (const e of events.Destroy)
 		if (e.entityObj)
@@ -419,7 +422,7 @@ m.SharedScript.prototype.updateResourceMaps = function(events)
 /**
  * @param {entity} entity - The entity to add to the resource map.
  */
-m.SharedScript.prototype.addEntityToResourceMap = function(entity)
+SharedScript.prototype.addEntityToResourceMap = function(entity)
 {
 	this.changeEntityInResourceMapHelper(entity, 1);
 };
@@ -427,7 +430,7 @@ m.SharedScript.prototype.addEntityToResourceMap = function(entity)
 /**
  * @param {entity} entity - The entity to remove from the resource map.
  */
-m.SharedScript.prototype.removeEntityFromResourceMap = function(entity)
+SharedScript.prototype.removeEntityFromResourceMap = function(entity)
 {
 	this.changeEntityInResourceMapHelper(entity, -1);
 };
@@ -435,7 +438,7 @@ m.SharedScript.prototype.removeEntityFromResourceMap = function(entity)
 /**
  * @param {entity} ent - The entity to add to the resource map.
  */
-m.SharedScript.prototype.changeEntityInResourceMapHelper = function(ent, multiplication = 1)
+SharedScript.prototype.changeEntityInResourceMapHelper = function(ent, multiplication = 1)
 {
 	if (!ent)
 		return;
@@ -454,8 +457,3 @@ m.SharedScript.prototype.changeEntityInResourceMapHelper = function(ent, multipl
 	this.resourceMaps[resource].addInfluence(x, y, this.influenceRadius[grp] / cellSize, strength / 2);
 	this.ccResourceMaps[resource].addInfluence(x, y, this.ccInfluenceRadius[grp] / cellSize, strength, "constant");
 };
-
-return m;
-
-}(API3);
-

@@ -1,10 +1,8 @@
-API3 = function(m)
-{
 /**
  * Provides a nicer syntax for defining classes,
  * with support for OO-style inheritance.
  */
-m.Class = function(data)
+export function Class(data)
 {
 	let ctor;
 	if (data._init)
@@ -19,8 +17,4 @@ m.Class = function(data)
 		ctor.prototype[key] = data[key];
 
 	return ctor;
-};
-
-return m;
-
-}(API3);
+}

@@ -1,7 +1,6 @@
-API3 = function(m)
-{
+import { SquareVectorDistance } from "simulation/ai/common-api/utils.js";
 
-m.EntityCollection = function(sharedAI, entities = new Map(), filters = [])
+export function EntityCollection(sharedAI, entities = new Map(), filters = [])
 {
 	this._ai = sharedAI;
 	this._entities = entities;
@@ -13,9 +12,9 @@ m.EntityCollection = function(sharedAI, entities = new Map(), filters = [])
 
 	Object.defineProperty(this, "length", { "get": () => this._entities.size });
 	this.frozen = false;
-};
+}
 
-m.EntityCollection.prototype.Serialize = function()
+EntityCollection.prototype.Serialize = function()
 {
 	const filters = [];
 	for (const f of this._filters)
@@ -27,7 +26,7 @@ m.EntityCollection.prototype.Serialize = function()
 	};
 };
 
-m.EntityCollection.prototype.Deserialize = function(data, sharedAI)
+EntityCollection.prototype.Deserialize = function(data, sharedAI)
 {
 	this._ai = sharedAI;
 	for (const id of data.ents)
@@ -48,37 +47,37 @@ m.EntityCollection.prototype.Deserialize = function(data, sharedAI)
  * this makes it easy to create entity collection that will auto-remove dead units
  * but never add new ones.
  */
-m.EntityCollection.prototype.freeze = function()
+EntityCollection.prototype.freeze = function()
 {
 	this.frozen = true;
 };
 
-m.EntityCollection.prototype.defreeze = function()
+EntityCollection.prototype.defreeze = function()
 {
 	this.frozen = false;
 };
 
-m.EntityCollection.prototype.toIdArray = function()
+EntityCollection.prototype.toIdArray = function()
 {
 	return Array.from(this._entities.keys());
 };
 
-m.EntityCollection.prototype.toEntityArray = function()
+EntityCollection.prototype.toEntityArray = function()
 {
 	return Array.from(this._entities.values());
 };
 
-m.EntityCollection.prototype.values = function()
+EntityCollection.prototype.values = function()
 {
 	return this._entities.values();
 };
 
-m.EntityCollection.prototype.toString = function()
+EntityCollection.prototype.toString = function()
 {
 	return "[EntityCollection " + this.toEntityArray().join(" ") + "]";
 };
 
-m.EntityCollection.prototype.filter = function(filter, thisp)
+EntityCollection.prototype.filter = function(filter, thisp)
 {
 	if (typeof filter === "function")
 		filter = { "func": filter, "dynamicProperties": [] };
@@ -88,19 +87,19 @@ m.EntityCollection.prototype.filter = function(filter, thisp)
 		if (filter.func.call(thisp, ent, id, this))
 			ret.set(id, ent);
 
-	return new m.EntityCollection(this._ai, ret, this._filters.concat([filter]));
+	return new EntityCollection(this._ai, ret, this._filters.concat([filter]));
 };
 
 /**
  * Returns the (at most) n entities nearest to targetPos.
  */
-m.EntityCollection.prototype.filterNearest = function(targetPos, n)
+EntityCollection.prototype.filterNearest = function(targetPos, n)
 {
 	// Compute the distance of each entity
 	const data = []; // [ [id, ent, distance], ... ]
 	for (const [id, ent] of this._entities)
 		if (ent.position())
-			data.push([id, ent, m.SquareVectorDistance(targetPos, ent.position())]);
+			data.push([id, ent, SquareVectorDistance(targetPos, ent.position())]);
 
 	// Sort by increasing distance
 	data.sort((a, b) => a[2] - b[2]);
@@ -115,10 +114,10 @@ m.EntityCollection.prototype.filterNearest = function(targetPos, n)
 	for (let i = 0; i < n; ++i)
 		ret.set(data[i][0], data[i][1]);
 
-	return new m.EntityCollection(this._ai, ret);
+	return new EntityCollection(this._ai, ret);
 };
 
-m.EntityCollection.prototype.filter_raw = function(callback, thisp)
+EntityCollection.prototype.filter_raw = function(callback, thisp)
 {
 	const ret = new Map();
 	for (const [id, ent] of this._entities)
@@ -127,22 +126,22 @@ m.EntityCollection.prototype.filter_raw = function(callback, thisp)
 		if (callback.call(thisp, val, id, this))
 			ret.set(id, ent);
 	}
-	return new m.EntityCollection(this._ai, ret);
+	return new EntityCollection(this._ai, ret);
 };
 
-m.EntityCollection.prototype.forEach = function(callback)
+EntityCollection.prototype.forEach = function(callback)
 {
 	for (const ent of this._entities.values())
 		callback(ent);
 	return this;
 };
 
-m.EntityCollection.prototype.hasEntities = function()
+EntityCollection.prototype.hasEntities = function()
 {
 	return this._entities.size !== 0;
 };
 
-m.EntityCollection.prototype.move = function(x, z, queued = false, pushFront = false)
+EntityCollection.prototype.move = function(x, z, queued = false, pushFront = false)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "walk",
@@ -155,7 +154,7 @@ m.EntityCollection.prototype.move = function(x, z, queued = false, pushFront = f
 	return this;
 };
 
-m.EntityCollection.prototype.moveToRange = function(x, z, min, max, queued = false, pushFront = false)
+EntityCollection.prototype.moveToRange = function(x, z, min, max, queued = false, pushFront = false)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "walk-to-range",
@@ -170,7 +169,7 @@ m.EntityCollection.prototype.moveToRange = function(x, z, min, max, queued = fal
 	return this;
 };
 
-m.EntityCollection.prototype.attackMove = function(x, z, targetClasses, allowCapture = true, queued = false, pushFront = false)
+EntityCollection.prototype.attackMove = function(x, z, targetClasses, allowCapture = true, queued = false, pushFront = false)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "attack-walk",
@@ -185,7 +184,7 @@ m.EntityCollection.prototype.attackMove = function(x, z, targetClasses, allowCap
 	return this;
 };
 
-m.EntityCollection.prototype.moveIndiv = function(x, z, queued = false, pushFront = false)
+EntityCollection.prototype.moveIndiv = function(x, z, queued = false, pushFront = false)
 {
 	for (const id of this._entities.keys())
 		Engine.PostCommand(PlayerID, {
@@ -199,7 +198,7 @@ m.EntityCollection.prototype.moveIndiv = function(x, z, queued = false, pushFron
 	return this;
 };
 
-m.EntityCollection.prototype.garrison = function(target, queued = false, pushFront = false)
+EntityCollection.prototype.garrison = function(target, queued = false, pushFront = false)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "garrison",
@@ -211,7 +210,7 @@ m.EntityCollection.prototype.garrison = function(target, queued = false, pushFro
 	return this;
 };
 
-m.EntityCollection.prototype.occupyTurret = function(target, queued = false, pushFront = false)
+EntityCollection.prototype.occupyTurret = function(target, queued = false, pushFront = false)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "occupy-turret",
@@ -223,13 +222,13 @@ m.EntityCollection.prototype.occupyTurret = function(target, queued = false, pus
 	return this;
 };
 
-m.EntityCollection.prototype.destroy = function()
+EntityCollection.prototype.destroy = function()
 {
 	Engine.PostCommand(PlayerID, { "type": "delete-entities", "entities": this.toIdArray() });
 	return this;
 };
 
-m.EntityCollection.prototype.attack = function(unitId, queued = false, pushFront = false)
+EntityCollection.prototype.attack = function(unitId, queued = false, pushFront = false)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "attack",
@@ -242,7 +241,7 @@ m.EntityCollection.prototype.attack = function(unitId, queued = false, pushFront
 };
 
 /** violent, aggressive, defensive, passive, standground */
-m.EntityCollection.prototype.setStance = function(stance)
+EntityCollection.prototype.setStance = function(stance)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "stance",
@@ -253,7 +252,7 @@ m.EntityCollection.prototype.setStance = function(stance)
 };
 
 /** Returns the average position of all units */
-m.EntityCollection.prototype.getCentrePosition = function()
+EntityCollection.prototype.getCentrePosition = function()
 {
 	const sumPos = [0, 0];
 	let count = 0;
@@ -274,7 +273,7 @@ m.EntityCollection.prototype.getCentrePosition = function()
  * This might be faster for huge collections, but there's
  * always a risk that it'll be unprecise.
  */
-m.EntityCollection.prototype.getApproximatePosition = function(sample)
+EntityCollection.prototype.getApproximatePosition = function(sample)
 {
 	const sumPos = [0, 0];
 	let i = 0;
@@ -292,13 +291,13 @@ m.EntityCollection.prototype.getApproximatePosition = function(sample)
 	return i ? [sumPos[0]/i, sumPos[1]/i] : undefined;
 };
 
-m.EntityCollection.prototype.hasEntId = function(id)
+EntityCollection.prototype.hasEntId = function(id)
 {
 	return this._entities.has(id);
 };
 
 /** Removes an entity from the collection, returns true if the entity was a member, false otherwise */
-m.EntityCollection.prototype.removeEnt = function(ent)
+EntityCollection.prototype.removeEnt = function(ent)
 {
 	if (!this._entities.has(ent.id()))
 		return false;
@@ -307,7 +306,7 @@ m.EntityCollection.prototype.removeEnt = function(ent)
 };
 
 /** Adds an entity to the collection, returns true if the entity was not member, false otherwise */
-m.EntityCollection.prototype.addEnt = function(ent)
+EntityCollection.prototype.addEnt = function(ent)
 {
 	if (this._entities.has(ent.id()))
 		return false;
@@ -322,7 +321,7 @@ m.EntityCollection.prototype.addEnt = function(ent)
  * If an entitycollection is frozen, it will never automatically add a unit.
  * But can remove one.
  */
-m.EntityCollection.prototype.updateEnt = function(ent, force)
+EntityCollection.prototype.updateEnt = function(ent, force)
 {
 	let passesFilters = true;
 	for (const filter of this._filters)
@@ -338,31 +337,27 @@ m.EntityCollection.prototype.updateEnt = function(ent, force)
 	return this.removeEnt(ent);
 };
 
-m.EntityCollection.prototype.registerUpdates = function()
+EntityCollection.prototype.registerUpdates = function()
 {
 	this._ai.registerUpdatingEntityCollection(this);
 };
 
-m.EntityCollection.prototype.unregister = function()
+EntityCollection.prototype.unregister = function()
 {
 	this._ai.removeUpdatingEntityCollection(this);
 };
 
-m.EntityCollection.prototype.dynamicProperties = function()
+EntityCollection.prototype.dynamicProperties = function()
 {
 	return this.dynamicProp;
 };
 
-m.EntityCollection.prototype.setUID = function(id)
+EntityCollection.prototype.setUID = function(id)
 {
 	this._UID = id;
 };
 
-m.EntityCollection.prototype.getUID = function()
+EntityCollection.prototype.getUID = function()
 {
 	return this._UID;
 };
-
-return m;
-
-}(API3);
