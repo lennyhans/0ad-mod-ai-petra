@@ -1,6 +1,7 @@
 import * as filters from "simulation/ai/common-api/filters.js";
 import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
-import { Config, DIFFICULTY_EASY, DIFFICULTY_MEDIUM } from "simulation/ai/petra/config.js";
+import { Config } from "simulation/ai/petra/config.js";
+import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
 import { getBestBase, getBuiltEntity, getLandAccess, isFastMoving, isNotWorthBuilding } from
 	"simulation/ai/petra/entityExtend.js";
 import { createObstructionMap } from "simulation/ai/petra/mapModule.js";
@@ -36,7 +37,7 @@ export function BaseManager(gameState, basesManager)
 
 	this.constructing = false;
 	// Defenders to train in this cc when its construction is finished
-	this.neededDefenders = this.Config.difficulty > DIFFICULTY_EASY ? 3 + 2*(this.Config.difficulty - 3) : 0;
+	this.neededDefenders = this.Config.difficulty > difficulty.EASY ? 3 + 2*(this.Config.difficulty - 3) : 0;
 
 	// vector for iterating, to check one use the HQ map.
 	this.territoryIndices = [];
@@ -97,7 +98,7 @@ BaseManager.prototype.reset = function(gameState, state)
 		this.constructing = true;
 	else
 		this.constructing = false;
-	if (state !== BaseManager.STATE_CAPTURED || this.Config.difficulty < DIFFICULTY_MEDIUM)
+	if (state !== BaseManager.STATE_CAPTURED || this.Config.difficulty < difficulty.MEDIUM)
 		this.neededDefenders = 0;
 	else
 		this.neededDefenders = 3 + 2 * (this.Config.difficulty - 3);

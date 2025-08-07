@@ -1,7 +1,8 @@
 import * as filters from "simulation/ai/common-api/filters.js";
 import { ResourcesManager } from "simulation/ai/common-api/resources.js";
 import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
-import { Config, DIFFICULTY_SANDBOX } from "simulation/ai/petra/config.js";
+import { Config } from "simulation/ai/petra/config.js";
+import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
 import { gatherTreasure, getLandAccess, isFastMoving } from "simulation/ai/petra/entityExtend.js";
 import { Headquather } from "simulation/ai/petra/headquarters.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
@@ -35,7 +36,7 @@ Headquather.prototype.gameAnalysis = function(gameState)
 
 
 	// Sandbox difficulty should not try to expand
-	this.canExpand = this.Config.difficulty != DIFFICULTY_SANDBOX;
+	this.canExpand = this.Config.difficulty != difficulty.SANDBOX;
 	// If no base yet, check if we can construct one. If not, dispatch our units to possible tasks/attacks
 	this.canBuildUnits = true;
 	if (!gameState.getOwnStructures().filter(filters.byClass("CivCentre")).hasEntities())

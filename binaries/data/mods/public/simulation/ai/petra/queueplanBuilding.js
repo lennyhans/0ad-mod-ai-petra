@@ -3,8 +3,8 @@ import { InfoMap } from "simulation/ai/common-api/map-module.js";
 import { ResourcesManager } from "simulation/ai/common-api/resources.js";
 import { SquareVectorDistance, VectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { getBuiltEntity, getLandAccess, getSeaAccess } from "simulation/ai/petra/entityExtend.js";
-import { border_Mask, createObstructionMap, fullBorder_Mask, outside_Mask } from
-	"simulation/ai/petra/mapModule.js";
+import * as mapMask from "simulation/ai/petra/mapMask.js";
+import { createObstructionMap } from "simulation/ai/petra/mapModule.js";
 import { QueuePlan } from "simulation/ai/petra/queueplan.js";
 
 /**
@@ -260,7 +260,7 @@ ConstructionPlan.prototype.findGoodPosition = function(gameState)
 			for (let j = 0; j < placement.map.length; ++j)
 			{
 				let value = placement.map[j] - gameState.sharedScript.resourceMaps.wood.map[j]/3;
-				if (HQ.borderMap.map[j] & fullBorder_Mask)
+				if (HQ.borderMap.map[j] & mapMask.fullBorder)
 					value /= 2;	// we need space around farmstead, so disfavor map border
 				placement.set(j, value);
 			}
@@ -282,9 +282,9 @@ ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				placement.map[j] = 0;
 			else if (placement.map[j] > 0)
 			{
-				if (favorBorder && HQ.borderMap.map[j] & border_Mask)
+				if (favorBorder && HQ.borderMap.map[j] & mapMask.border)
 					placement.set(j, placement.map[j] + 50);
-				else if (disfavorBorder && !(HQ.borderMap.map[j] & fullBorder_Mask))
+				else if (disfavorBorder && !(HQ.borderMap.map[j] & mapMask.fullBorder))
 					placement.set(j, placement.map[j] + 10);
 
 				const x = (j % placement.width + 0.5) * cellSize;
@@ -302,9 +302,9 @@ ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				placement.map[j] = 0;
 			else if (placement.map[j] > 0)
 			{
-				if (favorBorder && HQ.borderMap.map[j] & border_Mask)
+				if (favorBorder && HQ.borderMap.map[j] & mapMask.border)
 					placement.set(j, placement.map[j] + 50);
-				else if (disfavorBorder && !(HQ.borderMap.map[j] & fullBorder_Mask))
+				else if (disfavorBorder && !(HQ.borderMap.map[j] & mapMask.fullBorder))
 					placement.set(j, placement.map[j] + 10);
 
 				const x = (j % placement.width + 0.5) * cellSize;
@@ -496,7 +496,7 @@ ConstructionPlan.prototype.findDockPosition = function(gameState)
 		}
 
 		// Add a penalty if on the map border as ship movement will be difficult
-		if (gameState.ai.HQ.borderMap.map[j] & fullBorder_Mask)
+		if (gameState.ai.HQ.borderMap.map[j] & mapMask.fullBorder)
 			score += 20;
 
 		// Do a pre-selection, supposing we will have the best possible water
@@ -825,7 +825,7 @@ ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
 			const jz = iz + Math.round(i*step*a[1]);
 			if (jz < 0 || jz >= width)
 				continue;
-			if (borderMap.map[jx+width*jz] & outside_Mask)
+			if (borderMap.map[jx+width*jz] & mapMask.outside)
 				continue;
 			territoryOwner = territoryMap.getOwnerIndex(jx+width*jz);
 			if (alliedVictory && gameState.isPlayerAlly(territoryOwner) || territoryOwner == PlayerID)

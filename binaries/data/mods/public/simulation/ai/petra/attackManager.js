@@ -2,7 +2,8 @@ import * as filters from "simulation/ai/common-api/filters.js";
 import { warn as aiWarn, SquareVectorDistance, VectorDistance } from "simulation/ai/common-api/utils.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import * as chat from "simulation/ai/petra/chatHelper.js";
-import { Config, DIFFICULTY_VERY_EASY } from "simulation/ai/petra/config.js";
+import { Config } from "simulation/ai/petra/config.js";
+import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
 import { allowCapture, getLandAccess } from "simulation/ai/petra/entityExtend.js";
 import { Worker } from "simulation/ai/petra/worker.js";
 
@@ -435,7 +436,7 @@ AttackManager.prototype.update = function(gameState, queues, events)
 	}
 
 	// Check if we have some unused ranged siege unit which could do something useful while waiting
-	if (this.Config.difficulty > DIFFICULTY_VERY_EASY && gameState.ai.playedTurn % 5 == 0)
+	if (this.Config.difficulty > difficulty.VERY_EASY && gameState.ai.playedTurn % 5 == 0)
 		this.assignBombers(gameState);
 };
 

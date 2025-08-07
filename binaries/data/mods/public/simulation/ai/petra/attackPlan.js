@@ -1,7 +1,8 @@
 import { EntityCollection } from "simulation/ai/common-api/entitycollection.js";
 import * as filters from "simulation/ai/common-api/filters.js";
 import { SquareVectorDistance, VectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
-import { Config, DIFFICULTY_EASY, DIFFICULTY_MEDIUM } from "simulation/ai/petra/config.js";
+import { Config } from "simulation/ai/petra/config.js";
+import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
 import { allowCapture, dumpEntity, getHolder, getLandAccess, isSiegeUnit, returnResources } from
 	"simulation/ai/petra/entityExtend.js";
 import { TrainingPlan } from "simulation/ai/petra/queueplanTraining.js";
@@ -179,18 +180,18 @@ export function AttackPlan(gameState, config, uniqueID, type = AttackPlan.TYPE_D
 	// Put some randomness on the attack size
 	let variation = randFloat(0.8, 1.2);
 	// and lower priority and smaller sizes for easier difficulty levels
-	if (this.Config.difficulty < DIFFICULTY_EASY)
+	if (this.Config.difficulty < difficulty.EASY)
 	{
 		priority *= 0.4;
 		variation *= 0.2;
 	}
-	else if (this.Config.difficulty < DIFFICULTY_MEDIUM)
+	else if (this.Config.difficulty < difficulty.MEDIUM)
 	{
 		priority *= 0.8;
 		variation *= 0.6;
 	}
 
-	if (this.Config.difficulty < DIFFICULTY_EASY)
+	if (this.Config.difficulty < difficulty.EASY)
 	{
 		for (const cat in this.unitStat)
 		{
@@ -432,7 +433,7 @@ AttackPlan.prototype.addSiegeUnits = function(gameState)
 
 	this.siegeState = AttackPlan.SIEGE_ADDED;
 	let targetSize;
-	if (this.Config.difficulty < DIFFICULTY_MEDIUM)
+	if (this.Config.difficulty < difficulty.MEDIUM)
 		targetSize = this.type === AttackPlan.TYPE_HUGE_ATTACK ? Math.max(this.Config.difficulty, 1) : Math.max(this.Config.difficulty - 1, 0);
 	else
 		targetSize = this.type === AttackPlan.TYPE_HUGE_ATTACK ? this.Config.difficulty + 1 : this.Config.difficulty - 1;
@@ -761,7 +762,7 @@ AttackPlan.prototype.assignUnits = function(gameState)
 	// Finally add also some workers for the higher difficulties,
 	// If Rush, assign all kind of workers, keeping only a minimum number of defenders
 	// Otherwise, assign only some idle workers if too much of them
-	if (this.Config.difficulty <= DIFFICULTY_EASY)
+	if (this.Config.difficulty <= difficulty.EASY)
 		return added;
 
 	let num = 0;

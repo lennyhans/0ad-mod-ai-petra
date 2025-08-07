@@ -5,15 +5,17 @@ import { AttackManager } from "simulation/ai/petra/attackManager.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import { BasesManager } from "simulation/ai/petra/basesManager.js";
 import { BuildManager } from "simulation/ai/petra/buildManager.js";
-import { Config, DIFFICULTY_SANDBOX, DIFFICULTY_EASY } from "simulation/ai/petra/config.js";
+import { Config } from "simulation/ai/petra/config.js";
 import { DefenseManager } from "simulation/ai/petra/defenseManager.js";
+import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
 import { DiplomacyManager } from "simulation/ai/petra/diplomacyManager.js";
 import { EmergencyManager } from "simulation/ai/petra/emergencyManager.js";
 import { allowCapture, getAttackBonus, getLandAccess, getMaxStrength, isLineInsideEnemyTerritory,
 	setSeaAccess } from "simulation/ai/petra/entityExtend.js";
 import { GarrisonManager } from "simulation/ai/petra/garrisonManager.js";
-import { createBorderMap, createObstructionMap, createTerritoryMap, fullBorder_Mask, fullFrontier_Mask,
-	largeFrontier_Mask, narrowFrontier_Mask, outside_Mask } from "simulation/ai/petra/mapModule.js";
+import * as mapMask from "simulation/ai/petra/mapMask.js";
+import { createBorderMap, createObstructionMap, createTerritoryMap } from
+	"simulation/ai/petra/mapModule.js";
 import { NavalManager } from "simulation/ai/petra/navalManager.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
 import { TrainingPlan } from "simulation/ai/petra/queueplanTraining.js";
@@ -261,7 +263,7 @@ Headquather.prototype.checkEvents = function(gameState, events)
 	}
 
 	// Then deals with decaying structures: destroy them if being lost to enemy (except in easier difficulties)
-	if (this.Config.difficulty < DIFFICULTY_EASY)
+	if (this.Config.difficulty < difficulty.EASY)
 		return;
 	for (const entId of this.decayingStructures)
 	{
@@ -811,7 +813,7 @@ Headquather.prototype.findEconomicCCLocation = function(gameState, template, res
 				continue;
 		}
 
-		if (this.borderMap.map[j] & fullBorder_Mask)	// disfavor the borders of the map
+		if (this.borderMap.map[j] & mapMask.fullBorder)	// disfavor the borders of the map
 			norm *= 0.5;
 
 		let val = 2 * gameState.sharedScript.ccResourceMaps[resource].map[j];
@@ -966,7 +968,7 @@ Headquather.prototype.findStrategicCCLocation = function(gameState, template)
 			currentVal += delta*delta;
 		}
 		// disfavor border of the map
-		if (this.borderMap.map[j] & fullBorder_Mask)
+		if (this.borderMap.map[j] & mapMask.fullBorder)
 			currentVal += 10000;
 
 		if (bestVal !== undefined && currentVal > bestVal)
@@ -1047,7 +1049,7 @@ Headquather.prototype.findMarketLocation = function(gameState, template)
 	for (let j = 0; j < this.territoryMap.length; ++j)
 	{
 		// do not try on the narrow border of our territory
-		if (this.borderMap.map[j] & narrowFrontier_Mask)
+		if (this.borderMap.map[j] & mapMask.narrowFrontier)
 			continue;
 		if (this.baseAtIndex(j) == 0)   // only in our territory
 			continue;
@@ -1193,9 +1195,9 @@ Headquather.prototype.findDefensiveLocation = function(gameState, template)
 		if (!wonderMode)
 		{
 			// do not try if well inside or outside territory
-			if (!(this.borderMap.map[j] & fullFrontier_Mask))
+			if (!(this.borderMap.map[j] & mapMask.fullFrontier))
 				continue;
-			if (this.borderMap.map[j] & largeFrontier_Mask && isTower)
+			if (this.borderMap.map[j] & mapMask.largeFrontier && isTower)
 				continue;
 		}
 		if (this.baseAtIndex(j) == 0)   // inaccessible cell
@@ -1985,10 +1987,10 @@ Headquather.prototype.updateTerritories = function(gameState)
 
 	for (let j = 0; j < this.territoryMap.length; ++j)
 	{
-		if (this.borderMap.map[j] & outside_Mask)
+		if (this.borderMap.map[j] & mapMask.outside)
 			continue;
-		if (this.borderMap.map[j] & fullFrontier_Mask)
-			this.borderMap.map[j] &= ~fullFrontier_Mask;	// reset the frontier
+		if (this.borderMap.map[j] & mapMask.fullFrontier)
+			this.borderMap.map[j] &= ~mapMask.fullFrontier;	// reset the frontier
 
 		if (this.territoryMap.getOwnerIndex(j) != PlayerID)
 			this.basesManager.removeBaseFromTerritoryIndex(j);
@@ -2006,12 +2008,12 @@ Headquather.prototype.updateTerritories = function(gameState)
 				let jz = iz + Math.round(insideSmall*a[1]);
 				if (jz < 0 || jz >= width)
 					continue;
-				if (this.borderMap.map[jx+width*jz] & outside_Mask)
+				if (this.borderMap.map[jx+width*jz] & mapMask.outside)
 					continue;
 				let territoryOwner = this.territoryMap.getOwnerIndex(jx+width*jz);
 				if (territoryOwner != PlayerID && !(alliedVictory && gameState.isPlayerAlly(territoryOwner)))
 				{
-					this.borderMap.map[j] |= narrowFrontier_Mask;
+					this.borderMap.map[j] |= mapMask.narrowFrontier;
 					break;
 				}
 				jx = ix + Math.round(insideLarge*a[0]);
@@ -2020,14 +2022,14 @@ Headquather.prototype.updateTerritories = function(gameState)
 				jz = iz + Math.round(insideLarge*a[1]);
 				if (jz < 0 || jz >= width)
 					continue;
-				if (this.borderMap.map[jx+width*jz] & outside_Mask)
+				if (this.borderMap.map[jx+width*jz] & mapMask.outside)
 					continue;
 				territoryOwner = this.territoryMap.getOwnerIndex(jx+width*jz);
 				if (territoryOwner != PlayerID && !(alliedVictory && gameState.isPlayerAlly(territoryOwner)))
 					onFrontier = true;
 			}
-			if (onFrontier && !(this.borderMap.map[j] & narrowFrontier_Mask))
-				this.borderMap.map[j] |= largeFrontier_Mask;
+			if (onFrontier && !(this.borderMap.map[j] & mapMask.narrowFrontier))
+				this.borderMap.map[j] |= mapMask.largeFrontier;
 
 			if (this.basesManager.addTerritoryIndexToBase(gameState, j, passabilityMap))
 				expansion++;
@@ -2322,7 +2324,7 @@ Headquather.prototype.update = function(gameState, queues, events)
 	if (gameState.ai.playedTurn % 3 == 0)
 	{
 		this.constructTrainingBuildings(gameState, queues);
-		if (this.Config.difficulty > DIFFICULTY_SANDBOX)
+		if (this.Config.difficulty > difficulty.SANDBOX)
 			this.buildDefenses(gameState, queues);
 	}
 
@@ -2330,7 +2332,7 @@ Headquather.prototype.update = function(gameState, queues, events)
 
 	this.navalManager.update(gameState, queues, events);
 
-	if (this.Config.difficulty > DIFFICULTY_SANDBOX && (this.hasActiveBase() || !this.canBuildUnits))
+	if (this.Config.difficulty > difficulty.SANDBOX && (this.hasActiveBase() || !this.canBuildUnits))
 		this.attackManager.update(gameState, queues, events);
 
 	this.diplomacyManager.update(gameState, events);

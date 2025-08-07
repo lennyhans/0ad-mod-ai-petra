@@ -1,7 +1,8 @@
 import * as filters from "simulation/ai/common-api/filters.js";
 import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
 import { newTradeRoute as chatNewTradeRoute } from "simulation/ai/petra/chatHelper.js";
-import { Config, DIFFICULTY_VERY_EASY } from "simulation/ai/petra/config.js";
+import { Config } from "simulation/ai/petra/config.js";
+import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
 import { gatherTreasure, getBestBase, getLandAccess, getSeaAccess, isLineInsideEnemyTerritory } from
 	"simulation/ai/petra/entityExtend.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
@@ -680,7 +681,7 @@ TradeManager.prototype.update = function(gameState, events, queues)
 	if (gameState.ai.HQ.canBarter && Resources.GetBarterableCodes().length)
 		this.performBarter(gameState);
 
-	if (this.Config.difficulty <= DIFFICULTY_VERY_EASY)
+	if (this.Config.difficulty <= difficulty.VERY_EASY)
 		return;
 
 	if (this.checkEvents(gameState, events))  // true if one market was built or destroyed

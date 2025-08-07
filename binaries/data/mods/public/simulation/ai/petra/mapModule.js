@@ -1,6 +1,7 @@
 import * as filters from "simulation/ai/common-api/filters.js";
 import { InfoMap } from "simulation/ai/common-api/map-module.js";
 import { getMapIndices } from "simulation/ai/common-api/utils.js";
+import * as mapMask from "simulation/ai/petra/mapMask.js";
 
 /** map functions */
 
@@ -138,15 +139,6 @@ export function createTerritoryMap(gameState)
  *     - large border (inside our territory, exclusive of narrow)   => bit 3
  */
 
-/* eslint-disable prefer-const -- Mods should be able to change them */
-export let outside_Mask = 1;
-export let border_Mask = 2;
-export let fullBorder_Mask = outside_Mask | border_Mask;
-export let narrowFrontier_Mask = 4;
-export let largeFrontier_Mask = 8;
-export let fullFrontier_Mask = narrowFrontier_Mask | largeFrontier_Mask;
-/* eslint-enable prefer-const */
-
 export function createBorderMap(gameState)
 {
 	const map = new InfoMap(gameState.sharedScript, "territory");
@@ -165,13 +157,13 @@ export function createBorderMap(gameState)
 			const radius = dx*dx + dy*dy;
 			if (radius < radcut)
 				continue;
-			map.map[j] = outside_Mask;
+			map.map[j] = mapMask.outside;
 			const ind = getMapIndices(j, map, passabilityMap);
 			for (const k of ind)
 			{
 				if (passabilityMap.data[k] & obstructionMask)
 					continue;
-				map.map[j] = border_Mask;
+				map.map[j] = mapMask.border;
 				break;
 			}
 		}
@@ -185,13 +177,13 @@ export function createBorderMap(gameState)
 			const iy = Math.floor(j/width);
 			if (ix < border || ix >= borderCut || iy < border || iy >= borderCut)
 			{
-				map.map[j] = outside_Mask;
+				map.map[j] = mapMask.outside;
 				const ind = getMapIndices(j, map, passabilityMap);
 				for (const k of ind)
 				{
 					if (passabilityMap.data[k] & obstructionMask)
 						continue;
-					map.map[j] = border_Mask;
+					map.map[j] = mapMask.border;
 					break;
 				}
 			}
