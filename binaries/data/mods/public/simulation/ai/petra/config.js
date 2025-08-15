@@ -3,7 +3,7 @@ import * as difficultyLevel from "simulation/ai/petra/difficultyLevel.js";
 
 export function Config(difficulty = difficultyLevel.MEDIUM, behavior)
 {
-	this.difficulty = difficultyLevel;
+	this.difficulty = difficulty;
 
 	// for instance "balanced", "aggressive" or "defensive"
 	this.behavior = behavior || "random";
@@ -244,14 +244,14 @@ Config.prototype.setConfig = function(gameState)
 	this.Military.fortressLapseTime = Math.round(this.Military.fortressLapseTime * (1.1 - 0.2 * this.personality.defensive));
 	this.priorities.defenseBuilding = Math.round(this.priorities.defenseBuilding * (0.9 + 0.2 * this.personality.defensive));
 
-	if (this.difficulty < difficulty.EASY)
+	if (this.difficulty < difficultyLevel.EASY)
 	{
 		this.popScaling = 0.5;
 		this.Economy.supportRatio = 0.5;
 		this.Economy.provisionFields = 1;
 		this.Military.numSentryTowers = this.personality.defensive > this.personalityCut.strong ? 1 : 0;
 	}
-	else if (this.difficulty < difficulty.MEDIUM)
+	else if (this.difficulty < difficultyLevel.MEDIUM)
 	{
 		this.popScaling = 0.7;
 		this.Economy.supportRatio = 0.4;
@@ -260,7 +260,7 @@ Config.prototype.setConfig = function(gameState)
 	}
 	else
 	{
-		if (this.difficulty == difficulty.MEDIUM)
+		if (this.difficulty == difficultyLevel.MEDIUM)
 			this.Military.numSentryTowers = 1;
 		else
 			this.Military.numSentryTowers = 2;
@@ -278,9 +278,9 @@ Config.prototype.setConfig = function(gameState)
 	}
 
 	const maxPop = gameState.getPopulationMax();
-	if (this.difficulty < difficulty.EASY)
+	if (this.difficulty < difficultyLevel.EASY)
 		this.Economy.targetNumWorkers = Math.max(1, Math.min(40, maxPop));
-	else if (this.difficulty < difficulty.MEDIUM)
+	else if (this.difficulty < difficultyLevel.MEDIUM)
 		this.Economy.targetNumWorkers = Math.max(1, Math.min(60, Math.floor(maxPop/2)));
 	else
 		this.Economy.targetNumWorkers = Math.max(1, Math.min(120, Math.floor(maxPop/3)));
@@ -306,7 +306,7 @@ Config.prototype.setConfig = function(gameState)
 	this.Economy.targetNumWorkers = Math.max(this.Economy.targetNumWorkers, this.Economy.popPhase2);
 	this.Economy.workPhase3 = Math.min(this.Economy.workPhase3, this.Economy.targetNumWorkers);
 	this.Economy.workPhase4 = Math.min(this.Economy.workPhase4, this.Economy.targetNumWorkers);
-	if (this.difficulty < difficulty.EASY)
+	if (this.difficulty < difficultyLevel.EASY)
 		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
 	this.emergencyValues = {
