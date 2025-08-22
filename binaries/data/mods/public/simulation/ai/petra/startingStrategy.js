@@ -4,7 +4,7 @@ import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/u
 import { Config } from "simulation/ai/petra/config.js";
 import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
 import { gatherTreasure, getLandAccess, isFastMoving } from "simulation/ai/petra/entityExtend.js";
-import { Headquather } from "simulation/ai/petra/headquarters.js";
+import { Headquarters } from "simulation/ai/petra/headquarters.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
 
 /**
@@ -12,7 +12,7 @@ import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
  * depending on the initial conditions
  */
 
-Headquather.prototype.gameAnalysis = function(gameState)
+Headquarters.prototype.gameAnalysis = function(gameState)
 {
 	// Analysis of the terrain and the different access regions
 	if (!this.regionAnalysis(gameState))
@@ -61,7 +61,7 @@ Headquather.prototype.gameAnalysis = function(gameState)
 /**
  * Assign the starting entities to the different bases
  */
-Headquather.prototype.assignStartingEntities = function(gameState)
+Headquarters.prototype.assignStartingEntities = function(gameState)
 {
 	for (const ent of gameState.getOwnEntities().values())
 	{
@@ -108,7 +108,7 @@ Headquather.prototype.assignStartingEntities = function(gameState)
  * determine the main land Index (or water index if none)
  * as well as the list of allowed (land andf water) regions
  */
-Headquather.prototype.regionAnalysis = function(gameState)
+Headquarters.prototype.regionAnalysis = function(gameState)
 {
 	const accessibility = gameState.ai.accessibility;
 	let landIndex;
@@ -205,7 +205,7 @@ Headquather.prototype.regionAnalysis = function(gameState)
  * load units and buildings from the config files
  * TODO: change that to something dynamic
  */
-Headquather.prototype.structureAnalysis = function(gameState)
+Headquarters.prototype.structureAnalysis = function(gameState)
 {
 	const civref = gameState.playerData.civ;
 	const civ = civref in this.Config.buildings ? civref : 'default';
@@ -219,7 +219,7 @@ Headquather.prototype.structureAnalysis = function(gameState)
  * build our first base
  * if not enough resource, try first to do a dock
  */
-Headquather.prototype.buildFirstBase = function(gameState)
+Headquarters.prototype.buildFirstBase = function(gameState)
 {
 	if (gameState.ai.queues.civilCentre.hasQueuedUnits())
 		return;
@@ -336,7 +336,7 @@ Headquather.prototype.buildFirstBase = function(gameState)
  *   - if one of our allies has a cc, affect a small fraction of our army for his defense, the rest will attack
  *   - otherwise all units will attack
  */
-Headquather.prototype.dispatchUnits = function(gameState)
+Headquarters.prototype.dispatchUnits = function(gameState)
 {
 	const allycc = gameState.getExclusiveAllyEntities().filter(filters.byClass("CivCentre"))
 		.toEntityArray();
@@ -416,7 +416,7 @@ Headquather.prototype.dispatchUnits = function(gameState)
  *   - if on a small island, favor fishing
  *   - count the available wood resource, and allow rushes only if enough (we should otherwise favor expansion)
  */
-Headquather.prototype.configFirstBase = function(gameState)
+Headquarters.prototype.configFirstBase = function(gameState)
 {
 	if (!this.hasPotentialBase())
 		return;

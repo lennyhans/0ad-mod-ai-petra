@@ -1,7 +1,7 @@
 import { BaseAI } from "simulation/ai/common-api/baseAI.js";
 import { Entity } from "simulation/ai/common-api/entity.js";
 import { Config } from "simulation/ai/petra/config.js";
-import { Headquather } from "simulation/ai/petra/headquarters.js";
+import { Headquarters } from "simulation/ai/petra/headquarters.js";
 import { Queue } from "simulation/ai/petra/queue.js";
 import { QueueManager } from "simulation/ai/petra/queueManager.js";
 
@@ -80,7 +80,7 @@ PetraBot.prototype.CustomInit = function(gameState)
 
 		this.queueManager = new QueueManager(this.Config, this.queues);
 
-		this.HQ = new Headquather(this.Config);
+		this.HQ = new Headquarters(this.Config);
 
 		this.HQ.init(gameState, this.queues);
 
