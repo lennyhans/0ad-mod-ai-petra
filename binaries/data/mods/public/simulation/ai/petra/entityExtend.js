@@ -1,4 +1,4 @@
-import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { SquareVectorDistance, aiWarn } from "simulation/ai/common-api/utils.js";
 
 /** returns true if this unit should be considered as a siege unit */
 export function isSiegeUnit(ent)

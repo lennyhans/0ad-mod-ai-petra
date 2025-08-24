@@ -1,5 +1,5 @@
 import * as filters from "simulation/ai/common-api/filters.js";
-import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { aiWarn } from "simulation/ai/common-api/utils.js";
 
 /**
  * One task of this manager is to cache the list of structures we have builders for,

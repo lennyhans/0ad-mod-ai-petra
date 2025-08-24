@@ -1,5 +1,5 @@
 import * as filters from "simulation/ai/common-api/filters.js";
-import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { SquareVectorDistance, aiWarn } from "simulation/ai/common-api/utils.js";
 import { newTradeRoute as chatNewTradeRoute } from "simulation/ai/petra/chatHelper.js";
 import { Config } from "simulation/ai/petra/config.js";
 import * as difficulty from "simulation/ai/petra/difficultyLevel.js";

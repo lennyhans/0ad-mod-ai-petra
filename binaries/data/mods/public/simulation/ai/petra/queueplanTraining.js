@@ -1,6 +1,6 @@
 import * as filters from "simulation/ai/common-api/filters.js";
 import { ResourcesManager } from "simulation/ai/common-api/resources.js";
-import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { aiWarn } from "simulation/ai/common-api/utils.js";
 import { QueuePlan } from "simulation/ai/petra/queueplan.js";
 import { Worker } from "simulation/ai/petra/worker.js";
 

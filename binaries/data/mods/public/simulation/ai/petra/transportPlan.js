@@ -1,5 +1,5 @@
 import * as filters from "simulation/ai/common-api/filters.js";
-import { SquareVectorDistance, VectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { SquareVectorDistance, VectorDistance, aiWarn } from "simulation/ai/common-api/utils.js";
 import { getLandAccess } from "simulation/ai/petra/entityExtend.js";
 import { Worker } from "simulation/ai/petra/worker.js";
 

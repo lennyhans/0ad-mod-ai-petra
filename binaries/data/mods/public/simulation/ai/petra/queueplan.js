@@ -1,5 +1,5 @@
 import { ResourcesManager } from "simulation/ai/common-api/resources.js";
-import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { aiWarn } from "simulation/ai/common-api/utils.js";
 
 /**
  * Common functions and variables to all queue plans.

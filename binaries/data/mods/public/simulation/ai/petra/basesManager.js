@@ -1,7 +1,7 @@
 import { EntityCollection } from "simulation/ai/common-api/entitycollection.js";
 import * as filters from "simulation/ai/common-api/filters.js";
 import { InfoMap } from "simulation/ai/common-api/map-module.js";
-import { SquareVectorDistance, warn as aiWarn, getMapIndices } from "simulation/ai/common-api/utils.js";
+import { SquareVectorDistance, aiWarn, getMapIndices } from "simulation/ai/common-api/utils.js";
 import { BaseManager } from "simulation/ai/petra/baseManager.js";
 import { getBestBase, getLandAccess } from "simulation/ai/petra/entityExtend.js";
 import { Worker } from "simulation/ai/petra/worker.js";

@@ -1,5 +1,5 @@
 import * as filters from "simulation/ai/common-api/filters.js";
-import { warn as aiWarn, SquareVectorDistance, VectorDistance } from "simulation/ai/common-api/utils.js";
+import { aiWarn, SquareVectorDistance, VectorDistance } from "simulation/ai/common-api/utils.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import * as chat from "simulation/ai/petra/chatHelper.js";
 import { Config } from "simulation/ai/petra/config.js";

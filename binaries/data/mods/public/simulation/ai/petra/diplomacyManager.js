@@ -1,4 +1,4 @@
-import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { aiWarn } from "simulation/ai/common-api/utils.js";
 import * as chat from "simulation/ai/petra/chatHelper.js";
 
 /**

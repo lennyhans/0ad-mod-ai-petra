@@ -1,5 +1,5 @@
 import { ResourcesManager } from "simulation/ai/common-api/resources.js";
-import { warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { aiWarn } from "simulation/ai/common-api/utils.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
 import { ResearchPlan } from "simulation/ai/petra/queueplanResearch.js";
 import { TrainingPlan } from "simulation/ai/petra/queueplanTraining.js";

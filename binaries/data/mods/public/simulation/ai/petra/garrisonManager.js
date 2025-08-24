@@ -1,4 +1,4 @@
-import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { SquareVectorDistance, aiWarn } from "simulation/ai/common-api/utils.js";
 import { dumpEntity, isSiegeUnit } from "simulation/ai/petra/entityExtend.js";
 import { Worker } from "simulation/ai/petra/worker.js";
 

@@ -1,4 +1,4 @@
-export function warn(output)
+export function aiWarn(output)
 {
 	if (typeof output === "string")
 		warn("PlayerID " + PlayerID + " |   " + output);

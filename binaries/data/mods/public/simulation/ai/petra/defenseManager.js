@@ -1,5 +1,5 @@
 import * as filters from "simulation/ai/common-api/filters.js";
-import { SquareVectorDistance, warn as aiWarn } from "simulation/ai/common-api/utils.js";
+import { SquareVectorDistance, aiWarn } from "simulation/ai/common-api/utils.js";
 import { AttackPlan } from "simulation/ai/petra/attackPlan.js";
 import { DefenseArmy } from "simulation/ai/petra/defenseArmy.js";
 import { allowCapture, getLandAccess, getMaxStrength, isSiegeUnit } from
