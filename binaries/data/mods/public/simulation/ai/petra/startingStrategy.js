@@ -3,7 +3,8 @@ import { ResourcesManager } from "simulation/ai/common-api/resources.js";
 import { SquareVectorDistance, aiWarn } from "simulation/ai/common-api/utils.js";
 import { Config } from "simulation/ai/petra/config.js";
 import * as difficulty from "simulation/ai/petra/difficultyLevel.js";
-import { gatherTreasure, getLandAccess, isFastMoving } from "simulation/ai/petra/entityExtend.js";
+import { gatherTreasure, getHolder, getLandAccess, isFastMoving } from
+	"simulation/ai/petra/entityExtend.js";
 import { Headquarters } from "simulation/ai/petra/headquarters.js";
 import { ConstructionPlan } from "simulation/ai/petra/queueplanBuilding.js";
 
