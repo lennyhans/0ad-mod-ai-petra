@@ -788,7 +788,8 @@ BasesManager.prototype.Serialize = function()
 
 	return {
 		"properties": properties,
-		"noBase": this.noBase.Serialize(),
+		// noBase can be undefined if the region analysis failed and the managers haven't been initialised.
+		"noBase": this.noBase?.Serialize(),
 		"baseManagers": baseManagers
 	};
 };
@@ -798,10 +799,13 @@ BasesManager.prototype.Deserialize = function(gameState, data)
 	for (const key in data.properties)
 		this[key] = data.properties[key];
 
-	this.noBase = new BaseManager(gameState, this);
-	this.noBase.Deserialize(gameState, data.noBase);
-	this.noBase.init(gameState, BaseManager.STATE_WITH_ANCHOR);
-	this.noBase.Deserialize(gameState, data.noBase);
+	if (data.noBase)
+	{
+		this.noBase = new BaseManager(gameState, this);
+		this.noBase.Deserialize(gameState, data.noBase);
+		this.noBase.init(gameState, BaseManager.STATE_WITH_ANCHOR);
+		this.noBase.Deserialize(gameState, data.noBase);
+	}
 
 	this.baseManagers = [];
 	for (const basedata of data.baseManagers)
