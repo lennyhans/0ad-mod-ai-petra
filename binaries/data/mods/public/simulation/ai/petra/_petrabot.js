@@ -84,8 +84,8 @@ PetraBot.prototype.CustomInit = function(gameState)
 
 		this.HQ.init(gameState, this.queues);
 
-		// Analyze our starting position and set a strategy
-		this.HQ.gameAnalysis(gameState);
+		// Try to analyze our starting position and set a strategy.
+		this.canPlay = this.HQ.gameAnalysis(gameState);
 	}
 };
 
@@ -112,10 +112,10 @@ PetraBot.prototype.OnUpdate = function(sharedScript)
 
 		this.playedTurn++;
 
-		if (this.gameState.getOwnEntities().length === 0)
+		if (!this.canPlay)
 		{
 			Engine.ProfileStop();
-			return; // With no entities to control the AI cannot do anything
+			return;
 		}
 
 		this.HQ.update(this.gameState, this.queues, this.savedEvents);
